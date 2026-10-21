@@ -150,6 +150,12 @@ header {
 .shutter { position: fixed; inset: 0; z-index: 2147483647; background: #fff; pointer-events: none; animation: shutter .45s ease-out forwards; }
 @keyframes shutter { from { opacity: .55; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .shutter { display: none; } }
+/* Dark mode inverts the whole page; flip SoroAgent's own UI back so it looks as usual. */
+:host([data-dark]) .launcher, :host([data-dark]) .panel, :host([data-dark]) .shutter { filter: invert(1) hue-rotate(180deg); }
+.sliders { display: grid; gap: 8px; margin: 10px 0 4px; }
+.sliders label { display: grid; grid-template-columns: 112px 1fr 44px; align-items: center; gap: 10px; font-size: 13px; }
+.sliders input[type="range"] { width: 100%; accent-color: var(--accent); }
+.sliders output { text-align: right; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
 
 .thread { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .empty { margin: auto 0; color: var(--fg-muted); font-size: 13px; text-align: center; padding: 0 12px; }

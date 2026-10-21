@@ -25,6 +25,7 @@
     summarize: svg('<path d="M4 6h16M4 12h16M4 18h10"/>'),
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
     clean: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5.5 0 9 5 10 7a17 17 0 0 1-3 3.8M6.3 6.3C3.9 7.9 2.5 10.4 2 12c1 2 4.5 7 10 7 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
+    moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
     camera: svg('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
     research: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6M11 8v6"/>'),
     send: svg('<path d="M12 19V5M5 12l7-7 7 7"/>'),
@@ -85,6 +86,7 @@
         <button class="chip" type="button" data-action="summarize">${ICONS.summarize}<span>Summarize</span></button>
         <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
         <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
+        <button class="chip" type="button" data-action="dark" title="Dark mode for this site, with brightness, contrast and sepia">${ICONS.moon}<span>Dark mode</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="thread" aria-live="polite">
@@ -94,6 +96,7 @@
           <ul>
             <li><b>Summarize</b> the page. It keeps going if you leave, and every summary is kept in your history</li>
             <li><b>Hide ads</b> and distractions, keeping the layout</li>
+            <li><b>Dark mode</b> for any site, tuned to your eyes and remembered per site</li>
             <li><b>Screenshot</b> what you see; screenshots get their own section in your snippets</li>
             <li>Every summary is <b>saved</b> to your snippets; <b>Research</b> any of them further on the web</li>
             <li>Or ask anything about the page below</li>
@@ -148,6 +151,7 @@
   }
   adoptStyles(document, S.PAGE_CSS);
   adoptStyles(document, S.DECLUTTER_CSS);
+  S.dark.markHost(); // flip our own UI back if dark mode is already on
 
   // ---------------------------------------------------------------------------
   // State
@@ -785,6 +789,82 @@
     ]));
   }
 
+  // Dark mode for this site: applied by dark.js at page start; this is the switch and the tuning.
+  function updateDarkChip() {
+    const chip = els.actions.querySelector('[data-action="dark"]');
+    chip.classList.toggle('active', S.dark.isOn());
+    chip.querySelector('span').textContent = S.dark.isOn() ? 'Light mode' : 'Dark mode';
+  }
+
+  let darkSave = 0;
+  function saveDark(options) {
+    clearTimeout(darkSave);
+    darkSave = setTimeout(async () => {
+      const sites = { ...((await S.getSettings()).darkSites || {}) };
+      if (options) sites[location.hostname] = options;
+      else delete sites[location.hostname];
+      await S.saveSettings({ darkSites: sites });
+    }, options ? 250 : 0);
+  }
+
+  function darkCard() {
+    const host = location.hostname;
+    const sliders = el('div', { className: 'sliders' });
+    const inputs = {};
+    const rows = [
+      ['brightness', 'Brightness', 50, 150, '%'],
+      ['contrast', 'Contrast', 50, 150, '%'],
+      ['sepia', 'Sepia (warmer)', 0, 100, '%'],
+    ];
+    const current = S.dark.options();
+    for (const [key, label, min, max, unit] of rows) {
+      const value = el('output', { textContent: `${current[key]}${unit}` });
+      const input = el('input', { type: 'range', min: String(min), max: String(max), step: '5', value: String(current[key]) });
+      input.setAttribute('aria-label', label);
+      input.addEventListener('input', () => {
+        value.textContent = `${input.value}${unit}`;
+        const options = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, Number(i.value)]));
+        S.dark.apply(options); // live in this tab; saved for the site a moment later
+        saveDark(options);
+      });
+      inputs[key] = input;
+      sliders.append(el('label', {}, [el('span', { textContent: label }), input, value]));
+    }
+    const reset = el('button', { type: 'button', textContent: 'Reset' });
+    reset.addEventListener('click', () => {
+      for (const [key, input] of Object.entries(inputs)) {
+        input.value = String(S.DARK_DEFAULTS[key]);
+        input.dispatchEvent(new Event('input'));
+      }
+    });
+    const off = el('button', { type: 'button', textContent: 'Turn off' });
+    off.addEventListener('click', () => {
+      if (S.dark.isOn()) toggleDark();
+    });
+    return el('div', { className: 'card ok dark-card' }, [
+      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: `Dark mode is on for ${host}` })]),
+      el('p', { textContent: 'Photos and videos keep their colours. It stays on for this site until you turn it off.' }),
+      sliders,
+      el('div', { className: 'card-actions' }, [reset, off]),
+    ]);
+  }
+
+  function toggleDark() {
+    if (S.dark.isOn()) {
+      S.dark.apply(null);
+      saveDark(null);
+      els.thread.querySelectorAll('.dark-card').forEach((n) => n.remove());
+      append(card({ title: `Dark mode is off for ${location.hostname}.` }));
+      return;
+    }
+    const saved = (state.settings.darkSites || {})[location.hostname];
+    const options = S.normalizeDark(saved || S.DARK_DEFAULTS);
+    S.dark.apply(options);
+    saveDark(options);
+    append(darkCard());
+  }
+  S.dark.onChange(() => updateDarkChip());
+
   // Screenshot of the visible page (without SoroAgent's own button and panel), saved as a snippet.
   let capturing = false;
   async function takeScreenshot() {
@@ -1176,6 +1256,7 @@
     if (action === 'summarize') summarize();
     else if (action === 'declutter') toggleDeclutter();
     else if (action === 'screenshot') takeScreenshot();
+    else if (action === 'dark') toggleDark();
   });
 
   // Clicking a chip would otherwise clear the user's text selection on the page.
@@ -1304,4 +1385,5 @@
     }
   });
   updateControls();
+  updateDarkChip();
 })();

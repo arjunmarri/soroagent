@@ -37,7 +37,8 @@ test('pages only load scripts that exist', () => {
 });
 
 test('content scripts load the site registry before the site profiles and the assistant last', () => {
-  const js = expandScripts(manifest.content_scripts[0].js, ext);
+  const main = manifest.content_scripts.find((script) => script.js.includes('content/assistant.js'));
+  const js = expandScripts(main.js, ext);
   const registry = js.indexOf('sites/registry.js');
   const x = js.indexOf('sites/x.js');
   assert.ok(registry >= 0 && x > registry, 'registry before profiles');
@@ -45,4 +46,10 @@ test('content scripts load the site registry before the site profiles and the as
   assert.ok(js.includes('prompts/x.js'), 'site prompt files are loaded');
   assert.ok(!js.some((f) => f.includes('_template')), 'templates are not loaded');
   assert.equal(js.at(-1), 'content/assistant.js');
+});
+
+test('dark mode loads on its own at document_start so pages never flash white', () => {
+  const dark = manifest.content_scripts.find((script) => script.js.includes('content/dark.js'));
+  assert.equal(dark.run_at, 'document_start');
+  assert.deepEqual(dark.js, ['content/dark.js']);
 });

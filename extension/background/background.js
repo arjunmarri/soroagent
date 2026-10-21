@@ -315,7 +315,7 @@
       return await ext.tabs.sendMessage(tabId, message);
     } catch {
       // Tab was open before the extension was installed or reloaded: inject and retry.
-      const files = ext.runtime.getManifest().content_scripts[0].js;
+      const files = ext.runtime.getManifest().content_scripts.flatMap((script) => script.js);
       await ext.scripting.executeScript({ target: { tabId }, files });
       return ext.tabs.sendMessage(tabId, message);
     }
