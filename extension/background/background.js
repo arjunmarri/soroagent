@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  const { ext, getSettings, resolveConnection, listModels, chat, normalizeBaseUrl, createSecretStore, recommendModels, PULL_SUGGESTION } =
+  const { ext, getSettings, resolveConnection, listModels, chat, normalizeBaseUrl, createSecretStore, recommendModels, PULL_SUGGESTION, createJobRunner } =
     globalThis.SoroAgent;
 
   const secrets = createSecretStore();
@@ -174,6 +174,34 @@
   });
 
   // ---------------------------------------------------------------------------
+  // Summary jobs: run here, not in the page, so they finish even if the reader leaves.
+  // ---------------------------------------------------------------------------
+
+  const jobs = createJobRunner({
+    ext,
+    errorPayload,
+    runChat: async ({ messages, model, signal, onToken, onThinking }) => {
+      const { connection, api } = await resolveChat(model);
+      return chat({ connection, api, messages, signal, onToken, onThinking });
+    },
+  });
+  jobs.recover();
+
+  ext.runtime.onConnect.addListener((port) => {
+    if (port.name !== 'summary') return;
+    port.onDisconnect.addListener(() => jobs.detach(port)); // the job keeps running
+    port.onMessage.addListener(async (msg) => {
+      try {
+        if (msg.type === 'start') await jobs.start(msg.job, port);
+        else if (msg.type === 'attach' && !jobs.attach(msg.id, port)) port.postMessage({ type: 'gone', id: msg.id });
+        else if (msg.type === 'stop') jobs.stop(msg.id);
+      } catch (err) {
+        port.postMessage({ type: 'error', record: { status: 'error', ...errorPayload(err) } });
+      }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // One-shot messages from content scripts and extension pages
   // ---------------------------------------------------------------------------
 
@@ -215,6 +243,18 @@
     },
     'open:snippets': () => ext.tabs.create({ url: ext.runtime.getURL('pages/snippets.html') }),
     'open:options': () => ext.runtime.openOptionsPage(),
+    'open:history': () => ext.tabs.create({ url: ext.runtime.getURL('pages/history.html') }),
+    'summary:find': async (msg) => ({ ok: true, record: await jobs.find(msg.url, msg.fingerprint) }),
+    'summary:for-url': async (msg) => ({ ok: true, records: await jobs.forUrl(msg.url) }),
+    'summary:seen': async (msg) => {
+      await jobs.markSeen(msg.ids || []);
+      return { ok: true };
+    },
+    'summary:delete': async (msg, sender) => {
+      requireExtensionPage(sender);
+      await jobs.remove(msg.ids || []);
+      return { ok: true };
+    },
   };
 
   ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -255,6 +295,7 @@
 
   // Right-click on the toolbar owl.
   const ACTION_MENU_ITEMS = [
+    { id: 'soroagent-open-history', title: 'Summary history', open: () => handlers['open:history']() },
     { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']() },
     { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },
   ];

@@ -8,6 +8,8 @@ An AI assistant on every web page. SoroAgent is a browser extension for Chrome (
 Click the owl 🦉 on any page (a monochrome outline on a translucent button, always there and quietly watching) to:
 
 - **Summarize** the page. Ask again while nothing has changed and you get the earlier summary instantly, with a **Regenerate** link.
+- **Work in parallel.** Summaries run in the background, so you can move on to another page or tab while SoroAgent works. When you come back, the result is waiting in the panel. The toolbar owl shows how many summaries finished while you were away.
+- **Summary history.** Every summary is kept. Browse them by day in **Summary history**, search them, filter by site or status, and copy, re-open or save any of them as a snippet.
 - **Ask** follow-up questions about the page in a chat.
 - **Save** your selection (or the page) to a local library. The model writes a title, a summary and tags.
 
@@ -24,12 +26,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.5.1**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.6.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.5.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.5.1.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.5.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.5.1.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.6.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.6.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.6.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.6.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -64,8 +66,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.5.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.5.1.zip)
-- Firefox: [soroagent-firefox-2.5.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.5.1.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.6.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.6.0.zip)
+- Firefox: [soroagent-firefox-2.6.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.6.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -81,7 +83,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.5.1.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.6.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -92,7 +94,7 @@ On first install the settings page opens and tests the connection to `http://127
 | Any page | Click the owl button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). |
 | Keyboard | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens or closes the assistant (Option on a Mac). You can change it at `chrome://extensions/shortcuts`. |
 | Right-click menu | *Save selection to SoroAgent*, *Summarize this page* |
-| Toolbar owl | Click to open SoroAgent on the current page. Right-click for **Saved snippets** and **Settings**. |
+| Toolbar owl | Click to open SoroAgent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets** and **Settings**. |
 
 Saved snippets open in a **timeline**: grouped by day (Today, Yesterday, then dates) with the time of each save and a month index for jumping back in history. Click a site or a tag to filter, or search across everything. Switch to the **List** view any time; SoroAgent remembers your choice. You can also copy, delete, and export to JSON or Markdown (and import JSON).
 
@@ -137,6 +139,7 @@ Profiles in [`extension/sites/`](extension/sites) give SoroAgent site-specific b
   - *Limits:* this protects against websites, other extensions, and copies or backups of extension storage. It can't stop malware running as your user account, which could control the browser itself. Treat API keys like passwords: give them a spending limit and revoke them if a device is lost.
 - **Ollama and 403 errors:** Ollama rejects requests from `chrome-extension://` and `moz-extension://` origins by default. SoroAgent rewrites the `Origin` header to the server's own origin, which Ollama always accepts. This applies only to the extension's own background requests: Chrome uses a session `declarativeNetRequest` rule and Firefox uses `webRequest`. Requests from web pages are never changed, so you don't need to set `OLLAMA_ORIGINS`.
 - Reasoning models (Qwen3, DeepSeek-R1, Gemma 4…) run with thinking turned off for speed, and any `<think>` output is removed. You can turn thinking on in settings.
+- **Summaries are background jobs.** The page hands the work to the background worker, which saves progress in the summary history (`summary:<id>` in extension storage, newest 300 kept), streams to whichever page is open, and keeps running if you leave. If the browser itself stops SoroAgent mid-summary, the entry is marked *interrupted* and you can run it again.
 - Settings, keys and snippets are stored in `chrome.storage.local` on your machine (one key per snippet, so saves from several tabs can't overwrite each other).
 
 ## Development

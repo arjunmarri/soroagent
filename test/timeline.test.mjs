@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './helpers.mjs';
 
-const S = await load('shared/snippets.js');
+const S = await load('shared/timeline.js');
 const at = (y, m, d, h = 12) => new Date(y, m - 1, d, h).toISOString();
 
 test('dayLabel names recent days and dates further back', () => {

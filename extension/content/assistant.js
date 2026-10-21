@@ -75,6 +75,7 @@
         <button class="icon-btn menu-btn" type="button" aria-label="More options" aria-haspopup="menu">${ICONS.more}</button>
         <button class="icon-btn close-btn" type="button" aria-label="Close SoroAgent">${ICONS.close}</button>
         <div class="menu" role="menu" hidden>
+          <button type="button" role="menuitem" data-cmd="history">Summary history</button>
           <button type="button" role="menuitem" data-cmd="snippets">Saved snippets</button>
           <button type="button" role="menuitem" data-cmd="clear">Clear conversation</button>
           <button type="button" role="menuitem" data-cmd="reset-position" hidden>Reset button position</button>
@@ -92,7 +93,7 @@
           <strong>Hi, I'm SoroAgent</strong>
           <span class="empty-note">Runs on the model served at your local URL. Nothing leaves your machine.</span>
           <ul>
-            <li><b>Summarize</b> the page</li>
+            <li><b>Summarize</b> the page. It keeps going if you leave, and every summary is kept in your history</li>
             <li><b>Save</b> your selection or the page</li>
             <li>Or ask anything about the page below</li>
           </ul>
@@ -504,37 +505,128 @@
     return summarizePage({ fresh });
   }
 
+  // ---------------------------------------------------------------------------
+  // Summary jobs: the background worker runs each summary, so it finishes even if the reader
+  // leaves the page. Results are kept in the summary history.
+  // ---------------------------------------------------------------------------
+
+  const NOTES_PLACEHOLDER = '@@SOROAGENT_NOTES@@';
+
+  /** Connects a reply bubble to a job (new or running). Resolves with the final text. */
+  function followJob(port, reply, { signal, onStarted } = {}) {
+    return new Promise((resolve, reject) => {
+      let id = '';
+      let settled = false;
+      const finish = (fn, value) => {
+        if (settled) return;
+        settled = true;
+        try {
+          port.disconnect();
+        } catch {
+          // already closed
+        }
+        fn(value);
+      };
+      port.onMessage.addListener((msg) => {
+        if (msg.type === 'started') {
+          id = msg.id;
+          if (onStarted) onStarted(id);
+        } else if (msg.type === 'snapshot') {
+          id = msg.record.id;
+          if (msg.record.text) reply.push(msg.record.text);
+          else if (msg.record.statusText) reply.status(msg.record.statusText);
+        } else if (msg.type === 'status') reply.status(msg.text);
+        else if (msg.type === 'thinking') reply.thinking();
+        else if (msg.type === 'token') reply.push(msg.text);
+        else if (msg.type === 'done') {
+          reply.finish(msg.record.text);
+          finish(resolve, msg.record.text);
+        } else if (msg.type === 'error' || msg.type === 'gone') {
+          const record = msg.record || {};
+          finish(reject, record.status === 'stopped' ? Object.assign(new Error('Stopped.'), { name: 'AbortError' }) : toError(record));
+        }
+      });
+      port.onDisconnect.addListener(() => finish(reject, toError({ error: 'Lost the connection to the extension.', hint: 'Reload the page; the summary is in your summary history.' })));
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          if (id) port.postMessage({ type: 'stop', id });
+          finish(reject, Object.assign(new Error('Stopped.'), { name: 'AbortError' }));
+        }, { once: true });
+      }
+    });
+  }
+
+  /**
+   * Runs a summary as a background job and streams it into a reply bubble.
+   * job: { label, kind, fingerprint, final (messages), notes (list of messages; optional) }
+   */
+  async function runSummaryJob(job, { signal, reply }) {
+    const port = ext.runtime.connect({ name: 'summary' });
+    const done = followJob(port, reply, { signal });
+    port.postMessage({
+      type: 'start',
+      job: {
+        ...job,
+        placeholder: NOTES_PLACEHOLDER,
+        url: location.href,
+        pageTitle: document.title,
+        site: state.site.id === 'default' ? location.hostname : state.site.name,
+        model: els.model.value || '',
+      },
+    });
+    try {
+      const text = await done;
+      state.history.push({ role: 'user', content: job.label }, { role: 'assistant', content: text });
+      state.history = state.history.slice(-12);
+      return text;
+    } catch (err) {
+      if (!reply.node.textContent.trim() || /Reading|Writing|Thinking/.test(reply.node.textContent)) reply.node.remove();
+      throw err;
+    }
+  }
+
+  // An earlier summary of exactly this content (from the summary history), if any.
+  async function findSummary(print) {
+    try {
+      const res = await sendMessage({ type: 'summary:find', url: location.href, fingerprint: print });
+      return res.record ? { text: res.record.text, at: Date.parse(res.record.finishedAt || res.record.createdAt) } : null;
+    } catch {
+      return null;
+    }
+  }
+
   function summarizePage({ fresh }) {
     return runTask(async (signal) => {
       const page = getPage();
       if (!page.text) throw new Error('This page has no readable text to summarize.');
       state.pageContext = { url: location.href, page };
-      const key = `page:${fingerprint(`${location.href}\n${page.text}`)}`;
-      const cached = state.summaries.get(key);
-      if (cached && !fresh) return showCachedSummary('Summarize this page', cached, () => summarize({ fresh: true }));
+      const print = fingerprint(`${location.href}\n${page.text}`);
+      const cached = !fresh && (await findSummary(print));
+      if (cached) return showCachedSummary('Summarize this page', cached, () => summarize({ fresh: true }));
       addUserMessage('Summarize this page');
       const vars = S.pageVars(page, { context: pageInfo().context || '' });
-      const text = await streamReply(S.buildMessages('summarize', vars, sitePrompts()), 'Summarize this page.', signal);
-      state.summaries.set(key, { text, at: Date.now() });
+      await runSummaryJob(
+        { label: 'Summarize this page', kind: 'page', fingerprint: print, final: S.buildMessages('summarize', vars, sitePrompts()) },
+        { signal, reply: addAssistantMessage() }
+      );
     });
   }
 
-  // Items already on screen (e.g. a thread on X): no scrolling.
+  // Items already on screen (e.g. a thread on X or Reddit): no scrolling.
   function summarizeVisibleItems(posts, { fresh }) {
     return runTask(async (signal) => {
-      const key = `items:${fingerprint(location.href + JSON.stringify(siteOptions()) + posts.map((p) => p.id).join(','))}`;
+      const print = fingerprint(location.href + JSON.stringify(siteOptions()) + posts.map((p) => p.id).join(','));
       const label = `Summarize ${posts.length} ${items().noun || 'items'}`;
-      const cached = state.summaries.get(key);
-      if (cached && !fresh) return showCachedSummary(label, cached, () => summarize({ fresh: true }));
+      const cached = !fresh && (await findSummary(print));
+      if (cached) return showCachedSummary(label, cached, () => summarize({ fresh: true }));
       addUserMessage(label);
-      const text = await summarizeItems(posts, { start: 1, context: pageInfo().context || '', signal, label });
-      state.summaries.set(key, { text, at: Date.now() });
+      await summarizeItems(posts, { start: 1, context: pageInfo().context || '', signal, label, print });
     });
   }
 
-  // Formats items and summarizes them. Batches longer than the page-text limit are summarized
-  // in parts (notes per part), then the notes are merged into one summary.
-  async function summarizeItems(list, { start, context, signal, label }) {
+  // Formats items and summarizes them as a background job. Batches longer than the page-text
+  // limit are summarized in parts (notes per part), then the notes are merged into one summary.
+  async function summarizeItems(list, { start, context, signal, label, print = '' }) {
     const site = items();
     const prompts = sitePrompts();
     const budget = maxChars();
@@ -555,33 +647,66 @@
 
     const base = { title: document.title, url: location.href, text: '' };
     const noun = site.noun || 'items';
-    const reply = addAssistantMessage(`Reading ${list.length} ${noun}…`);
+    const notes = [];
     let content = site.format(list, { start });
     let fullContext = context;
     if (groups.length > 1) {
-      const notes = [];
       let offset = start;
       for (let i = 0; i < groups.length; i++) {
-        reply.status(`Reading part ${i + 1} of ${groups.length}…`);
         const vars = S.pageVars({ ...base, text: site.format(groups[i], { start: offset }) }, { context: `${context} (Part ${i + 1} of ${groups.length}.)`, count: groups[i].length });
-        try {
-          notes.push(`--- Part ${i + 1} ---\n${await runChat({ messages: S.buildMessages('notes', vars, prompts), signal })}`);
-        } catch (err) {
-          reply.node.remove();
-          throw err;
-        }
+        notes.push(S.buildMessages('notes', vars, prompts));
         offset += groups[i].length;
       }
-      reply.status('Writing the summary…');
-      content = notes.join('\n\n');
+      content = NOTES_PLACEHOLDER;
       fullContext = `${context} The content below is notes taken on ${list.length} ${noun} in ${groups.length} parts.`;
     }
     const vars = S.pageVars({ ...base, text: content }, { context: fullContext, count: list.length });
-    const text = await streamReply(S.buildMessages('summarize', vars, prompts), label, signal, reply);
+    const text = await runSummaryJob(
+      { label, kind: 'items', fingerprint: print, notes, final: S.buildMessages('summarize', vars, prompts) },
+      { signal, reply: addAssistantMessage(`Reading ${list.length} ${noun}…`) }
+    );
     // Follow-up questions are answered from these items.
     const asText = site.format(list, { start });
     state.pageContext = { url: location.href, page: { ...base, text: asText.slice(0, budget), truncated: asText.length > budget } };
     return text;
+  }
+
+  // Coming back to a page: show summaries that finished while the reader was away, and
+  // reconnect to ones still running.
+  async function showPendingSummaries() {
+    let records = [];
+    try {
+      records = (await sendMessage({ type: 'summary:for-url', url: location.href })).records || [];
+    } catch {
+      return;
+    }
+    const relevant = records.filter((r) => r.status !== 'running' || r.live);
+    if (!relevant.length) return;
+    openPanel({ focus: false });
+    const seen = [];
+    for (const record of relevant) {
+      const when = new Date(record.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      if (record.status === 'running') {
+        append(card({ icon: 'summarize', title: `Still working on "${record.label}" (started ${when}).`, body: 'It kept running while you were away.' }));
+        const reply = addAssistantMessage(record.statusText || 'Summarizing…');
+        const port = ext.runtime.connect({ name: 'summary' });
+        followJob(port, reply).then((text) => {
+          state.history.push({ role: 'user', content: record.label }, { role: 'assistant', content: text });
+          sendMessage({ type: 'summary:seen', ids: [record.id] }).catch(() => {});
+        }).catch((err) => showError(err, err.hint, false));
+        port.postMessage({ type: 'attach', id: record.id });
+        continue;
+      }
+      seen.push(record.id);
+      if (record.status === 'done') {
+        append(card({ kind: 'ok', icon: 'check', title: `Finished while you were away: ${record.label}`, body: `Started at ${when}.` }));
+        addAssistantMessage().finish(record.text);
+        state.history.push({ role: 'user', content: record.label }, { role: 'assistant', content: record.text });
+      } else if (record.status !== 'stopped') {
+        showError(new Error(`"${record.label}" didn't finish: ${record.error || record.status}`), record.hint, false);
+      }
+    }
+    if (seen.length) sendMessage({ type: 'summary:seen', ids: seen }).catch(() => {});
   }
 
   // Feeds (X, Reddit): Summarize reads only what's already loaded, then offers "Read more".
@@ -851,6 +976,7 @@
     }
     state.pageContext = null;
     renderSiteBar();
+    showPendingSummaries();
   }, 800);
 
   // ---------------------------------------------------------------------------
@@ -859,7 +985,7 @@
 
   const isOpen = () => !els.panel.hidden;
 
-  function openPanel() {
+  function openPanel({ focus = true } = {}) {
     if (!isOpen()) {
       els.panel.hidden = false;
       els.launcher.classList.add('open');
@@ -867,7 +993,7 @@
       launcherCtl.placePanel();
       if (state.status !== 'ready') connect();
     }
-    els.input.focus({ preventScroll: true });
+    if (focus) els.input.focus({ preventScroll: true });
   }
 
   function closePanel() {
@@ -938,6 +1064,7 @@
     const cmd = e.target.closest('[data-cmd]')?.dataset.cmd;
     els.menu.hidden = true;
     if (cmd === 'snippets') sendMessage({ type: 'open:snippets' });
+    else if (cmd === 'history') sendMessage({ type: 'open:history' });
     else if (cmd === 'settings') sendMessage({ type: 'open:options' });
     else if (cmd === 'clear') {
       state.history = [];
@@ -1001,6 +1128,7 @@
     state.settings = settings;
     applySettings();
     applySiteOptions();
+    showPendingSummaries();
   });
   updateControls();
 })();
