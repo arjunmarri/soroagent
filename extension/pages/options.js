@@ -5,7 +5,7 @@
   const { ext, DEFAULT_SETTINGS, PROVIDER_PRESETS, CLOUD_PROVIDERS } = S;
   const $ = (id) => document.getElementById(id);
   const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl'];
-  const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars'];
+  const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit'];
   const CHECK_FIELDS = ['allowThinking', 'showLauncher'];
 
   let saved = { ...DEFAULT_SETTINGS }; // last saved settings, for fields this page doesn't show

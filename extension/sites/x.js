@@ -1,5 +1,5 @@
-// Site profile for X (formerly Twitter): reads posts instead of page text, gathers search results
-// by scrolling, and adds "Verified only" / "Hide ads" filters. Its prompts are in prompts/x.js.
+// Site profile for X (formerly Twitter): reads posts instead of page text, reads more of a feed on
+// request, and adds "Verified only" / "Hide ads" filters. Its prompts are in prompts/x.js.
 // A worked example for extension/sites/README.md.
 (function (root) {
   'use strict';
@@ -147,47 +147,8 @@
     return posts;
   }
 
-  const sleep = (ms, signal) =>
-    new Promise((resolve, reject) => {
-      const timer = setTimeout(resolve, ms);
-      if (signal) {
-        signal.addEventListener('abort', () => {
-          clearTimeout(timer);
-          reject(Object.assign(new Error('Stopped.'), { name: 'AbortError' }));
-        }, { once: true });
-      }
-    });
-
-  /**
-   * Scrolls the page to gather up to `target` posts not in `skip`. Starts from `fromY` when given.
-   * Resolves with { items, endY, exhausted }. The caller restores the scroll position.
-   */
-  async function collect({ target = 100, skip = new Set(), options = {}, signal, onProgress, fromY }) {
-    const found = new Map();
-    if (typeof fromY === 'number') {
-      window.scrollTo(0, fromY);
-      await sleep(900, signal);
-    }
-    let idleRounds = 0;
-    while (found.size < target && idleRounds < 6) {
-      if (signal && signal.aborted) throw Object.assign(new Error('Stopped.'), { name: 'AbortError' });
-      const before = found.size;
-      for (const post of visiblePosts(document, options)) {
-        if (!skip.has(post.id) && !found.has(post.id)) found.set(post.id, { ...post, el: null });
-      }
-      if (onProgress) onProgress(Math.min(found.size, target), target);
-      if (found.size >= target) break;
-      const height = document.documentElement.scrollHeight;
-      window.scrollBy(0, Math.max(400, window.innerHeight * 0.85));
-      // Give X time to fetch and render the next page of results.
-      for (let waited = 0; waited < 2400; waited += 300) {
-        await sleep(300, signal);
-        if (document.documentElement.scrollHeight !== height) break;
-      }
-      idleRounds = found.size === before ? idleRounds + 1 : 0;
-    }
-    return { items: [...found.values()].slice(0, target), endY: window.scrollY, exhausted: idleRounds >= 6 };
-  }
+  /** Gathers more posts by scrolling (bounded; see collectByScrolling in registry.js). */
+  const collect = (args) => SoroAgent.collectByScrolling({ ...args, visible: visiblePosts });
 
   /** The post to save when nothing is selected: the main post of a thread, else the one in view. */
   function focusedPost(doc, location) {
@@ -250,8 +211,8 @@
     applyOptions,
     items: {
       noun: 'posts',
-      batchSize: 100,
-      /** Summarize gathers a batch by scrolling on feeds; threads use what's loaded. */
+      // Feeds: Summarize reads what's loaded, then offers "Read more" in batches of this size.
+      batchSize: 50,
       isFeed: (info) => FEED_TYPES.has(info.type),
       visible: visiblePosts,
       collect,

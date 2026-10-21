@@ -7,7 +7,7 @@ SoroAgent works on any page, but a **site profile** makes it smarter on a specif
 - **gather more content by scrolling** (for example, 100 posts from a search page);
 - add **toggles** to the panel (for example, "Verified only" on X).
 
-[`x.js`](x.js) is the complete example used for X (formerly Twitter). [`_template.js`](_template.js) is a minimal starting point.
+[`x.js`](x.js) (X) and [`reddit.js`](reddit.js) (Reddit, new and old) are complete examples. [`_template.js`](_template.js) is a minimal starting point.
 
 ## Add a profile for your site
 
@@ -43,9 +43,9 @@ For sites made of posts or results, add an `items` object:
 | `noun` | What an item is called in the UI, for example `'posts'`. |
 | `visible(document, optionValues)` | Returns the items currently in the page: `[{ id, text, … }]`, where `id` is stable. |
 | `format(items, { start })` | Turns items into numbered text (`[1] …`) for prompts. |
-| `isFeed(pageInfo)` | Return `true` when **Summarize** should gather `batchSize` items by scrolling. |
-| `batchSize` | How many items to gather per batch (X uses 100). |
-| `collect({ target, skip, options, signal, onProgress, fromY })` | Scrolls and gathers items. Resolves with `{ items, endY, exhausted }`. |
+| `isFeed(pageInfo)` | Return `true` for feed pages. There, **Summarize** reads what's loaded and then offers **Read more**. |
+| `batchSize` | How many items one **Read more** loads (X and Reddit use 50). |
+| `collect({ target, skip, options, signal, onProgress, fromY })` | Scrolls and gathers more items. Use `SoroAgent.collectByScrolling({ ...args, visible })`, which enforces the anti-doom-scrolling limits (steps, time, no-progress), unless you have a good reason not to. |
 | `focused(document, location)` | The item **Save** stores when nothing is selected. |
 | `describe(item)` | Plain-text version of an item for saving. |
 

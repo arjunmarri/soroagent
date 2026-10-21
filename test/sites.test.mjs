@@ -10,7 +10,7 @@ const loc = (url) => new URL(url);
 
 test('every site profile registers with valid prompts and options', () => {
   const ids = S.siteProfiles.map((p) => p.id);
-  assert.ok(ids.includes('x'));
+  assert.ok(ids.includes('x') && ids.includes('reddit'));
   assert.equal(new Set(ids).size, ids.length);
   for (const profile of S.siteProfiles) {
     const prompts = S.promptsFor(profile.id, profile.prompts);
@@ -68,4 +68,40 @@ test('X counts and post formatting', () => {
     { start: 101 }
   );
   assert.equal(text, '[101] @ada (Ada, verified) · 2026-10-20 · 1.5K likes · 20 reposts\nHello\n\n[102] @bob · AD\n[media only]');
+});
+
+test('Reddit page detection', () => {
+  const { pageInfo } = S.siteHelpers.reddit;
+  const reddit = S.siteFor(loc('https://www.reddit.com/'));
+  assert.equal(reddit.id, 'reddit');
+  assert.equal(S.siteFor(loc('https://old.reddit.com/r/LocalLLaMA/')).id, 'reddit');
+  assert.equal(pageInfo(loc('https://www.reddit.com/')).type, 'home');
+  assert.equal(pageInfo(loc('https://www.reddit.com/r/popular/')).type, 'home');
+  const sub = pageInfo(loc('https://www.reddit.com/r/LocalLLaMA/top/'));
+  assert.deepEqual([sub.type, sub.label], ['subreddit', 'r/LocalLLaMA · top']);
+  assert.equal(pageInfo(loc('https://www.reddit.com/r/LocalLLaMA/comments/abc123/which_quant/')).type, 'thread');
+  const search = pageInfo(loc('https://www.reddit.com/search/?q=ollama'));
+  assert.deepEqual([search.type, search.query], ['search', 'ollama']);
+  assert.equal(pageInfo(loc('https://www.reddit.com/user/someone/')).type, 'user');
+  for (const type of ['home', 'subreddit', 'search', 'user']) assert.equal(reddit.items.isFeed({ type }), true);
+  assert.equal(reddit.items.isFeed({ type: 'thread' }), false);
+});
+
+test('Reddit formatting of posts and comments', () => {
+  const { formatItems, toNumber } = S.siteHelpers.reddit;
+  assert.equal(toNumber('1.2k'), 1200);
+  assert.equal(toNumber('842 points'), 842);
+  const text = formatItems([
+    { kind: 'post', subreddit: 'r/LocalLLaMA', author: 'ada', score: 1500, comments: 12, time: '2026-10-19T10:00:00Z', title: 'Q5 vs Q4?', text: 'Body' },
+    { kind: 'comment', author: 'bob', depth: 1, score: 40, text: 'Use Q5_K_M.' },
+  ]);
+  assert.equal(text, '[1] r/LocalLLaMA · u/ada · 1.5K points · 12 comments · 2026-10-19\nTitle: Q5 vs Q4?\nBody\n\n[2] u/bob · reply (depth 1) · 40 points\nUse Q5_K_M.');
+});
+
+test('feeds read more in bounded batches', () => {
+  for (const id of ['x', 'reddit']) {
+    const profile = S.siteProfiles.find((p) => p.id === id);
+    assert.ok(profile.items.batchSize > 0 && profile.items.batchSize <= 100, `${id} batch size`);
+  }
+  assert.ok(S.SCROLL_LIMITS.maxSteps <= 50 && S.SCROLL_LIMITS.maxMs <= 60000, 'one batch is bounded in steps and time');
 });

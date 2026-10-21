@@ -40,4 +40,13 @@ test('buildMessages renders placeholders and layers default < site file < inline
   assert.equal(ask[1].content, 'Why?');
   assert.throws(() => S.buildMessages('nope', vars), /Unknown prompt action/);
   assert.throws(() => S.definePrompts('bad', { summarise: {} }), /unknown action "summarise"/);
+  assert.throws(() => S.definePrompts('bad', { pages: { thread: { sumarize: {} } } }), /bad.pages.thread.*unknown action "sumarize"/);
+
+  // Page-type prompts: Reddit threads get their own summarize prompt; feeds use the site's.
+  const feed = S.promptsFor('reddit', null, 'subreddit');
+  const thread = S.promptsFor('reddit', null, 'thread');
+  assert.match(feed.summarize.user, /Summarize these \{\{count\}\} posts/);
+  assert.match(thread.summarize.user, /Summarize this discussion/);
+  assert.equal(thread.save.user, feed.save.user, 'other actions are shared');
+  assert.equal(thread.pages, undefined);
 });

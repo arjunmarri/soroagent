@@ -142,6 +142,10 @@
       <label class="check"><input type="checkbox" id="showLauncher">
         <span>Show the assistant button<small>When off, open it from the toolbar icon, the right-click menu, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.</small></span>
       </label>
+      <label class="field"><span>"Read more" limit on feeds (posts per page)</span>
+        <input type="number" id="readMoreLimit" min="20" max="1000" step="10">
+        <small>On X and Reddit, Summarize reads what's loaded and then offers to read more, one batch at a time. It stops for good at this many posts on a page, so it never turns into doom-scrolling.</small>
+      </label>
       <label class="field"><span>Button position</span>
         <select id="launcherPosition">
           <option value="auto">Automatic — find a spot that doesn't cover the page's buttons</option>

@@ -17,9 +17,15 @@ test('there is a default prompt set covering every action', () => {
   assert.ok(defaults.persona, 'default persona');
 });
 
-for (const id of setIds) {
-  test(`prompts/${id}.js uses only known placeholders and keeps JSON reply shapes`, () => {
-    const set = S.promptsFor(id);
+// Each prompt set, plus each of its page-type variants (e.g. reddit/thread).
+const variants = setIds.flatMap((id) => {
+  const pages = Object.keys(S.promptSet(id).pages || {});
+  return [[id, undefined], ...pages.map((page) => [id, page])];
+});
+
+for (const [id, page] of variants) {
+  test(`prompts/${id}.js${page ? ` (${page} pages)` : ''} uses only known placeholders and keeps JSON reply shapes`, () => {
+    const set = S.promptsFor(id, null, page);
     for (const action of S.PROMPT_ACTIONS) {
       for (const field of ['system', 'user']) {
         const text = (set[action] && set[action][field]) || '';

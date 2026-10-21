@@ -21,12 +21,22 @@
   const PLACEHOLDERS = Object.freeze(['persona', 'title', 'url', 'content', 'page', 'count', 'context', 'note', 'question']);
   const promptSets = {}; // set id ("default", "x", …) -> { persona?, <action>: { system?, user? } }
 
-  /** Registers the prompts for a site id; called by the files in extension/prompts/. */
+  function checkActions(id, prompts) {
+    for (const key of Object.keys(prompts)) {
+      if (key === 'persona' || key === 'pages') continue;
+      if (!ACTIONS.includes(key)) throw new Error(`Prompts "${id}": unknown action "${key}". Known: ${ACTIONS.join(', ')}.`);
+    }
+  }
+
+  /**
+   * Registers the prompts for a site id; called by the files in extension/prompts/.
+   * `pages` holds overrides for specific page types (from the site profile's pageInfo().type),
+   * e.g. { pages: { thread: { summarize: { user: '…' } } } }.
+   */
   function definePrompts(id, prompts) {
     if (!id || typeof prompts !== 'object') throw new Error('definePrompts(id, prompts) needs an id and an object.');
-    for (const key of Object.keys(prompts)) {
-      if (key !== 'persona' && !ACTIONS.includes(key)) throw new Error(`Prompts "${id}": unknown action "${key}". Known: ${ACTIONS.join(', ')}.`);
-    }
+    checkActions(id, prompts);
+    for (const [pageType, overrides] of Object.entries(prompts.pages || {})) checkActions(`${id}.pages.${pageType}`, overrides);
     promptSets[id] = prompts;
   }
 
@@ -36,15 +46,21 @@
     for (const set of sets) {
       if (!set) continue;
       for (const [key, value] of Object.entries(set)) {
+        if (key === 'pages') continue;
         merged[key] = key === 'persona' ? value : { ...(merged[key] || {}), ...value };
       }
     }
     return merged;
   }
 
-  /** Prompts for a site: defaults, then extension/prompts/<siteId>.js, then inline profile overrides. */
-  function promptsFor(siteId, inline) {
-    return mergeSets(promptSets.default, siteId && siteId !== 'default' ? promptSets[siteId] : null, inline);
+  /**
+   * Prompts for a site and page type: defaults, then extension/prompts/<siteId>.js, then that
+   * file's overrides for the page type, then inline profile overrides.
+   */
+  function promptsFor(siteId, inline, pageType) {
+    const set = siteId && siteId !== 'default' ? promptSets[siteId] : null;
+    const forPage = set && set.pages && pageType ? set.pages[pageType] : null;
+    return mergeSets(promptSets.default, set, forPage, inline);
   }
 
   function render(template, vars) {
@@ -132,6 +148,7 @@
     PROMPT_PLACEHOLDERS: PLACEHOLDERS,
     definePrompts,
     promptsFor,
+    promptSet: (id) => promptSets[id] || null,
     renderTemplate: render,
     pageVars,
     buildMessages,

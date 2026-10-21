@@ -1,0 +1,21 @@
+[1] r/LocalLLaMA · u/quant_curious · 842 points · 213 comments · 2026-10-19
+Title: Which quantization actually holds up for 14B models on a 16 GB Mac?
+I keep seeing conflicting advice. Q4_K_M feels fine for chat but my JSON extraction breaks more often than with Q6. Is this just me?
+
+[2] u/ggml_fan · comment · 512 points
+Not just you. Q4 quants lose the most on structured output. Q5_K_M is the sweet spot on 16 GB for 14B; Q6 if you can spare the memory and keep context under 8k.
+
+[3] u/mac_metal · reply (depth 1) · 140 points
+Can confirm on an M2 Pro: Q5_K_M qwen2.5 14B runs ~22 tok/s with 8k context and the JSON failures mostly went away.
+
+[4] u/skeptic42 · comment · 96 points
+Benchmarks I ran show almost no difference between Q4_K_M and Q5 on MMLU. I think the JSON issue is the prompt, not the quant. Use grammar-constrained decoding.
+
+[5] u/ggml_fan · reply (depth 1) · 88 points
+MMLU isn't sensitive to formatting errors though. Grammar constraints help, agreed — llama.cpp supports them and Ollama has format=json.
+
+[6] u/newbie_dev · comment · 12 points
+what's the difference between K_M and K_S?? sorry new here
+
+[7] u/mac_metal · reply (depth 1) · 30 points
+K_S is smaller and a bit worse; K_M keeps some layers at higher precision. On 16 GB go K_M.

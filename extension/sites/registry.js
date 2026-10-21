@@ -38,7 +38,61 @@
     return values;
   }
 
-  Object.assign(SoroAgent, { DEFAULT_SITE, registerSite, siteFor, siteOptionValues });
+  const stopped = () => Object.assign(new Error('Stopped.'), { name: 'AbortError' });
+  const sleep = (ms, signal) =>
+    new Promise((resolve, reject) => {
+      if (signal && signal.aborted) return reject(stopped());
+      const timer = setTimeout(resolve, ms);
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          clearTimeout(timer);
+          reject(stopped());
+        }, { once: true });
+      }
+    });
+
+  // Guardrails for "Read more": one batch is bounded in posts, scroll steps and time, so a
+  // request to read a little more can never turn into endless scrolling.
+  const SCROLL_LIMITS = Object.freeze({ maxSteps: 30, maxMs: 45000, idleSteps: 5 });
+
+  /**
+   * Shared helper for site profiles: scrolls from `fromY` (default: where the reader is) and
+   * gathers up to `target` items not in `skip`, using `visible(document, options)` to read the
+   * items currently in the page. Resolves with { items, endY, exhausted }; the caller restores
+   * the reader's scroll position afterwards.
+   */
+  async function collectByScrolling({ visible, target = 50, skip = new Set(), options = {}, signal, onProgress, fromY }) {
+    const found = new Map();
+    const started = Date.now();
+    if (typeof fromY === 'number' && Math.abs(window.scrollY - fromY) > 4) {
+      window.scrollTo(0, fromY);
+      await sleep(700, signal);
+    }
+    let steps = 0;
+    let idle = 0;
+    for (;;) {
+      if (signal && signal.aborted) throw stopped();
+      const before = found.size;
+      for (const item of visible(document, options)) {
+        if (!skip.has(item.id) && !found.has(item.id)) found.set(item.id, { ...item, el: null });
+      }
+      if (onProgress) onProgress(Math.min(found.size, target), target);
+      if (found.size >= target || steps >= SCROLL_LIMITS.maxSteps || Date.now() - started > SCROLL_LIMITS.maxMs) break;
+      idle = found.size === before ? idle + 1 : 0;
+      if (idle >= SCROLL_LIMITS.idleSteps) break;
+      const height = document.documentElement.scrollHeight;
+      window.scrollBy(0, Math.max(400, window.innerHeight * 0.85));
+      steps++;
+      // Give the site time to fetch and render more.
+      for (let waited = 0; waited < 2400; waited += 300) {
+        await sleep(300, signal);
+        if (document.documentElement.scrollHeight !== height) break;
+      }
+    }
+    return { items: [...found.values()].slice(0, target), endY: window.scrollY, exhausted: idle >= SCROLL_LIMITS.idleSteps };
+  }
+
+  Object.assign(SoroAgent, { DEFAULT_SITE, registerSite, siteFor, siteOptionValues, collectByScrolling, SCROLL_LIMITS });
   // (A getter inside Object.assign would be copied as a one-time value.)
   Object.defineProperty(SoroAgent, 'siteProfiles', { get: () => profiles.slice(), configurable: true });
 })(globalThis);

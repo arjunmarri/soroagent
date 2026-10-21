@@ -6,7 +6,8 @@
 //   npm run try-prompt -- --site x --action ask --question "Which posts are about privacy?"
 //   npm run try-prompt -- --action save --input my-page.txt --model qwen3:30b-a3b
 //
-// Options: --site <id> (default "default"), --action <name>, --input <file>, --question <text>,
+// Options: --site <id> (default "default"), --action <name>, --input <file>, --page <type>
+//          (page-type prompts, e.g. "thread" for Reddit), --question <text>,
 //          --context <text>, --model <name> (default: the best installed model), --url <server>
 //          (default http://127.0.0.1:11434 or $SOROAGENT_URL), --show-prompt
 import { readFileSync, readdirSync } from 'node:fs';
@@ -37,16 +38,22 @@ if (!S.PROMPT_ACTIONS.includes(args.action)) {
   process.exit(1);
 }
 
-const inputFile = args.input || join(EXT, 'prompts/samples', args.site === 'x' ? 'x-posts.txt' : 'article.txt');
+const SAMPLES = { x: 'x-posts.txt', reddit: 'reddit-thread.txt' };
+const inputFile = args.input || join(EXT, 'prompts/samples', SAMPLES[args.site] || 'article.txt');
 const text = readFileSync(inputFile, 'utf8').trim();
 const count = (text.match(/^\[\d+\]/gm) || []).length;
 const context =
-  args.context ?? (args.site === 'x' ? 'These are top posts from X search results for the query "local llm".' : '');
+  args.context ??
+  ({
+    x: 'These are top posts from X search results for the query "local llm".',
+    reddit: 'This is a Reddit post in r/LocalLLaMA (item [1]) followed by its comments; replies are marked with their depth.',
+  }[args.site] || '');
 const vars = S.pageVars(
   { title: basename(inputFile), url: 'https://example.com/sample', text },
   { context, count: count || '', question: args.question || 'What are the main points?' }
 );
-const prompts = S.promptsFor(args.site);
+const PAGES = { reddit: 'thread' }; // which page type each sample represents
+const prompts = S.promptsFor(args.site, null, args.page || (args.input ? undefined : PAGES[args.site]));
 let messages = S.buildMessages(args.action, vars, prompts);
 if (args.action === 'ask') messages = [messages[0], { role: 'user', content: vars.question }];
 

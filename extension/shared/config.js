@@ -26,6 +26,7 @@
     temperature: 0.3,
     contextWindow: 8192, // Ollama num_ctx; its default is too small for whole pages
     maxPageChars: 12000,
+    readMoreLimit: 200, // feeds: "Read more" stops for good after this many posts on a page
     allowThinking: false,
     showLauncher: true,
     launcherPosition: 'auto', // 'auto' | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'

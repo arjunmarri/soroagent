@@ -6,6 +6,7 @@ Every prompt SoroAgent sends to the model lives in this folder as plain text. To
 |---|---|
 | [`default.js`](default.js) | Every website, and for any action a site file leaves out |
 | [`x.js`](x.js) | X (formerly Twitter) |
+| [`reddit.js`](reddit.js) | Reddit, with separate prompts for thread pages |
 | [`_template.js`](_template.js) | Starting point for a new site (not loaded) |
 | [`samples/`](samples) | Example inputs for trying prompts (not shipped in the extension) |
 
@@ -15,9 +16,25 @@ For each action, SoroAgent combines up to three layers. A later layer wins, sepa
 
 1. `prompts/default.js`
 2. `prompts/<site id>.js`, for example `x.js`, when the page matches the site profile with that id in [`../sites/`](../sites)
-3. `prompts` written directly inside a site profile (rarely needed)
+3. that file's `pages.<page type>` overrides, for the kind of page you're on (see below)
+4. `prompts` written directly inside a site profile (rarely needed)
 
 So a site file only needs the parts it changes. For example, `x.js` replaces the `user` prompt for **Save** but keeps the default `system` prompt.
+
+## Prompts for specific page types
+
+A site often has different kinds of pages, such as a feed of posts and a single discussion thread. Its site profile's `pageInfo()` names the page type (for Reddit: `home`, `subreddit`, `search`, `user`, `thread`), and the prompt file can override actions just for that type:
+
+```js
+definePrompts('reddit', {
+  summarize: { user: `…summarize these posts…` },           // feeds
+  pages: {
+    thread: { summarize: { user: `…summarize this discussion…` } },  // thread pages
+  },
+});
+```
+
+One focused prompt per page type works much better than a single prompt that says "if this is a thread, do X, otherwise Y". Small models tend to answer both branches.
 
 ## Fine-tuning loop
 
@@ -45,6 +62,7 @@ So a site file only needs the parts it changes. For example, `x.js` replaces the
 | `--site` | `default` | Prompt set to use (`default`, `x`, …) |
 | `--action` | `summarize` | `summarize`, `notes`, `ask`, `save` |
 | `--input` | a file in `samples/` | Text to run the prompt on |
+| `--page` | the sample's page type | Use that page type's prompts, for example `--site reddit --page thread` |
 | `--question` | | The question, for `ask` |
 | `--context` | an X search description for `x` | Fills `{{context}}` |
 | `--model` | best installed model | Any model on your server |

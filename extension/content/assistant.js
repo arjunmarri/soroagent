@@ -177,8 +177,8 @@
   const siteOptions = () => S.siteOptionValues(state.site, state.settings);
   const pageInfo = () => (state.site.pageInfo ? state.site.pageInfo(location) : { type: 'page', label: '', context: '' });
   const items = () => state.site.items || null;
-  // Prompt texts: prompts/default.js, then prompts/<site id>.js, then any inline profile prompts.
-  const sitePrompts = () => S.promptsFor(state.site.id, state.site.prompts);
+  // Prompt texts: prompts/default.js, then prompts/<site id>.js and its page-type overrides.
+  const sitePrompts = () => S.promptsFor(state.site.id, state.site.prompts, pageInfo().type);
   const nounOne = () => ((items() && items().noun) || 'items').replace(/s$/, '');
 
   // FNV-1a: a fast fingerprint to tell whether content changed.
@@ -496,7 +496,7 @@
 
   function summarize({ fresh = false } = {}) {
     const site = items();
-    if (site && site.isFeed && site.isFeed(pageInfo())) return summarizeFeed({ fresh, next: false });
+    if (site && site.isFeed && site.isFeed(pageInfo())) return summarizeFeed({ fresh });
     if (site) {
       const posts = site.visible(document, siteOptions());
       if (posts.length) return summarizeVisibleItems(posts, { fresh });
@@ -584,45 +584,70 @@
     return text;
   }
 
-  // Feeds (e.g. X search): gather a batch by scrolling, summarize it, then offer the next batch.
-  function summarizeFeed({ fresh, next }) {
+  // Feeds (X, Reddit): Summarize reads only what's already loaded, then offers "Read more".
+  // Reading more is always the reader's choice, one bounded batch at a time, and stops for good at a
+  // per-page limit, so it can't turn into doom-scrolling.
+  const readMoreLimit = () => Math.max(20, Number(state.settings.readMoreLimit) || 200);
+
+  function inViewport(site, item) {
+    const target = site.element(item);
+    const rect = target && target.getBoundingClientRect();
+    return Boolean(rect && rect.bottom > 0 && rect.top < window.innerHeight);
+  }
+
+  function summarizeFeed({ fresh }) {
     const site = items();
     const info = pageInfo();
     const options = siteOptions();
     const optionsKey = JSON.stringify(options);
-    const target = site.batchSize || 100;
     const noun = site.noun || 'items';
-    if (!state.feed || state.feed.url !== location.href || state.feed.optionsKey !== optionsKey) {
-      state.feed = { url: location.href, optionsKey, seen: new Set(), endY: undefined, done: 0, exhausted: false };
-    }
-    const feed = state.feed;
 
     return runTask(async (signal) => {
-      // The feed counts as unchanged when every post on screen was part of the earlier first batch
-      // (sites like X unload posts as you scroll, so "what's at the top" isn't stable on its own).
-      const key = `feed:${fingerprint(location.href + optionsKey)}`;
-      const label = next ? `Summarize the next ${target} ${noun}` : `Summarize ${target} ${noun}${info.label ? ` · ${info.label}` : ''}`;
-      const cached = !next && state.summaries.get(key);
-      // Only posts inside the viewport: sites keep extra posts loaded above and below it.
-      const onScreen = site
-        .visible(document, options)
-        .filter((p) => {
-          const target = site.element(p);
-          const rect = target && target.getBoundingClientRect();
-          return rect && rect.bottom > 0 && rect.top < window.innerHeight;
-        })
-        .map((p) => p.id);
-      const unchanged = cached && onScreen.length > 0 && onScreen.every((postId) => cached.ids.has(postId));
-      if (unchanged && !fresh) {
-        showCachedSummary(label, cached.summary, () => summarizeFeed({ fresh: true, next: false }));
-        if (feed.done < cached.feed.done) Object.assign(feed, cached.feed, { seen: new Set(cached.feed.seen) });
-        offerNextBatch(feed, target);
+      const loaded = site.visible(document, options);
+      if (!loaded.length) {
+        append(card({ title: `No ${noun} found on this page yet.`, body: 'Wait for the page to load, then try again.' }));
         return;
       }
-      if (!next) Object.assign(feed, { seen: new Set(), endY: undefined, done: 0, exhausted: false });
+      // Unchanged since the last summary: every post on screen was part of it.
+      const key = `feed:${fingerprint(location.href + optionsKey)}`;
+      const cached = state.summaries.get(key);
+      const onScreen = loaded.filter((p) => inViewport(site, p)).map((p) => p.id);
+      const unchanged = cached && onScreen.length > 0 && onScreen.every((postId) => cached.ids.has(postId));
+      const label = `Summarize ${loaded.length} loaded ${noun}${info.label ? ` · ${info.label}` : ''}`;
+      if (unchanged && !fresh) {
+        showCachedSummary(cached.label, cached.summary, () => summarize({ fresh: true }));
+        if (!state.feed || state.feed.url !== location.href) state.feed = { ...cached.feed, seen: new Set(cached.feed.seen) };
+        offerReadMore();
+        return;
+      }
 
+      state.feed = { url: location.href, optionsKey, seen: new Set(loaded.map((p) => p.id)), endY: undefined, done: loaded.length, exhausted: false };
       addUserMessage(label);
-      const progress = progressCard('summarize', `Gathering ${noun}… 0 of ${target}`);
+      const context = `${info.context || ''} These are the ${noun} currently loaded on the page.`;
+      const text = await summarizeItems(loaded, { start: 1, context, signal, label });
+      state.summaries.set(key, {
+        label,
+        summary: { text, at: Date.now() },
+        ids: new Set(loaded.map((p) => p.id)),
+        feed: { ...state.feed, seen: [...state.feed.seen] },
+      });
+      offerReadMore();
+    });
+  }
+
+  function readMore() {
+    const site = items();
+    const feed = state.feed;
+    if (!site || !feed || feed.url !== location.href) return summarize();
+    const info = pageInfo();
+    const options = siteOptions();
+    const noun = site.noun || 'items';
+    const target = Math.min(site.batchSize || 50, readMoreLimit() - feed.done);
+    if (target <= 0) return offerReadMore();
+
+    return runTask(async (signal) => {
+      addUserMessage(`Read ${target} more ${noun}`);
+      const progress = progressCard('summarize', `Loading more ${noun}… 0 of ${target}`);
       const startY = window.scrollY;
       let result;
       try {
@@ -631,52 +656,61 @@
           skip: feed.seen,
           options,
           signal,
-          fromY: next ? feed.endY : undefined,
-          onProgress: (count) => progress.update(`Gathering ${noun}… ${count} of ${target}`, count / target),
+          fromY: feed.endY ?? window.scrollY,
+          onProgress: (count) => progress.update(`Loading more ${noun}… ${count} of ${target}`, count / target),
         });
       } finally {
         progress.node.remove();
-        window.scrollTo({ top: startY }); // put the reader back where they were
+        window.scrollTo({ top: startY }); // back to where the reader was
       }
+      feed.endY = result.endY;
+      feed.exhausted = result.exhausted;
       if (!result.items.length) {
-        append(card({ title: next ? `No more ${noun} found.` : `No ${noun} found on this page.` }));
+        feed.exhausted = true;
+        offerReadMore();
         return;
       }
       for (const item of result.items) feed.seen.add(item.id);
       const start = feed.done + 1;
       feed.done += result.items.length;
-      feed.endY = result.endY;
-      feed.exhausted = result.exhausted;
-
-      const context = `${info.context || ''}${next ? ` This batch is ${noun} ${start} to ${feed.done}.` : ''}`;
-      const text = await summarizeItems(result.items, { start, context, signal, label });
-      if (!next) {
-        // Posts above the starting point were on screen when Summarize was clicked; remember them too.
-        const ids = new Set([...feed.seen, ...onScreen]);
-        state.summaries.set(key, { summary: { text, at: Date.now() }, ids, feed: { ...feed, seen: [...feed.seen] } });
-      }
-      offerNextBatch(feed, target);
+      const context = `${info.context || ''} This batch is ${noun} ${start} to ${feed.done}, loaded after the ones already summarized.`;
+      await summarizeItems(result.items, { start, context, signal, label: `Read ${target} more ${noun}` });
+      offerReadMore();
     });
   }
 
-  function offerNextBatch(feed, target) {
-    const noun = items().noun || 'items';
-    if (feed.exhausted) {
-      append(card({ icon: 'check', kind: 'ok', title: `Summarized ${feed.done} ${noun}: that's all that loaded.` }));
+  function offerReadMore() {
+    const site = items();
+    const feed = state.feed;
+    if (!site || !feed) return;
+    const noun = site.noun || 'items';
+    const limit = readMoreLimit();
+    if (feed.done >= limit) {
+      append(card({
+        icon: 'check',
+        kind: 'ok',
+        title: `You've caught up on ${feed.done} ${noun} here.`,
+        body: `That's the limit for this page, so SoroAgent stops reading more here. Maybe take a break 🦉 (You can change the limit in settings.)`,
+      }));
       return;
     }
+    if (feed.exhausted) {
+      append(card({ icon: 'check', kind: 'ok', title: `Summarized ${feed.done} ${noun}: that's everything that loaded.` }));
+      return;
+    }
+    const next = Math.min(site.batchSize || 50, limit - feed.done);
     const node = card({
-      title: `Summarized ${noun} 1–${feed.done}. Summarize the next ${target}?`,
-      body: "SoroAgent scrolls further down to gather them, then returns you to where you were.",
+      title: `Summarized ${noun} 1–${feed.done}. Would you like to read more?`,
+      body: `SoroAgent will scroll to load up to ${next} more, summarize only the new ones, then bring you back to where you are. It stops after ${limit} ${noun} on this page.`,
       actions: [
         {
-          label: `Yes, next ${target}`,
+          label: `Read ${next} more`,
           onClick: () => {
             node.remove();
-            summarizeFeed({ fresh: false, next: true });
+            readMore();
           },
         },
-        { label: 'Not now', onClick: () => node.remove() },
+        { label: 'No thanks', onClick: () => node.remove() },
       ],
     });
     append(node);

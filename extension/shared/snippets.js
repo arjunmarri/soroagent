@@ -58,5 +58,51 @@
     return Object.keys(changes).some((key) => key.startsWith(PREFIX));
   }
 
-  Object.assign(SoroAgent, { addSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange });
+  // ---------------------------------------------------------------------------
+  // Timeline grouping (pure; unit tested)
+  // ---------------------------------------------------------------------------
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const dayKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  /** "Today", "Yesterday", a weekday within the last week, else a full date. */
+  function dayLabel(date, now = new Date(), locale) {
+    const days = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days > 1 && days < 7) return date.toLocaleDateString(locale, { weekday: 'long' });
+    const sameYear = date.getFullYear() === now.getFullYear();
+    return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long', ...(sameYear ? {} : { year: 'numeric' }) });
+  }
+
+  /**
+   * Groups snippets (newest first) into days and months for the timeline:
+   * [{ key: '2026-10', label: 'October 2026', count, days: [{ key, label, items }] }]
+   */
+  function groupTimeline(snippets, now = new Date(), locale) {
+    const months = [];
+    const sorted = [...snippets].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    for (const snippet of sorted) {
+      const date = new Date(snippet.createdAt);
+      if (Number.isNaN(date.getTime())) continue;
+      const monthKey = `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
+      let month = months[months.length - 1];
+      if (!month || month.key !== monthKey) {
+        month = { key: monthKey, label: date.toLocaleDateString(locale, { month: 'long', year: 'numeric' }), count: 0, days: [] };
+        months.push(month);
+      }
+      const key = dayKey(date);
+      let day = month.days[month.days.length - 1];
+      if (!day || day.key !== key) {
+        day = { key, label: dayLabel(date, now, locale), items: [] };
+        month.days.push(day);
+      }
+      day.items.push(snippet);
+      month.count++;
+    }
+    return months;
+  }
+
+  Object.assign(SoroAgent, { addSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange, dayLabel, groupTimeline });
 })(globalThis);

@@ -11,11 +11,14 @@ Click the owl 🦉 on any page (a monochrome outline on a translucent button, al
 - **Ask** follow-up questions about the page in a chat.
 - **Save** your selection (or the page) to a local library. The model writes a title, a summary and tags.
 
-**Extra features on X (formerly Twitter)**, detected automatically:
+**Feeds on X and Reddit**, detected automatically:
 
-- **Search pages:** Summarize gathers the first **100 posts** by scrolling for you, summarizes them (themes, notable posts by @handle, sentiment), returns you to where you were, then offers **the next 100**.
-- **Verified only** and **Hide ads** toggles in the panel, for higher-signal feeds and summaries.
-- Prompts written specifically for X posts. Any website can get its own prompts: see [Site profiles](#site-profiles).
+- **Summarize reads only what's loaded.** No surprise scrolling. You get themes, notable posts (by @handle or title) and the overall sentiment.
+- **Then it asks if you'd like to read more.** If you say yes, it scrolls to load up to 50 more posts, summarizes only the new ones, and puts you back where you were.
+- **No doom-scrolling.** Every batch needs your yes, and each one is capped in posts, scroll steps and time. After 200 posts on a page (adjustable in settings), SoroAgent stops offering and suggests a break.
+- **Threads.** On a Reddit thread or an X post, it summarizes the discussion: the post, what people say, and where they agree.
+- **Panel toggles:** **Verified only** on X and **Hide ads** on both, for higher-signal feeds and summaries.
+- **Site-specific prompts** for X and Reddit. Any website can get its own: see [Site profiles](#site-profiles).
 
 With a local model, page text never leaves your computer. With a cloud API, the text you act on goes only to the provider you choose, and is billed to your key. There are no SoroAgent accounts, servers or analytics.
 
@@ -89,7 +92,7 @@ On first install the settings page opens and tests the connection to `http://127
 | Right-click menu | *Save selection to SoroAgent*, *Summarize this page* |
 | Toolbar owl | Click to open SoroAgent on the current page. Right-click for **Saved snippets** and **Settings**. |
 
-Saved snippets are listed on the **Snippets** page, where you can search, filter by tag, copy, delete, and export to JSON or Markdown (and import JSON).
+Saved snippets open in a **timeline**: grouped by day (Today, Yesterday, then dates) with the time of each save and a month index for jumping back in history. Click a site or a tag to filter, or search across everything. Switch to the **List** view any time; SoroAgent remembers your choice. You can also copy, delete, and export to JSON or Markdown (and import JSON).
 
 **Playing with the owl.** Its eyes follow your mouse, and it blinks and looks around while it works. Pick it up by dragging: it flaps its wings while you carry it, and when you let go it flies across the page and perches on the opposite side, remembered for that site. Turn on your system's *reduce motion* setting and it moves without animation.
 
@@ -102,7 +105,7 @@ The panel's **⋯** menu can hide the button on the current site or reset a drag
 Every prompt SoroAgent uses is plain text in [`extension/prompts/`](extension/prompts), so you can fine-tune it without touching the extension code:
 
 - [`default.js`](extension/prompts/default.js): prompts for every site (Summarize, Ask, Save).
-- [`x.js`](extension/prompts/x.js): prompts for X, overriding only what differs.
+- [`x.js`](extension/prompts/x.js) and [`reddit.js`](extension/prompts/reddit.js): prompts for X and Reddit, overriding only what differs. Reddit also has separate prompts for thread pages.
 - `<site>.js`: add your own. A site file only needs the parts it changes.
 
 Try a prompt against your local model before reloading the extension:
