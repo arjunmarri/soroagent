@@ -1,5 +1,5 @@
-// Places the floating button so it never covers the page's own controls, lets the user drag it
-// to either edge (remembered per site), and keeps the panel next to it.
+// Places the floating owl so it never covers the page's own controls, keeps the panel next to it,
+// and makes it playful: its eyes follow the mouse, and dragging it makes it fly to the other side.
 (function (root) {
   'use strict';
 
@@ -91,7 +91,7 @@
     }
 
     function place() {
-      if (launcher.hidden || drag) return;
+      if (launcher.hidden || drag || launcher.classList.contains('flying') || launcher.classList.contains('carried')) return;
       apply(choose());
     }
 
@@ -114,18 +114,67 @@
       style.right = narrow ? '12px' : current.side === 'right' ? `${EDGE}px` : 'auto';
     }
 
-    // Dragging: move freely, then snap to the nearest side and remember it for this site.
+    // ---------------------------------------------------------------------------
+    // Pick up and fly: drag the owl and it flaps while carried; let go and it flies in an arc
+    // to the opposite side of the page and perches there (remembered for this site).
+    // ---------------------------------------------------------------------------
+
+    const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+
+    function fly(x0, y0, side, top) {
+      const x1 = side === 'left' ? EDGE : window.innerWidth - EDGE - SIZE;
+      const y1 = top;
+      if (reducedMotion()) return Promise.resolve();
+      // A quadratic arc that rises above both ends; longer trips rise higher and take longer.
+      const distance = Math.abs(x1 - x0);
+      const cx = (x0 + x1) / 2;
+      const cy = Math.max(EDGE, Math.min(y0, y1) - 70 - distance * 0.12);
+      const duration = Math.min(1400, 600 + distance * 0.45);
+      launcher.dataset.heading = x1 >= x0 ? 'right' : 'left';
+      launcher.classList.add('flying');
+      return new Promise((resolve) => {
+        const started = performance.now();
+        const step = (now) => {
+          const t = Math.min(1, (now - started) / duration);
+          const k = ease(t);
+          const x = (1 - k) ** 2 * x0 + 2 * (1 - k) * k * cx + k ** 2 * x1;
+          const y = (1 - k) ** 2 * y0 + 2 * (1 - k) * k * cy + k ** 2 * y1;
+          // Bank into the turn: tilt follows the horizontal direction, easing out near landing.
+          const tilt = (x1 >= x0 ? 1 : -1) * 14 * Math.sin(Math.PI * k);
+          launcher.style.setProperty('--tilt', `${tilt.toFixed(1)}deg`);
+          Object.assign(launcher.style, { left: `${x}px`, right: 'auto', top: `${y}px` });
+          if (t < 1) requestAnimationFrame(step);
+          else {
+            launcher.classList.remove('flying');
+            launcher.style.removeProperty('--tilt');
+            launcher.classList.add('landing');
+            setTimeout(() => launcher.classList.remove('landing'), 420);
+            resolve();
+          }
+        };
+        requestAnimationFrame(step);
+      });
+    }
+
     launcher.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || launcher.classList.contains('flying')) return;
       const rect = launcher.getBoundingClientRect();
-      drag = { startX: e.clientX, startY: e.clientY, dx: e.clientX - rect.left, dy: e.clientY - rect.top, moved: false };
+      drag = {
+        startX: e.clientX,
+        startY: e.clientY,
+        dx: e.clientX - rect.left,
+        dy: e.clientY - rect.top,
+        moved: false,
+        fromSide: current ? current.side : rect.left + SIZE / 2 < window.innerWidth / 2 ? 'left' : 'right',
+      };
       launcher.setPointerCapture(e.pointerId);
     });
     launcher.addEventListener('pointermove', (e) => {
       if (!drag) return;
       if (!drag.moved && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 6) return;
       drag.moved = true;
-      launcher.classList.add('dragging');
+      launcher.classList.add('dragging', 'carried');
       Object.assign(launcher.style, {
         left: `${Math.max(0, Math.min(window.innerWidth - SIZE, e.clientX - drag.dx))}px`,
         right: 'auto',
@@ -134,21 +183,61 @@
     });
     const endDrag = async (e) => {
       if (!drag) return;
-      const moved = drag.moved;
+      const { moved, fromSide } = drag;
       drag = null;
       launcher.classList.remove('dragging');
-      if (!moved) return;
+      if (!moved) {
+        launcher.classList.remove('carried');
+        return;
+      }
       suppressClick = true;
+      if (e) e.preventDefault();
       const rect = launcher.getBoundingClientRect();
-      const side = rect.left + SIZE / 2 < window.innerWidth / 2 ? 'left' : 'right';
+      const side = fromSide === 'left' ? 'right' : 'left';
       const top = clampTop(rect.top);
+      await fly(rect.left, rect.top, side, top);
+      launcher.classList.remove('carried');
       apply({ side, top });
       const placements = { ...(settings().launcherPlacements || {}), [site()]: { side, y: top / window.innerHeight } };
       await save({ launcherPlacements: placements });
-      if (e) e.preventDefault();
     };
     launcher.addEventListener('pointerup', endDrag);
     launcher.addEventListener('pointercancel', endDrag);
+
+    // ---------------------------------------------------------------------------
+    // Always watching: the pupils follow the mouse, and drift on their own when it stops.
+    // ---------------------------------------------------------------------------
+
+    let pointer = null;
+    let trackFrame = 0;
+    let idleTimer = 0;
+    function track() {
+      trackFrame = 0;
+      if (!pointer || launcher.hidden || reducedMotion()) return;
+      const rect = launcher.getBoundingClientRect();
+      const dx = pointer.clientX - (rect.left + rect.width / 2);
+      const dy = pointer.clientY - (rect.top + rect.height / 2);
+      const length = Math.hypot(dx, dy) || 1;
+      const reach = Math.min(1, length / 240); // look further the further away the cursor is
+      launcher.style.setProperty('--px', `${((dx / length) * reach * 0.9).toFixed(2)}px`);
+      launcher.style.setProperty('--py', `${((dy / length) * reach * 0.75).toFixed(2)}px`);
+      launcher.classList.add('tracking');
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        launcher.classList.remove('tracking');
+        launcher.style.removeProperty('--px');
+        launcher.style.removeProperty('--py');
+      }, 3500);
+    }
+    document.addEventListener(
+      'pointermove',
+      (e) => {
+        pointer = e;
+        if (!trackFrame) trackFrame = requestAnimationFrame(track);
+      },
+      { passive: true, capture: true }
+    );
+
     // A drag ends with a click event; swallow it so dragging doesn't toggle the panel.
     launcher.addEventListener(
       'click',

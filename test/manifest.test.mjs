@@ -13,7 +13,6 @@ test('every file the manifest references exists', () => {
     manifest.background.service_worker,
     ...manifest.background.scripts,
     ...manifest.content_scripts.flatMap((c) => expandScripts(c.js, ext)),
-    manifest.action.default_popup,
     manifest.options_ui.page,
     ...Object.values(manifest.icons),
     ...Object.values(manifest.action.default_icon),
@@ -28,7 +27,7 @@ test('the Chrome service worker loads the same scripts as Firefox, in order', ()
 });
 
 test('pages only load scripts that exist', () => {
-  for (const page of ['popup', 'options', 'snippets']) {
+  for (const page of ['options', 'snippets']) {
     const html = readFileSync(join(ext, 'pages', `${page}.html`), 'utf8');
     for (const [, src] of html.matchAll(/<script src="([^"]+)"/g)) {
       assert.ok(existsSync(join(ext, 'pages', src)), `${page}.html -> ${src}`);

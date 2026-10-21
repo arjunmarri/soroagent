@@ -177,7 +177,7 @@
   // One-shot messages from content scripts and extension pages
   // ---------------------------------------------------------------------------
 
-  // True for SoroAgent's own pages (settings, popup, snippets); false for content scripts in web pages.
+  // True for SoroAgent's own pages (settings, snippets); false for content scripts in web pages.
   function fromExtensionPage(sender) {
     return Boolean(sender && sender.id === ext.runtime.id && (sender.url || '').startsWith(extensionBase));
   }
@@ -247,11 +247,16 @@
     if (tab && tab.id !== undefined) return sendToTab(tab.id, message);
   }
 
-  handlers['assistant:open-in-active-tab'] = (msg) => sendToActiveTab({ type: 'assistant:run', action: msg.action || 'open' });
 
   const MENU_ITEMS = [
     { id: 'soroagent-save-selection', title: 'Save selection to SoroAgent', contexts: ['selection'], action: 'save' },
     { id: 'soroagent-summarize', title: 'Summarize this page', contexts: ['page'], action: 'summarize' },
+  ];
+
+  // Right-click on the toolbar owl.
+  const ACTION_MENU_ITEMS = [
+    { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']() },
+    { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },
   ];
 
   async function createMenus() {
@@ -259,14 +264,30 @@
     for (const item of MENU_ITEMS) {
       ext.contextMenus.create({ id: item.id, title: item.title, contexts: item.contexts });
     }
+    for (const item of ACTION_MENU_ITEMS) ext.contextMenus.create({ id: item.id, title: item.title, contexts: ['action'] });
   }
 
   ext.contextMenus.onClicked.addListener((info, tab) => {
+    const actionItem = ACTION_MENU_ITEMS.find((m) => m.id === info.menuItemId);
+    if (actionItem) {
+      actionItem.open();
+      return;
+    }
     const item = MENU_ITEMS.find((m) => m.id === info.menuItemId);
     if (!item || !tab || tab.id === undefined) return;
     sendToTab(tab.id, { type: 'assistant:run', action: item.action, selectionText: info.selectionText || '' }).catch(
       (err) => console.warn('[SoroAgent] Could not reach the page:', err)
     );
+  });
+
+  // Clicking the toolbar owl opens (or closes) the panel on the current page. Pages extensions
+  // can't run on (browser pages, web stores) get the settings page instead.
+  ext.action.onClicked.addListener((tab) => {
+    if (!tab || tab.id === undefined || !/^https?:/.test(tab.url || '')) {
+      ext.runtime.openOptionsPage();
+      return;
+    }
+    sendToTab(tab.id, { type: 'assistant:toggle' }).catch(() => ext.runtime.openOptionsPage());
   });
 
   ext.commands.onCommand.addListener((command) => {

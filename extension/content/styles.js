@@ -65,15 +65,32 @@ svg { width: 18px; height: 18px; flex: none; }
   border: 1.5px solid transparent; border-top-color: rgba(255, 255, 255, 0.85); animation: spin 0.9s linear infinite;
 }
 
-/* The owl: pupils drift as it watches, it blinks now and then; opening the panel wakes it up. */
+/* The owl. Its pupils follow the mouse (--px/--py, set by launcher.js) or drift on their own,
+   it blinks now and then, looks around while working, perks up when the panel opens,
+   flaps its wings while carried or flying, and hops when it lands. */
 .owl { width: 33px; height: 33px; overflow: visible; }
-.owl .eyes, .owl .pupils, .owl { transform-box: fill-box; transform-origin: center; }
+.owl, .owl .eyes, .owl .pupils, .owl .wing { transform-box: fill-box; transform-origin: center; }
 .owl .eyes { animation: blink 7s infinite; }
-.owl .pupils { animation: watch 11s ease-in-out infinite; transition: transform 0.3s ease; }
+.owl .pupils { transform: translate(var(--px, 0px), var(--py, 0px)); animation: watch 11s ease-in-out infinite; transition: transform 0.18s ease-out; }
+.launcher.tracking .owl .pupils { animation: none; }
+.launcher:hover .owl .eyes { animation: none; transform: scale(1.06); transition: transform 0.2s ease; }
 .launcher.open .owl { animation: perk 0.5s ease; }
-.launcher.open .owl .pupils { animation: none; transform: scale(1.35); }
+.launcher.open .owl .pupils { animation: none; transform: translate(var(--px, 0px), var(--py, 0px)) scale(1.35); }
+.launcher.busy .owl .pupils { animation: scan 1.4s ease-in-out infinite; }
+
+.owl .wing { display: none; }
+.owl .wing-l { transform-origin: 100% 80%; }
+.owl .wing-r { transform-origin: 0% 80%; }
+.launcher.carried .owl .wings, .launcher.flying .owl .wings { display: none; }
+.launcher.carried .owl .wing, .launcher.flying .owl .wing { display: inline; }
+.launcher.carried .owl .wing-l, .launcher.flying .owl .wing-l { animation: flap-l 0.2s ease-in-out infinite alternate; }
+.launcher.carried .owl .wing-r, .launcher.flying .owl .wing-r { animation: flap-r 0.2s ease-in-out infinite alternate; }
+.launcher.carried { cursor: grabbing; transform: scale(1.08); box-shadow: 0 16px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.launcher.flying { transition: none !important; transform: rotate(var(--tilt, 0deg)) scale(1.04); }
+.launcher.landing { animation: land 0.42s ease-out; }
+
 .brand-mark .owl { width: 18px; height: 18px; }
-.brand-mark .owl .wings { display: none; }
+.brand-mark .owl .wings, .brand-mark .owl .wing { display: none; }
 
 .panel {
   position: fixed; right: 16px; bottom: 80px; z-index: 2147483647;
@@ -214,6 +231,10 @@ header {
 @keyframes pulse { 50% { opacity: 0.35; } }
 @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
 @keyframes watch { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-0.5px); } 45% { transform: translateX(0.6px); } 70% { transform: translate(0.2px, 0.3px); } }
+@keyframes scan { 0%, 100% { transform: translateX(-0.9px); } 50% { transform: translateX(0.9px); } }
+@keyframes flap-l { from { transform: rotate(16deg); } to { transform: rotate(-26deg); } }
+@keyframes flap-r { from { transform: rotate(-16deg); } to { transform: rotate(26deg); } }
+@keyframes land { 0% { transform: translateY(-5px) scale(1.06, 0.94); } 45% { transform: translateY(1px) scale(0.94, 1.06); } 75% { transform: translateY(-1px) scale(1.02, 0.98); } 100% { transform: none; } }
 @keyframes perk { 0% { transform: rotate(0) scale(1); } 35% { transform: rotate(-9deg) scale(1.08); } 70% { transform: rotate(4deg) scale(1); } 100% { transform: rotate(0) scale(1); } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 @media (prefers-reduced-motion: reduce) {
