@@ -32,7 +32,11 @@
   };
   const research = new Map(); // snippet id -> { status, text, error, sources } while running
 
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot', readlater: 'Read later' };
+  // Kinds with a section of their own, kept out of the text views.
+  const SECTIONS = ['screenshot', 'readlater'];
+  const topicPicks = new Map(); // snippet id -> { status: 'loading' | 'ready' | 'error', topics, error, draft }
+  if (!['all', 'summary', 'research', ...SECTIONS].includes(prefs.kind)) prefs.kind = 'all'; // e.g. the old Selections view
   const kindOf = (s) => s.kind || (s.source === 'selection' ? 'selection' : s.source === 'summary' ? 'summary' : 'page');
   const hostOf = (url) => {
     try {
@@ -54,10 +58,11 @@
 
   function matches(s, query) {
     const kind = kindOf(s);
-    // Screenshots have their own section and stay out of the text views.
-    if ((prefs.kind === 'screenshot') !== (kind === 'screenshot')) return false;
+    // Screenshots and Read later have their own sections and stay out of the text views.
+    if (SECTIONS.includes(prefs.kind) || SECTIONS.includes(kind)) {
+      if (prefs.kind !== kind) return false;
+    }
     if (prefs.kind === 'summary' && kind !== 'summary') return false;
-    if (prefs.kind === 'selection' && kind !== 'selection' && kind !== 'page') return false;
     if (prefs.kind === 'research' && !s.research && kind !== 'research') return false;
     if (tagFilter && !s.tags.includes(tagFilter)) return false;
     if (siteFilter && hostOf(s.url) !== siteFilter) return false;
@@ -81,7 +86,7 @@
     const kind = kindOf(s);
     const host = hostOf(s.url);
     const summary = s.summary || plain(s.text).slice(0, 220);
-    const card = el('button', { type: 'button', className: 'card' }, [
+    const card = el('button', { type: 'button', className: `card${s.readAt ? ' read' : ''}` }, [
       el('div', { className: 'card-title', textContent: s.title || s.pageTitle || 'Untitled' }),
       summary ? el('div', { className: 'card-summary', textContent: summary }) : '',
       el('div', { className: 'meta' }, [
@@ -89,6 +94,7 @@
         host ? siteBadge(host) : '',
         el('span', { textContent: when(s.createdAt, { hour: 'numeric', minute: '2-digit', ...(prefs.group === 'day' ? {} : { day: 'numeric', month: 'short' }) }) }),
         s.research ? el('span', { className: 'has-research', textContent: '· researched' }) : '',
+        s.readAt ? el('span', { className: 'is-read', textContent: '· read' }) : '',
       ]),
     ]);
     card.setAttribute('aria-current', String(s.id === selectedId));
@@ -136,7 +142,9 @@
         className: 'empty',
         textContent: prefs.kind === 'screenshot'
           ? 'No screenshots yet. Use Screenshot in the soroagent panel (or right-click a page) to take one.'
-          : snippets.some((s) => kindOf(s) !== 'screenshot') ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
+          : prefs.kind === 'readlater'
+          ? 'Nothing to read later. Click Read later in the soroagent panel to keep a page for later.'
+          : snippets.some((s) => !SECTIONS.includes(kindOf(s))) ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
       }));
       $('list').classList.remove('gallery');
       return;
@@ -195,6 +203,10 @@
       renderShotReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Screenshot' })]);
       return;
     }
+    if (kind === 'readlater') {
+      renderLaterReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Untitled' })]);
+      return;
+    }
 
     const body = el('div', { className: 'prose' });
     if (kind === 'summary' || kind === 'research') body.append(...markdown(s.text));
@@ -217,15 +229,16 @@
       nodes.push(el('div', { className: 'section-title', textContent: 'Sources' }), sourcesList(s.research.sources));
     } else if (kind === 'research' && s.research) {
       nodes.push(sourcesList(s.research.sources));
-    } else {
+    } else if (!topicPicks.has(s.id)) {
       nodes.push(el('p', { className: 'muted', textContent: 'Look this topic up on the web: soroagent searches, reads the top sources and writes a cited brief that goes beyond this snippet.' }));
     }
+    if (topicPicks.has(s.id) && !(live && live.status === 'running')) nodes.push(...topicPicker(s));
     if (live && live.status === 'error') nodes.push(el('div', { className: 'problem', textContent: live.error }));
 
     const actions = el('div', { className: 'reader-actions' });
-    if (kind !== 'research' && !(live && live.status === 'running')) {
+    if (kind !== 'research' && !(live && live.status === 'running') && !topicPicks.has(s.id)) {
       const go = el('button', { type: 'button', className: 'btn primary', textContent: s.research ? 'Research again' : 'Research this further' });
-      go.addEventListener('click', () => startResearch(s));
+      go.addEventListener('click', () => pickTopic(s));
       actions.append(go);
     }
     if (/^https?:/.test(s.url)) actions.append(el('a', { className: 'btn', href: s.url, target: '_blank', rel: 'noopener', textContent: 'Open source ↗' }));
@@ -285,10 +298,93 @@
     reader.replaceChildren(...nodes);
   }
 
+  function renderLaterReader(s, reader, nodes) {
+    if (s.summary) nodes.push(el('div', { className: 'prose' }, [el('p', { textContent: s.summary })]));
+    nodes.push(el('p', { className: 'muted', textContent: s.readAt ? `Marked as read ${when(s.readAt, { dateStyle: 'medium', timeStyle: 'short' })}.` : 'Saved to read later.' }));
+    const actions = el('div', { className: 'reader-actions' });
+    const open = el('a', { className: 'btn primary', href: s.url, target: '_blank', rel: 'noopener', textContent: 'Open page ↗' });
+    open.addEventListener('click', () => !s.readAt && S.updateSnippet(s.id, { readAt: new Date().toISOString() }));
+    const mark = el('button', { type: 'button', className: 'btn', textContent: s.readAt ? 'Mark as unread' : 'Mark as read' });
+    mark.addEventListener('click', () => S.updateSnippet(s.id, { readAt: s.readAt ? '' : new Date().toISOString() }));
+    const remove = el('button', { type: 'button', className: 'btn danger', textContent: 'Remove' });
+    remove.addEventListener('click', async () => {
+      await deleteSnippets([s.id]);
+      selectedId = '';
+    });
+    actions.append(open, mark, remove);
+    nodes.push(actions);
+    reader.replaceChildren(...nodes);
+  }
+
+  // One answer from the model (local or cloud, whichever is set up), for small JSON tasks.
+  function askModel(messages) {
+    return new Promise((resolve, reject) => {
+      const port = ext.runtime.connect({ name: 'llm' });
+      port.onMessage.addListener((msg) => {
+        if (msg.type === 'done') resolve(msg.text || '');
+        else if (msg.type === 'error') reject(new Error(msg.error || 'The model did not answer.'));
+        else return;
+        port.disconnect();
+      });
+      port.onDisconnect.addListener(() => reject(new Error('Lost the connection to the extension.')));
+      port.postMessage({ type: 'chat', messages, json: true });
+    });
+  }
+
+  // Before researching, ask what to focus on: topics the model finds in the snippet, the whole
+  // snippet, or the reader's own words.
+  function pickTopic(s) {
+    const pick = { status: 'loading', topics: [], error: '', draft: '' };
+    topicPicks.set(s.id, pick);
+    renderReader();
+    const vars = S.pageVars({ title: s.pageTitle || s.title, url: s.url, text: stripThinking(s.text || s.summary || '').slice(0, 4000) });
+    askModel(S.buildMessages('researchTopics', vars))
+      .then((reply) => Object.assign(pick, { status: 'ready', topics: S.parseTopics(stripThinking(reply)) }))
+      .catch((err) => Object.assign(pick, { status: 'error', error: err.message }))
+      .finally(() => s.id === selectedId && renderReader());
+  }
+
+  function topicPicker(s) {
+    const pick = topicPicks.get(s.id);
+    const start = (query) => {
+      topicPicks.delete(s.id);
+      startResearch(s, query);
+    };
+    const heading = el('p', {
+      textContent: pick.status === 'loading' ? 'Finding topics in this snippet…'
+        : pick.status === 'error' ? `Couldn't suggest topics (${pick.error}). Research everything, or type your own:`
+        : pick.topics.length ? 'What should the research focus on? Pick a topic, or research everything:' : 'No clear topics found. Research everything, or type your own:',
+      className: pick.status === 'loading' ? 'working' : '',
+    });
+    const topics = el('div', { className: 'topics' });
+    for (const topic of pick.topics) {
+      const button = el('button', { type: 'button', className: 'topic', textContent: topic });
+      button.addEventListener('click', () => start(topic));
+      topics.append(button);
+    }
+    const everything = el('button', { type: 'button', className: 'topic all', textContent: 'Everything in this snippet' });
+    everything.addEventListener('click', () => start(''));
+    topics.append(everything);
+    const input = el('input', { type: 'text', placeholder: 'Or type your own topic…', value: pick.draft, maxLength: 120 });
+    input.setAttribute('aria-label', 'Research topic');
+    input.addEventListener('input', () => (pick.draft = input.value));
+    const go = el('button', { type: 'button', className: 'btn primary small', textContent: 'Research' });
+    go.addEventListener('click', () => input.value.trim() && start(input.value.trim()));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.isComposing && input.value.trim()) start(input.value.trim());
+    });
+    const cancel = el('button', { type: 'button', className: 'btn small', textContent: 'Cancel' });
+    cancel.addEventListener('click', () => {
+      topicPicks.delete(s.id);
+      renderReader();
+    });
+    return [heading, topics, el('div', { className: 'topic-own' }, [input, go, cancel])];
+  }
+
   // Research runs as a background job, so it finishes even if this page is closed; the
   // result is attached to the snippet.
-  function startResearch(s) {
-    const job = { status: 'running', statusText: 'Choosing what to search for…', text: '', sources: null };
+  function startResearch(s, query = '') {
+    const job = { status: 'running', statusText: query ? `Searching the web for “${query}”…` : 'Choosing what to search for…', text: '', sources: null };
     research.set(s.id, job);
     renderReader();
     const vars = S.pageVars({ title: s.pageTitle || s.title, url: s.url, text: stripThinking(s.text).slice(0, 4000) });
@@ -320,7 +416,8 @@
         site: hostOf(s.url),
         snippetId: s.id,
         fallbackQuery: s.title,
-        queryMessages: S.buildMessages('researchQuery', vars),
+        query,
+        queryMessages: query ? null : S.buildMessages('researchQuery', vars),
         final: S.buildMessages('research', S.pageVars(
           { title: s.title, url: s.url, text: S.JOB_PLACEHOLDERS.sources },
           { context: stripThinking(s.text).slice(0, 3000), question: S.JOB_PLACEHOLDERS.query }
@@ -357,8 +454,10 @@
     const query = $('search').value.trim().toLowerCase();
     const visible = snippets.filter((s) => matches(s, query));
     const shots = snippets.filter((s) => kindOf(s) === 'screenshot').length;
+    const later = snippets.filter((s) => kindOf(s) === 'readlater' && !s.readAt).length;
     $('count').textContent = snippets.length ? `(${snippets.length})` : '';
     $('shotCount').textContent = shots ? `(${shots})` : '';
+    $('laterCount').textContent = later ? `(${later})` : '';
     for (const b of document.querySelectorAll('[data-group]')) b.setAttribute('aria-pressed', String(b.dataset.group === prefs.group));
     for (const b of document.querySelectorAll('[data-kind]')) b.setAttribute('aria-pressed', String(b.dataset.kind === prefs.kind));
     renderFilters();
@@ -368,11 +467,18 @@
 
   // snippets.html#<id> opens that snippet (the panel links new screenshots this way).
   function openFromHash() {
+    const view = location.hash.match(/^#view=(\w+)$/);
+    if (view && SECTIONS.includes(view[1])) {
+      prefs.kind = view[1];
+      selectedId = '';
+      history.replaceState(null, '', location.pathname);
+      return;
+    }
     const id = decodeURIComponent(location.hash.slice(1));
     const s = id && snippets.find((x) => x.id === id);
     if (!s) return;
     selectedId = id;
-    prefs.kind = kindOf(s) === 'screenshot' ? 'screenshot' : 'all';
+    prefs.kind = SECTIONS.includes(kindOf(s)) ? kindOf(s) : 'all';
     history.replaceState(null, '', location.pathname);
   }
 
@@ -417,7 +523,7 @@
   $('exportJson').addEventListener('click', () => download(`soroagent-snippets-${stamp()}.json`, 'application/json', JSON.stringify(snippets, null, 2)));
   $('exportMd').addEventListener('click', () => {
     const md = snippets
-      .filter((s) => kindOf(s) !== 'screenshot')
+      .filter((s) => !SECTIONS.includes(kindOf(s)))
       .map((s) => {
         const tags = s.tags.length ? `\n${s.tags.map((t) => `#${t}`).join(' ')}` : '';
         const body = kindOf(s) === 'summary' || kindOf(s) === 'research' ? stripThinking(s.text) : s.text.split('\n').map((l) => `> ${l}`).join('\n');

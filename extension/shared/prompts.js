@@ -17,7 +17,7 @@
 
   const soroagent = (root.soroagent = root.soroagent || {});
 
-  const ACTIONS = Object.freeze(['summarize', 'notes', 'ask', 'save', 'researchQuery', 'research']);
+  const ACTIONS = Object.freeze(['summarize', 'notes', 'ask', 'save', 'researchTopics', 'researchQuery', 'research']);
   const PLACEHOLDERS = Object.freeze(['persona', 'title', 'url', 'content', 'page', 'count', 'context', 'note', 'question']);
   const promptSets = {}; // set id ("default", "x", …) -> { persona?, <action>: { system?, user? } }
 
@@ -143,6 +143,22 @@
     };
   }
 
+  /** Research topics from the model's JSON reply: up to 5 short, distinct phrases. */
+  function parseTopics(text) {
+    const json = parseJsonLoose(text) || {};
+    const list = Array.isArray(json) ? json : Array.isArray(json.topics) ? json.topics : [];
+    const seen = new Set();
+    const topics = [];
+    for (const item of list) {
+      const topic = String((item && item.topic) || item || '').replace(/\s+/g, ' ').replace(/^(?:\d+[.)]\s+|[-*•#]\s*)/, '').replace(/^["']+|["'.\s]+$/g, '').trim().slice(0, 80);
+      if (topic && !seen.has(topic.toLowerCase())) {
+        seen.add(topic.toLowerCase());
+        topics.push(topic);
+      }
+    }
+    return topics.slice(0, 5);
+  }
+
   // Markers the page leaves in background-job prompts for text only known while the job runs
   // (the finished summary, the web sources, the search query).
   const JOB_PLACEHOLDERS = Object.freeze({ summary: '@@SOROAGENT_SUMMARY@@', sources: '@@SOROAGENT_SOURCES@@', query: '@@SOROAGENT_QUERY@@' });
@@ -159,5 +175,6 @@
     buildMessages,
     parseJsonLoose,
     parseSnippetMeta,
+    parseTopics,
   });
 })(globalThis);

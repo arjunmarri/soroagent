@@ -79,6 +79,7 @@ For `save`, `try-prompt` also prints the title, summary and tags soroagent read 
 | `notes` | Long content is summarized in parts: notes per part, then `summarize` merges them | Markdown |
 | `ask` | A question typed in the panel. `system` carries the page; `user` is the question | Markdown |
 | `save` | Labels each auto-saved summary (and saved selections): title, summary and tags | JSON `{ "title", "summary", "tags" }` |
+| `researchTopics` | **Research**, step 0: topics offered to the reader before research starts | JSON `{ "topics": [] }` |
 | `researchQuery` | **Research**, step 1: the web search query | JSON `{ "query" }` |
 | `research` | **Research**, step 2: the cited brief. `{{question}}` is the query, `{{content}}` the numbered web sources, `{{context}}` what the user already read | Markdown |
 

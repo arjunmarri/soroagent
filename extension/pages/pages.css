@@ -67,8 +67,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-i
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--fg); font: inherit; font-weight: 500; cursor: pointer; text-decoration: none;
+  padding: 7px 13px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--fg); font: inherit; font-size: 13px; font-weight: 550; cursor: pointer; text-decoration: none;
 }
 .btn { transition: border-color 0.12s ease, background 0.12s ease; }
 .btn:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
@@ -76,7 +76,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-i
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
 .btn.danger { color: var(--err); }
-.btn.small { padding: 4px 10px; font-size: 13px; border-radius: 8px; }
+.btn.small { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
 
 input[type="text"], input[type="url"], input[type="password"], input[type="number"], input[type="search"], select {
   width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px;

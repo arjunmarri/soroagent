@@ -56,6 +56,15 @@ URL: {{url}}
 Return JSON: {"title": "a specific title, max 80 chars", "summary": "1-2 sentences with the key information", "tags": ["1 to 4 short lowercase topic tags"]}`,
     },
 
+    // Research, step 0: topics the reader can pick from before researching. Reply: JSON (keep this shape).
+    researchTopics: {
+      system: `You pick research topics. Reply with JSON only.`,
+      user: `{{page}}
+
+List 3 to 5 specific topics from the text above that would be worth researching further on the web. Each topic is a short phrase (at most 8 words) naming a concrete subject: a product, person, event, claim, technique or open question from the text. No generic topics.
+Return JSON: {"topics": ["...", "..."]}`,
+    },
+
     // Research, step 1: a web search query for going deeper. Reply: JSON (keep this shape).
     researchQuery: {
       system: `You write web search queries. Reply with JSON only.`,

@@ -43,6 +43,17 @@
     .kind.research { background: var(--spark-soft); color: var(--spark-fg); }
     .has-research { color: var(--spark-fg); }
     .kind.screenshot { background: var(--surface-soft); color: var(--fg); }
+    .kind.readlater { background: var(--spark-soft); color: var(--spark-fg); }
+    .is-read { color: var(--fg-muted); }
+    .card.read .card-title { color: var(--fg-muted); font-weight: 550; }
+
+    /* Research: pick a topic first */
+    .topics { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+    .topic { border: 1px solid var(--border); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12.5px; cursor: pointer; }
+    .topic:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .topic.all { border-style: dashed; color: var(--fg-muted); }
+    .topic-own { display: flex; gap: 8px; margin-top: 10px; max-width: 520px; }
+    .topic-own input { flex: 1; }
 
     /* Screenshots: a gallery of thumbnails */
     .list.gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -107,10 +118,10 @@
     <div class="segmented" role="group" aria-label="Show">
       <button type="button" data-kind="all" aria-pressed="true">All</button>
       <button type="button" data-kind="summary" aria-pressed="false">Summaries</button>
-      <button type="button" data-kind="selection" aria-pressed="false">Selections</button>
       <button type="button" data-kind="research" aria-pressed="false">Research</button>
     </div>
-    <div class="segmented" role="group" aria-label="Screenshots">
+    <div class="segmented" role="group" aria-label="Sections">
+      <button type="button" data-kind="readlater" aria-pressed="false">Read later <span id="laterCount"></span></button>
       <button type="button" data-kind="screenshot" aria-pressed="false">Screenshots <span id="shotCount"></span></button>
     </div>
     <details class="more">

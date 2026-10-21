@@ -92,6 +92,7 @@
         <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
         <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
         <button class="chip" type="button" data-action="dark" title="Dark mode for this site, with brightness, contrast and sepia">${ICONS.moon}<span>Dark mode</span></button>
+        <button class="chip" type="button" data-action="read-later" title="Keep this page in your Read later list">${ICONS.save}<span>Read later</span></button>
         <button class="chip" type="button" data-action="page-history" title="Snippets and screenshots you saved from this page before">${ICONS.history}<span>History</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
@@ -174,7 +175,6 @@
     busy: null, // AbortController of the running task
     history: [], // chat turns (without the page context)
     pageContext: null, // { url, page } used for questions
-    lastSelection: { text: '', at: 0 },
     summaries: new Map(), // content fingerprint -> earlier summary, for repeat Summarize on unchanged content
     feed: null, // batches gathered by scrolling: { url, optionsKey, seen, endY, done, exhausted }
   };
@@ -218,7 +218,6 @@
   const items = () => state.site.items || null;
   // Prompt texts: prompts/default.js, then prompts/<site id>.js and its page-type overrides.
   const sitePrompts = () => S.promptsFor(state.site.id, state.site.prompts, pageInfo().type);
-  const nounOne = () => ((items() && items().noun) || 'items').replace(/s$/, '');
 
   // FNV-1a: a fast fingerprint to tell whether content changed.
   function fingerprint(text) {
@@ -725,7 +724,7 @@
       return;
     }
     const research = el('button', { type: 'button', textContent: 'Research this further' });
-    research.addEventListener('click', () => runResearch(record));
+    research.addEventListener('click', () => chooseResearch(record));
     const open = el('button', { type: 'button', textContent: 'Open snippets' });
     open.addEventListener('click', () => sendMessage({ type: 'open:snippets' }));
     append(el('div', { className: 'card ok saved' }, [
@@ -751,11 +750,54 @@
     ]);
   }
 
-  // Research: search the web for the summary's topic, read the top sources, write a cited brief.
-  function runResearch(record) {
+  // Before researching, ask what to focus on: topics the model finds in the summary, the whole
+  // summary, or the reader's own words.
+  function chooseResearch(record) {
+    const title = record.pageTitle || document.title;
+    els.thread.querySelectorAll('.topic-card').forEach((n) => n.remove());
+    const node = card({ kind: 'topic-card', icon: 'research', title: 'What should the research focus on?' });
+    const status = el('p', { className: 'topics-status', textContent: 'Finding topics in this summary…' });
+    const topics = el('div', { className: 'topics' });
+    const input = el('input', { type: 'text', placeholder: 'Or type your own topic…', maxLength: 120 });
+    input.setAttribute('aria-label', 'Research topic');
+    const go = el('button', { type: 'button', className: 'primary', textContent: 'Research' });
+    const pick = (query) => {
+      node.remove();
+      runResearch(record, query);
+    };
+    const everything = el('button', { type: 'button', className: 'topic all', textContent: 'Everything in this summary' });
+    everything.addEventListener('click', () => pick(''));
+    go.addEventListener('click', () => input.value.trim() && pick(input.value.trim()));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.isComposing && input.value.trim()) pick(input.value.trim());
+    });
+    node.append(status, topics, el('div', { className: 'topic-own' }, [input, go]));
+    topics.append(everything);
+    append(node);
+    runChat({
+      messages: S.buildMessages('researchTopics', S.pageVars({ title, url: record.url || location.href, text: S.stripThinking(record.text).slice(0, 4000) }), sitePrompts()),
+      json: true,
+    })
+      .then((reply) => {
+        const found = S.parseTopics(S.stripThinking(reply));
+        status.textContent = found.length ? 'Pick a topic, or research everything:' : 'No clear topics found. Research everything, or type your own:';
+        for (const topic of found) {
+          const button = el('button', { type: 'button', className: 'topic', textContent: topic });
+          button.addEventListener('click', () => pick(topic));
+          topics.insertBefore(button, everything);
+        }
+      })
+      .catch((err) => {
+        status.textContent = `Couldn't suggest topics (${err.message}). Research everything, or type your own:`;
+      });
+  }
+
+  // Research: search the web (for `query`, or a query the model picks), read the top sources,
+  // write a cited brief.
+  function runResearch(record, query = '') {
     return runTask(async (signal) => {
       const title = record.pageTitle || document.title;
-      addUserMessage(`Research: ${title}`);
+      addUserMessage(`Research: ${query || title}`);
       const seed = S.pageVars({ title, url: record.url || location.href, text: record.text.slice(0, 4000) });
       let shown = false;
       await runSummaryJob(
@@ -764,7 +806,8 @@
           kind: 'research',
           snippetId: record.snippetId || '',
           fallbackQuery: title,
-          queryMessages: S.buildMessages('researchQuery', seed, sitePrompts()),
+          query,
+          queryMessages: query ? null : S.buildMessages('researchQuery', seed, sitePrompts()),
           final: S.buildMessages('research', S.pageVars(
             { title, url: record.url || location.href, text: S.JOB_PLACEHOLDERS.sources },
             { context: record.text.slice(0, 3000), question: S.JOB_PLACEHOLDERS.query }
@@ -772,7 +815,7 @@
         },
         {
           signal,
-          reply: addAssistantMessage('Choosing what to search for…'),
+          reply: addAssistantMessage(query ? `Searching the web for “${query}”…` : 'Choosing what to search for…'),
           onSources: (msg) => {
             if (shown) return;
             shown = true;
@@ -897,8 +940,37 @@
   }
   S.dark.onChange(() => updateDarkChip());
 
+  // Read later: keep this page in the Read later list (once per page).
+  async function readLater() {
+    const done = (title, body) => append(card({ kind: 'ok', icon: 'save', title, body, actions: [{ label: 'Open Read later', onClick: () => sendMessage({ type: 'open:snippets', view: 'readlater' }) }] }));
+    try {
+      const saved = (await S.snippetsForPage(location.href)).find((s) => s.kind === 'readlater');
+      if (saved) {
+        done('Already in your Read later list.', `Saved ${new Date(saved.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}.`);
+        return;
+      }
+      // The page's own description, else its first real paragraph, else the start of its text.
+      const description = document.querySelector('meta[name="description"], meta[property="og:description"]');
+      const scope = document.querySelector('article, main, [role="main"]') || document.body;
+      const paragraph = [...scope.querySelectorAll('p')]
+        .filter((p) => !p.closest('table, aside, figure, nav, header, footer, [role="note"], [role="complementary"]'))
+        .map((p) => p.textContent.trim())
+        .find((t) => t.length > 100 && /[.!?]["”’)]?(\s|$)/.test(t));
+      const page = getPage(2000);
+      const full = ((description && description.content) || paragraph || page.text.replace(/^#.*$/m, '') || '')
+        .replace(/\[\d+\]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const excerpt = full.length > 280 ? `${full.slice(0, 280).replace(/\s+\S*$/, '')}…` : full;
+      await S.addSnippet({ kind: 'readlater', source: 'readlater', title: page.title || document.title || location.hostname, pageTitle: page.title || document.title, url: location.href, summary: excerpt });
+      done('Saved to Read later.', 'Find it any time under Read later in your snippets.');
+    } catch (err) {
+      showError(err, '', false);
+    }
+  }
+
   // History: everything saved from this exact page before (summaries, selections, screenshots).
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot', readlater: 'Later' };
   async function showPageHistory() {
     let items = [];
     try {
@@ -1181,64 +1253,6 @@
   // Save
   // ---------------------------------------------------------------------------
 
-  function save(selectionText) {
-    const recent = Date.now() - state.lastSelection.at < 2 * 60 * 1000 ? state.lastSelection.text : '';
-    const selection = (selectionText || S.currentSelection() || recent).trim();
-
-    return runTask(async (signal) => {
-      let text = selection;
-      let url = location.href;
-      let source = 'selection';
-      const site = items();
-      if (!text && site && site.focused) {
-        const item = site.focused(document, location);
-        if (item) {
-          text = site.describe ? site.describe(item) : item.text;
-          url = item.url || url;
-          source = 'item';
-        }
-      }
-      const page = getPage();
-      if (!text) {
-        text = page.text;
-        source = 'page';
-      }
-      if (!text) throw new Error('Nothing to save: select some text or open a page with readable content.');
-
-      const what = { selection: 'your selection', item: `this ${nounOne()}`, page: 'this page' }[source];
-      const progress = append(card({ icon: 'save', title: `Saving ${what}…` }));
-      let meta;
-      let warning = '';
-      try {
-        const vars = S.pageVars({ title: page.title, url, text: text.slice(0, 6000) }, { context: pageInfo().context || '' });
-        const reply = await runChat({ messages: S.buildMessages('save', vars, sitePrompts()), json: true, signal });
-        meta = S.parseSnippetMeta(reply, page.title);
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          progress.remove();
-          throw err;
-        }
-        meta = S.parseSnippetMeta('', page.title);
-        warning = `Saved without an AI summary: ${err.message}`;
-      }
-
-      const snippet = await S.addSnippet({ ...meta, text, source: source === 'page' ? 'page' : 'selection', url, pageTitle: page.title, model: els.model.value });
-      state.lastSelection = { text: '', at: 0 };
-
-      const done = card({
-        kind: 'ok',
-        icon: 'check',
-        title: `Saved: ${snippet.title}`,
-        body: warning || snippet.summary,
-        actions: [{ label: 'Open snippets', onClick: () => sendMessage({ type: 'open:snippets' }) }],
-      });
-      if (snippet.tags.length) {
-        done.insertBefore(el('div', { className: 'tags' }, snippet.tags.map((tag) => el('span', { className: 'tag', textContent: `#${tag}` }))), done.querySelector('.card-actions'));
-      }
-      progress.replaceWith(done);
-    });
-  }
-
   // ---------------------------------------------------------------------------
   // Site bar: page label and the site's toggles
   // ---------------------------------------------------------------------------
@@ -1332,6 +1346,7 @@
     else if (action === 'screenshot') takeScreenshot();
     else if (action === 'dark') toggleDark();
     else if (action === 'page-history') showPageHistory();
+    else if (action === 'read-later') readLater();
   });
 
   // Suggested questions on the empty screen.
@@ -1402,12 +1417,6 @@
     if (!els.menu.hidden && !e.target.closest('.menu, .menu-btn')) els.menu.hidden = true;
   });
 
-  // Remember the last selection: some sites clear it when focus moves into the panel.
-  document.addEventListener('selectionchange', () => {
-    const text = S.currentSelection();
-    if (text) state.lastSelection = { text, at: Date.now() };
-  });
-
   ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg || typeof msg.type !== 'string' || !msg.type.startsWith('assistant:')) return false;
     if (msg.type === 'assistant:toggle') {
@@ -1418,7 +1427,6 @@
     } else if (msg.type === 'assistant:run') {
       openPanel();
       if (msg.action === 'summarize') summarize();
-      else if (msg.action === 'save') save(msg.selectionText);
     }
     sendResponse({ ok: true });
     return false;

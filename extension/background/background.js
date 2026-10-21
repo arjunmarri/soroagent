@@ -261,7 +261,10 @@
       return { ok: true, keys: await secrets.describe() };
     },
     // `id` opens the snippets page on that snippet.
-    'open:snippets': (msg) => ext.tabs.create({ url: ext.runtime.getURL(`pages/snippets.html${msg && msg.id ? `#${encodeURIComponent(msg.id)}` : ''}`) }),
+    'open:snippets': (msg) => {
+      const hash = msg && msg.id ? `#${encodeURIComponent(msg.id)}` : msg && msg.view ? `#view=${encodeURIComponent(msg.view)}` : '';
+      return ext.tabs.create({ url: ext.runtime.getURL(`pages/snippets.html${hash}`) });
+    },
     // Screenshot of the visible part of the sender's tab, saved as a snippet. The page hides
     // soroagent's own button and panel before asking.
     'screenshot:capture': async (msg, sender) => {
@@ -328,7 +331,6 @@
 
 
   const MENU_ITEMS = [
-    { id: 'soroagent-save-selection', title: 'Save selection to soroagent', contexts: ['selection'], action: 'save' },
     { id: 'soroagent-summarize', title: 'Summarize this page', contexts: ['page'], action: 'summarize' },
     { id: 'soroagent-screenshot', title: 'Take a screenshot', contexts: ['page', 'image', 'video'], action: 'screenshot' },
   ];

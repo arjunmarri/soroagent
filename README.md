@@ -11,12 +11,13 @@ Click the owl 🦉 on any page to get started. soroagent's mascot is a mint owl 
 - **Work in parallel.** Summaries run in the background, so you can move on to another page or tab while soroagent works. When you come back, the result is waiting in the panel. The toolbar owl shows how many summaries finished while you were away.
 - **Summary history.** Every summary is kept. Browse them by day in **Summary history**, search them, filter by site or status, and copy, re-open or save any of them as a snippet.
 - **Ask** follow-up questions about the page in a chat.
-- **Snippets are saved automatically.** Every summary becomes a snippet with a title, short summary and tags, and re-summarizing the same page updates it instead of duplicating it. To keep just a passage, select it and right-click → *Save selection to soroagent*.
-- **Research** any summary or snippet: soroagent writes a search query, searches the web (DuckDuckGo, Brave Search or Bing, whichever answers, or your own SearXNG), reads the top sources and writes a cited brief on what they add. The brief and its sources are saved with the snippet. Only the search query leaves your machine; the page text doesn't.
+- **Snippets are saved automatically.** Every summary becomes a snippet with a title, short summary and tags, and re-summarizing the same page updates it instead of duplicating it.
+- **Research** any summary or snippet: first soroagent asks what to focus on, offering topics your model (local or cloud) picks out of the summary; choose one, research everything, or type your own. Then it searches the web (DuckDuckGo, Brave Search or Bing, whichever answers, or your own SearXNG), reads the top sources and writes a cited brief on what they add. The brief and its sources are saved with the snippet. Only the search query leaves your machine; the page text doesn't.
 - **Hide ads** removes ads and distractions (ad slots, sponsored and "recommended" widgets, cookie and newsletter pop-ups, sticky video players) **without changing the layout**: ads in the page become invisible but keep their space, so nothing jumps. You can show them again, or have soroagent always hide them on a site.
 - **Dark mode** (moon button in the panel) turns any site dark for eye comfort, even sites with no dark theme of their own. Photos and videos keep their real colours. Adjust **brightness**, **contrast** and **sepia** with sliders; the choice is remembered per site and applied as the page starts loading, so there's no white flash. Click **Light mode** to turn it off for that site.
 - **Screenshot** (camera button in the panel, or right-click → *Take a screenshot*) captures what you see, without soroagent's own button and panel, and keeps it in a separate **Screenshots** section of your snippets, where you can view, download, copy or delete it. Screenshots stay on your computer and are included in backups.
-- **History** (clock button in the panel) lists everything you saved from the exact page you're on (summaries, selections, research and screenshots), newest first; click one to open it in your snippets.
+- **Read later** (bookmark button in the panel) keeps the page in a **Read later** section of your snippets, with a short excerpt. Open it from there when you have time; it's marked as read when you do, or mark it yourself.
+- **History** (clock button in the panel) lists everything you saved from the exact page you're on (summaries, research, read-later pages and screenshots), newest first; click one to open it in your snippets.
 - **++ / --** in the panel header make soroagent's panel bigger or smaller (four sizes); the size is remembered.
 
 **Feeds on X and Reddit**, detected automatically:
@@ -32,12 +33,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.12.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.13.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.12.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.12.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.12.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.12.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.13.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.13.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.13.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.13.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -72,8 +73,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.12.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.12.0.zip)
-- Firefox: [soroagent-firefox-2.12.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.12.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.13.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.13.0.zip)
+- Firefox: [soroagent-firefox-2.13.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.13.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -89,7 +90,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.12.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.13.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -99,10 +100,10 @@ On first install the settings page opens and tests the connection to `http://127
 |---|---|
 | Any page | Click the owl button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). |
 | Keyboard | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens or closes the assistant (Option on a Mac). You can change it at `chrome://extensions/shortcuts`. |
-| Right-click menu | *Save selection to soroagent*, *Summarize this page* |
+| Right-click menu | *Summarize this page*, *Take a screenshot* |
 | Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets** and **Settings**. |
 
-**Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, selections, research), or search everything. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
+**Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, research), or search everything. **Read later** and **Screenshots** have sections of their own. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
 
 **Your data carries over to every update.** Snippets, summary history and settings live in the browser's storage for soroagent. The Chrome build has a fixed extension ID (`jomghmmgdlajfonjihmagbhomimadpcg`), so a newer version loaded from any folder keeps the same storage, and stored data is upgraded automatically when the format changes. To move to another browser or computer, or from a copy older than v2.8 (which had a different ID), use **Settings → Backup & restore**. API keys are never included in backups.
 

@@ -50,3 +50,12 @@ test('buildMessages renders placeholders and layers default < site file < inline
   assert.equal(thread.save.user, feed.save.user, 'other actions are shared');
   assert.equal(thread.pages, undefined);
 });
+
+test('research topics are short, distinct phrases from the model reply', async () => {
+  const P = S;
+  assert.deepEqual(P.parseTopics('```json\n{"topics": ["Qwen 3 benchmarks", "qwen 3 benchmarks", "  MoE routing.  ", ""]}\n```'), ['Qwen 3 benchmarks', 'MoE routing']);
+  assert.deepEqual(P.parseTopics('[{"topic": "A"}, "B"]'), ['A', 'B']);
+  assert.deepEqual(P.parseTopics('{"topics": ["1. 2024 election polls", "- \\"Quoted\\""]}'), ['2024 election polls', 'Quoted']);
+  assert.deepEqual(P.parseTopics('no json here'), []);
+  assert.equal(P.parseTopics(JSON.stringify({ topics: ['1', '2', '3', '4', '5', '6', '7'] })).length, 5);
+});
