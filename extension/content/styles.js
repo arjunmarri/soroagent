@@ -88,7 +88,8 @@ svg { width: 18px; height: 18px; flex: none; }
 
 .panel {
   position: fixed; right: 16px; bottom: 80px; z-index: 2147483647;
-  width: min(400px, calc(100vw - 24px)); height: min(600px, calc(100vh - 100px));
+  width: min(var(--panel-w, 400px), calc(100vw - 24px)); height: min(600px, calc(100vh - 100px));
+  transition: width 0.18s ease, height 0.18s ease;
   display: flex; flex-direction: column;
   background: var(--bg); border: 1px solid var(--border); border-radius: 16px;
   box-shadow: var(--shadow); overflow: hidden;
@@ -128,6 +129,19 @@ header {
   display: grid; place-items: center; color: var(--fg-muted); flex: none;
 }
 .icon-btn:hover { background: var(--bg-hover); color: var(--fg); }
+.size-btns { display: flex; flex: none; }
+.size-btn { width: 30px; font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.02em; }
+.size-btn:disabled { opacity: 0.35; cursor: default; background: transparent; }
+.status { overflow: hidden; }
+
+/* Snippets saved from this page */
+.page-snips { display: grid; gap: 6px; margin-top: 8px; }
+.page-snip { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; text-align: left; width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--fg); font: inherit; cursor: pointer; }
+.page-snip:hover { border-color: var(--accent); }
+.page-snip img { grid-row: span 2; width: 56px; height: 36px; object-fit: cover; object-position: top; border-radius: 5px; }
+.page-snip .snip-title { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-snip .snip-meta { grid-column: 2; font-size: 11.5px; color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-snip .snip-kind { grid-row: span 2; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
 
 .menu {
   position: absolute; top: 44px; right: 10px; z-index: 2; min-width: 210px; padding: 5px;

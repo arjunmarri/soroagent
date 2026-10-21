@@ -14,7 +14,7 @@
    * opts: { host, launcher, panel, settings(), save(patch) }
    * Returns { place(), placePanel(), isDrag() } — call place() after settings change.
    */
-  function createLauncherController({ host, launcher, panel, settings, save }) {
+  function createLauncherController({ host, launcher, panel, settings, save, panelHeight = () => 600 }) {
     let current = null; // { side, top }
     let drag = null;
     let suppressClick = false;
@@ -101,13 +101,13 @@
       const style = panel.style;
       if (launcher.hidden || !current) {
         Object.assign(style, { top: 'auto', bottom: '20px', left: narrow ? '12px' : 'auto', right: narrow ? '12px' : `${EDGE}px` });
-        style.height = '';
+        style.height = `min(${panelHeight()}px, calc(100vh - 40px))`;
         return;
       }
       const gap = 12;
       const below = current.top + SIZE / 2 < window.innerHeight / 2;
       const room = below ? window.innerHeight - (current.top + SIZE + gap) - EDGE : current.top - gap - EDGE;
-      style.height = `${Math.max(320, Math.min(600, room))}px`;
+      style.height = `${Math.max(320, Math.min(panelHeight(), room))}px`;
       style.top = below ? `${current.top + SIZE + gap}px` : 'auto';
       style.bottom = below ? 'auto' : `${window.innerHeight - current.top + gap}px`;
       style.left = narrow ? '12px' : current.side === 'left' ? `${EDGE}px` : 'auto';

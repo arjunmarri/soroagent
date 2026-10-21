@@ -25,6 +25,7 @@
     summarize: svg('<path d="M4 6h16M4 12h16M4 18h10"/>'),
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
     clean: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5.5 0 9 5 10 7a17 17 0 0 1-3 3.8M6.3 6.3C3.9 7.9 2.5 10.4 2 12c1 2 4.5 7 10 7 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
+    history: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
     moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
     camera: svg('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
     research: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6M11 8v6"/>'),
@@ -71,6 +72,10 @@
           <span class="where" hidden></span>
           <select class="model" aria-label="Model" hidden></select>
         </div>
+        <div class="size-btns">
+          <button class="icon-btn size-btn" type="button" data-size="-1" aria-label="Make SoroAgent smaller" title="Smaller">--</button>
+          <button class="icon-btn size-btn" type="button" data-size="1" aria-label="Make SoroAgent bigger" title="Bigger">++</button>
+        </div>
         <button class="icon-btn menu-btn" type="button" aria-label="More options" aria-haspopup="menu">${ICONS.more}</button>
         <button class="icon-btn close-btn" type="button" aria-label="Close SoroAgent">${ICONS.close}</button>
         <div class="menu" role="menu" hidden>
@@ -87,6 +92,7 @@
         <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
         <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
         <button class="chip" type="button" data-action="dark" title="Dark mode for this site, with brightness, contrast and sepia">${ICONS.moon}<span>Dark mode</span></button>
+        <button class="chip" type="button" data-action="page-history" title="Snippets and screenshots you saved from this page before">${ICONS.history}<span>History</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="thread" aria-live="polite">
@@ -179,6 +185,32 @@
     panel: els.panel,
     settings: () => state.settings,
     save: (patch) => S.saveSettings(patch),
+    panelHeight: () => PANEL_SIZES[panelSize()].height,
+  });
+
+  // Panel size, changed with ++ / --; the same for every site.
+  const PANEL_SIZES = [
+    { width: 400, height: 600 },
+    { width: 520, height: 720 },
+    { width: 680, height: 860 },
+    { width: 880, height: 1100 },
+  ];
+  const panelSize = () => Math.max(0, Math.min(PANEL_SIZES.length - 1, Number(state.settings.panelSize) || 0));
+  function applyPanelSize() {
+    const size = panelSize();
+    els.panel.style.setProperty('--panel-w', `${PANEL_SIZES[size].width}px`);
+    for (const button of shadow.querySelectorAll('.size-btn')) {
+      button.disabled = size + Number(button.dataset.size) < 0 || size + Number(button.dataset.size) >= PANEL_SIZES.length;
+    }
+    launcherCtl.placePanel();
+  }
+  shadow.querySelector('.size-btns').addEventListener('click', (e) => {
+    const button = e.target.closest('.size-btn');
+    if (!button || button.disabled) return;
+    const next = Math.max(0, Math.min(PANEL_SIZES.length - 1, panelSize() + Number(button.dataset.size)));
+    state.settings = { ...state.settings, panelSize: next };
+    applyPanelSize();
+    S.saveSettings({ panelSize: next });
   });
 
   const siteOptions = () => S.siteOptionValues(state.site, state.settings);
@@ -865,6 +897,48 @@
   }
   S.dark.onChange(() => updateDarkChip());
 
+  // History: everything saved from this exact page before (summaries, selections, screenshots).
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot' };
+  async function showPageHistory() {
+    let items = [];
+    try {
+      items = await S.snippetsForPage(location.href);
+    } catch (err) {
+      showError(err, '', false);
+      return;
+    }
+    els.thread.querySelectorAll('.history-card').forEach((n) => n.remove());
+    if (!items.length) {
+      const empty = card({ icon: 'history', title: 'Nothing saved from this page yet.', body: 'Summaries and screenshots you take here will show up in this list.' });
+      empty.classList.add('history-card');
+      append(empty);
+      return;
+    }
+    const list = el('div', { className: 'page-snips' });
+    for (const s of items) {
+      const kind = s.kind || (s.source === 'selection' ? 'selection' : 'page');
+      const row = el('button', { type: 'button', className: 'page-snip', title: 'Open in snippets' });
+      if (kind === 'screenshot' && s.image) {
+        const img = el('img', { src: s.image, alt: '' });
+        img.addEventListener('error', () => img.replaceWith(el('span', { className: 'snip-kind', textContent: KIND_LABEL.screenshot })));
+        row.append(img);
+      } else {
+        row.append(el('span', { className: 'snip-kind', textContent: KIND_LABEL[kind] || kind }));
+      }
+      const when = new Date(s.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+      const preview = s.summary || S.stripThinking(s.text || '').replace(/[*_#>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 140);
+      row.append(
+        el('span', { className: 'snip-title', textContent: s.title || s.pageTitle || 'Untitled' }),
+        el('span', { className: 'snip-meta', textContent: [when, s.research ? 'researched' : '', preview].filter(Boolean).join(' · ') })
+      );
+      row.addEventListener('click', () => sendMessage({ type: 'open:snippets', id: s.id }));
+      list.append(row);
+    }
+    const node = card({ kind: 'history-card', icon: 'history', title: `${items.length} saved from this page` });
+    node.append(list);
+    append(node);
+  }
+
   // Screenshot of the visible page (without SoroAgent's own button and panel), saved as a snippet.
   let capturing = false;
   async function takeScreenshot() {
@@ -1240,7 +1314,7 @@
     els.launcher.hidden = !state.settings.showLauncher || hiddenHere;
     els.resetPosition.hidden = !launcherCtl.hasCustomPlacement();
     launcherCtl.place();
-    launcherCtl.placePanel();
+    applyPanelSize();
   }
 
   els.launcher.addEventListener('click', () => (isOpen() ? closePanel() : openPanel()));
@@ -1257,6 +1331,7 @@
     else if (action === 'declutter') toggleDeclutter();
     else if (action === 'screenshot') takeScreenshot();
     else if (action === 'dark') toggleDark();
+    else if (action === 'page-history') showPageHistory();
   });
 
   // Clicking a chip would otherwise clear the user's text selection on the page.

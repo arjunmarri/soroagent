@@ -79,9 +79,25 @@
     return Object.keys(toSave).length;
   }
 
+  /** Pure: a page address without its #fragment or trailing slash, for "same page" matching. */
+  function pageKey(url) {
+    try {
+      const u = new URL(url);
+      return `${u.origin}${u.pathname.replace(/\/+$/, '')}${u.search}`;
+    } catch {
+      return String(url || '');
+    }
+  }
+
+  /** Snippets saved from this exact page, newest first. */
+  async function snippetsForPage(url) {
+    const key = pageKey(url);
+    return (await listSnippets()).filter((s) => pageKey(s.url) === key);
+  }
+
   function isSnippetChange(changes) {
     return Object.keys(changes).some((key) => key.startsWith(PREFIX));
   }
 
-  Object.assign(SoroAgent, { addSnippet, upsertSnippet, updateSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange });
+  Object.assign(SoroAgent, { addSnippet, upsertSnippet, updateSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange, pageKey, snippetsForPage });
 })(globalThis);
