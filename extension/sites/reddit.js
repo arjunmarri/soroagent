@@ -3,7 +3,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = root.SoroAgent;
+  const soroagent = root.soroagent;
 
   // New Reddit
   const NEW_POST = 'shreddit-post';
@@ -215,7 +215,7 @@
     }
   }
 
-  SoroAgent.registerSite({
+  soroagent.registerSite({
     id: 'reddit',
     name: 'Reddit',
     matches: (location) => /(^|\.)reddit\.com$/i.test(location.hostname),
@@ -227,7 +227,7 @@
       batchSize: 50,
       isFeed: (info) => FEED_TYPES.has(info.type),
       visible: visibleItems,
-      collect: (args) => SoroAgent.collectByScrolling({ ...args, visible: visibleItems }),
+      collect: (args) => soroagent.collectByScrolling({ ...args, visible: visibleItems }),
       format: formatItems,
       focused: focusedItem,
       element: (item) => (item.el && item.el.isConnected ? item.el : null),
@@ -238,5 +238,5 @@
     },
   });
 
-  SoroAgent.siteHelpers = { ...(SoroAgent.siteHelpers || {}), reddit: { pageInfo, formatItems, toNumber } };
+  soroagent.siteHelpers = { ...(soroagent.siteHelpers || {}), reddit: { pageInfo, formatItems, toNumber } };
 })(globalThis);

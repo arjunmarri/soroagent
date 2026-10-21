@@ -1,10 +1,10 @@
-// The SoroAgent owl: one definition used for the on-page button (SVG) and the toolbar/store
+// The soroagent owl: one definition used for the on-page button (SVG) and the toolbar/store
 // icons (PNGs rendered by scripts/make-icons.mjs). A mint owl perched on a branch, drawn with
 // filled shapes only (no thin outlines) so it stays readable at 16px.
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   const PALETTE = Object.freeze({
     body: '#34D399',
@@ -81,5 +81,5 @@
     );
   }
 
-  Object.assign(SoroAgent, { BRAND: { PALETTE, SHAPES, FIT, owlSvg } });
+  Object.assign(soroagent, { BRAND: { PALETTE, SHAPES, FIT, owlSvg } });
 })(globalThis);

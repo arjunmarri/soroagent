@@ -23,7 +23,7 @@ test('ranking prefers modern instruction models of a practical size', () => {
   ];
   const picks = S.recommendModels(models);
   assert.equal(picks[0].id, 'qwen3:30b-a3b');
-  assert.equal(picks[0].label, 'Best for SoroAgent');
+  assert.equal(picks[0].label, 'Best for soroagent');
   assert.match(picks[0].reason, /quality at ~3B speed/);
   assert.ok(picks.some((p) => p.id === 'gemma4:latest' && p.label === 'Lighter on memory'));
   assert.ok(!picks.some((p) => /coder|r1|embed/.test(p.id)));

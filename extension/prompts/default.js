@@ -3,9 +3,9 @@
 (function (root) {
   'use strict';
 
-  root.SoroAgent.definePrompts('default', {
+  root.soroagent.definePrompts('default', {
     // Shared by every prompt that uses {{persona}}.
-    persona: `You are SoroAgent, an assistant running inside the user's browser. Be accurate, concise and concrete. Use Markdown. Never invent facts that are not in the provided content.`,
+    persona: `You are soroagent, an assistant running inside the user's browser. Be accurate, concise and concrete. Use Markdown. Never invent facts that are not in the provided content.`,
 
     // Summarize button. Reply: Markdown.
     summarize: {

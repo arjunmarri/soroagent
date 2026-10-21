@@ -7,7 +7,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   // Ad slots and ad-network widgets (cosmetic selectors in the style of common blocklists).
   const AD_SELECTORS = [
@@ -133,9 +133,9 @@
     state.hidden = 0;
   }
 
-  SoroAgent.declutter = { hideAds, showAds, isActive: () => state.active, count: () => document.querySelectorAll('[data-soroagent-declutter]').length };
+  soroagent.declutter = { hideAds, showAds, isActive: () => state.active, count: () => document.querySelectorAll('[data-soroagent-declutter]').length };
   // Applied to the page: keep the space of in-page ads, remove floating ones.
-  SoroAgent.DECLUTTER_CSS = `
+  soroagent.DECLUTTER_CSS = `
 [data-soroagent-declutter="space"] { visibility: hidden !important; }
 [data-soroagent-declutter="space"] iframe, [data-soroagent-declutter="space"] video { visibility: hidden !important; }
 [data-soroagent-declutter="gone"] { display: none !important; }

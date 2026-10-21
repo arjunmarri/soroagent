@@ -3,7 +3,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
   const PREFIX = 'snippet:';
 
   function newId() {
@@ -24,7 +24,7 @@
       model: '',
       ...fields,
     };
-    await SoroAgent.ext.storage.local.set({ [PREFIX + snippet.id]: snippet });
+    await soroagent.ext.storage.local.set({ [PREFIX + snippet.id]: snippet });
     return snippet;
   }
 
@@ -37,7 +37,7 @@
       const existing = (await listSnippets()).find((s) => s.dedupeKey === fields.dedupeKey);
       if (existing) {
         const updated = { ...existing, ...fields, id: existing.id, createdAt: existing.createdAt, updatedAt: new Date().toISOString(), research: fields.research || existing.research };
-        await SoroAgent.ext.storage.local.set({ [PREFIX + existing.id]: updated });
+        await soroagent.ext.storage.local.set({ [PREFIX + existing.id]: updated });
         return updated;
       }
     }
@@ -46,15 +46,15 @@
 
   async function updateSnippet(id, patch) {
     const key = PREFIX + id;
-    const current = (await SoroAgent.ext.storage.local.get(key))[key];
+    const current = (await soroagent.ext.storage.local.get(key))[key];
     if (!current) return null;
     const updated = { ...current, ...patch, updatedAt: new Date().toISOString() };
-    await SoroAgent.ext.storage.local.set({ [key]: updated });
+    await soroagent.ext.storage.local.set({ [key]: updated });
     return updated;
   }
 
   async function listSnippets() {
-    const all = await SoroAgent.ext.storage.local.get(null);
+    const all = await soroagent.ext.storage.local.get(null);
     return Object.keys(all)
       .filter((key) => key.startsWith(PREFIX))
       .map((key) => all[key])
@@ -62,7 +62,7 @@
   }
 
   async function deleteSnippets(ids) {
-    await SoroAgent.ext.storage.local.remove(ids.map((id) => PREFIX + id));
+    await soroagent.ext.storage.local.remove(ids.map((id) => PREFIX + id));
   }
 
   // Merges snippets from an export file; existing ids are kept as they are.
@@ -75,7 +75,7 @@
       if (existing.has(id)) continue;
       toSave[PREFIX + id] = { ...item, id, tags: Array.isArray(item.tags) ? item.tags : [] };
     }
-    await SoroAgent.ext.storage.local.set(toSave);
+    await soroagent.ext.storage.local.set(toSave);
     return Object.keys(toSave).length;
   }
 
@@ -99,5 +99,5 @@
     return Object.keys(changes).some((key) => key.startsWith(PREFIX));
   }
 
-  Object.assign(SoroAgent, { addSnippet, upsertSnippet, updateSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange, pageKey, snippetsForPage });
+  Object.assign(soroagent, { addSnippet, upsertSnippet, updateSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange, pageKey, snippetsForPage });
 })(globalThis);

@@ -3,7 +3,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   function escapeHtml(text) {
     return String(text)
@@ -100,5 +100,5 @@
     return out.join('');
   }
 
-  Object.assign(SoroAgent, { escapeHtml, renderMarkdown, stripThinking });
+  Object.assign(soroagent, { escapeHtml, renderMarkdown, stripThinking });
 })(globalThis);

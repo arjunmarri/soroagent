@@ -3,7 +3,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   const SIZE = 48;
   const EDGE = 16; // gap to the window edge
@@ -263,5 +263,5 @@
     return { place, placePanel, hasCustomPlacement: () => Boolean((settings().launcherPlacements || {})[site()]) };
   }
 
-  SoroAgent.createLauncherController = createLauncherController;
+  soroagent.createLauncherController = createLauncherController;
 })(globalThis);

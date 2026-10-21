@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   // Firefox exposes promise-based APIs on `browser`; Chrome MV3 returns promises on `chrome`.
   // Check `runtime.id` because a page element with id="browser" also shows up as window.browser.
@@ -204,7 +204,7 @@
     report();
   }
 
-  Object.assign(SoroAgent, {
+  Object.assign(soroagent, {
     ext,
     DEFAULT_SETTINGS,
     PROVIDER_PRESETS,

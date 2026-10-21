@@ -4,11 +4,11 @@
   'use strict';
 
   const { ext, getSettings, resolveConnection, listModels, chat, normalizeBaseUrl, createSecretStore, recommendModels, PULL_SUGGESTION, createJobRunner } =
-    globalThis.SoroAgent;
+    globalThis.soroagent;
 
   const secrets = createSecretStore();
   // Keys saved in plain text by 2.1.0 are encrypted and removed from chrome.storage on first run.
-  const migrated = secrets.migrateFrom(ext.storage.local).catch((err) => console.warn('[SoroAgent] Key migration failed:', err));
+  const migrated = secrets.migrateFrom(ext.storage.local).catch((err) => console.warn('[soroagent] Key migration failed:', err));
 
   // ---------------------------------------------------------------------------
   // Origin rewriting
@@ -66,7 +66,7 @@
       });
       ruleOrigin = llmOrigin;
     } catch (err) {
-      console.warn('[SoroAgent] Could not install origin rule:', err);
+      console.warn('[soroagent] Could not install origin rule:', err);
     }
   }
 
@@ -93,7 +93,7 @@
     const result = await listModels(connection);
     if (!connection.cloud) apiCache.set(result.baseUrl, result.api);
     const ids = result.models.map((m) => m.id);
-    // For local servers, rank what's installed and suggest the best fit for SoroAgent.
+    // For local servers, rank what's installed and suggest the best fit for soroagent.
     const recommended = connection.cloud ? [] : recommendModels(result.models);
     let model = connection.model;
     if (!model || (!connection.cloud && !ids.includes(model))) model = (recommended[0] && recommended[0].id) || result.suggested;
@@ -224,7 +224,7 @@
   // One-shot messages from content scripts and extension pages
   // ---------------------------------------------------------------------------
 
-  // True for SoroAgent's own pages (settings, snippets); false for content scripts in web pages.
+  // True for soroagent's own pages (settings, snippets); false for content scripts in web pages.
   function fromExtensionPage(sender) {
     return Boolean(sender && sender.id === ext.runtime.id && (sender.url || '').startsWith(extensionBase));
   }
@@ -263,11 +263,11 @@
     // `id` opens the snippets page on that snippet.
     'open:snippets': (msg) => ext.tabs.create({ url: ext.runtime.getURL(`pages/snippets.html${msg && msg.id ? `#${encodeURIComponent(msg.id)}` : ''}`) }),
     // Screenshot of the visible part of the sender's tab, saved as a snippet. The page hides
-    // SoroAgent's own button and panel before asking.
+    // soroagent's own button and panel before asking.
     'screenshot:capture': async (msg, sender) => {
       if (!sender.tab || fromExtensionPage(sender)) throw new Error('Screenshots are taken from a web page.');
       const image = await ext.tabs.captureVisibleTab(sender.tab.windowId, { format: 'jpeg', quality: 90 });
-      const snippet = await globalThis.SoroAgent.addSnippet({
+      const snippet = await globalThis.soroagent.addSnippet({
         kind: 'screenshot',
         source: 'screenshot',
         title: String(msg.title || sender.tab.title || 'Screenshot').slice(0, 200),
@@ -328,7 +328,7 @@
 
 
   const MENU_ITEMS = [
-    { id: 'soroagent-save-selection', title: 'Save selection to SoroAgent', contexts: ['selection'], action: 'save' },
+    { id: 'soroagent-save-selection', title: 'Save selection to soroagent', contexts: ['selection'], action: 'save' },
     { id: 'soroagent-summarize', title: 'Summarize this page', contexts: ['page'], action: 'summarize' },
     { id: 'soroagent-screenshot', title: 'Take a screenshot', contexts: ['page', 'image', 'video'], action: 'screenshot' },
   ];
@@ -357,7 +357,7 @@
     const item = MENU_ITEMS.find((m) => m.id === info.menuItemId);
     if (!item || !tab || tab.id === undefined) return;
     sendToTab(tab.id, { type: 'assistant:run', action: item.action, selectionText: info.selectionText || '' }).catch(
-      (err) => console.warn('[SoroAgent] Could not reach the page:', err)
+      (err) => console.warn('[soroagent] Could not reach the page:', err)
     );
   });
 
@@ -373,12 +373,12 @@
 
   ext.commands.onCommand.addListener((command) => {
     if (command === 'toggle-assistant') {
-      sendToActiveTab({ type: 'assistant:toggle' }).catch((err) => console.warn('[SoroAgent]', err));
+      sendToActiveTab({ type: 'assistant:toggle' }).catch((err) => console.warn('[soroagent]', err));
     }
   });
 
   // Upgrade stored data in place whenever a new version is installed (and on first start).
-  globalThis.SoroAgent.migrate(ext.storage.local).catch((err) => console.warn('[SoroAgent] Storage upgrade failed:', err));
+  globalThis.soroagent.migrate(ext.storage.local).catch((err) => console.warn('[soroagent] Storage upgrade failed:', err));
 
   ext.runtime.onInstalled.addListener((details) => {
     createMenus();

@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const S = globalThis.SoroAgent;
+  const S = globalThis.soroagent;
   const { ext, listSnippets, deleteSnippets, importSnippets, isSnippetChange, groupTimeline, renderMarkdown, stripThinking } = S;
   const $ = (id) => document.getElementById(id);
   const el = (tag, props = {}, children = []) => {
@@ -135,8 +135,8 @@
       $('list').replaceChildren(el('div', {
         className: 'empty',
         textContent: prefs.kind === 'screenshot'
-          ? 'No screenshots yet. Use Screenshot in the SoroAgent panel (or right-click a page) to take one.'
-          : snippets.length ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
+          ? 'No screenshots yet. Use Screenshot in the soroagent panel (or right-click a page) to take one.'
+          : snippets.some((s) => kindOf(s) !== 'screenshot') ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
       }));
       $('list').classList.remove('gallery');
       return;
@@ -218,7 +218,7 @@
     } else if (kind === 'research' && s.research) {
       nodes.push(sourcesList(s.research.sources));
     } else {
-      nodes.push(el('p', { className: 'muted', textContent: 'Look this topic up on the web: SoroAgent searches, reads the top sources and writes a cited brief that goes beyond this snippet.' }));
+      nodes.push(el('p', { className: 'muted', textContent: 'Look this topic up on the web: soroagent searches, reads the top sources and writes a cited brief that goes beyond this snippet.' }));
     }
     if (live && live.status === 'error') nodes.push(el('div', { className: 'problem', textContent: live.error }));
 
@@ -379,7 +379,7 @@
   async function load() {
     snippets = (await listSnippets()).map((s) => ({ ...s, tags: Array.isArray(s.tags) ? s.tags : [] }));
     openFromHash();
-    if (!selectedId && snippets.length && window.innerWidth > 860) selectedId = (snippets.find((s) => matches(s, '')) || snippets[0]).id;
+    if (!selectedId && window.innerWidth > 860) selectedId = (snippets.find((s) => matches(s, '')) || { id: '' }).id;
     if (selectedId && !snippets.some((s) => s.id === selectedId)) selectedId = '';
     render();
   }
@@ -425,7 +425,7 @@
         return `## ${s.title}\n\n${s.url}  \n_${when(s.createdAt, { dateStyle: 'medium', timeStyle: 'short' })}_${tags}\n\n${body}${extra}\n`;
       })
       .join('\n---\n\n');
-    download(`soroagent-snippets-${stamp()}.md`, 'text/markdown', `# SoroAgent snippets\n\n${md}`);
+    download(`soroagent-snippets-${stamp()}.md`, 'text/markdown', `# soroagent snippets\n\n${md}`);
   });
   $('import').addEventListener('change', async (e) => {
     const file = e.target.files[0];

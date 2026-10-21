@@ -7,7 +7,7 @@
   // How items are presented to the model ({{content}} is built by sites/reddit.js).
   const ITEMS = `Items are numbered [n]. Posts show the subreddit, author (u/name), points, comment count and date, then the title and text. Comments show the author, whether they're a reply (with depth) and points. Points show popularity, not truth.`;
 
-  root.SoroAgent.definePrompts('reddit', {
+  root.soroagent.definePrompts('reddit', {
     // Summarize a feed of posts (home, subreddit, search). Reply: Markdown.
     summarize: {
       system: `{{persona}}

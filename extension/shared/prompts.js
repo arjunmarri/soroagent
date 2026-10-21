@@ -15,7 +15,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   const ACTIONS = Object.freeze(['summarize', 'notes', 'ask', 'save', 'researchQuery', 'research']);
   const PLACEHOLDERS = Object.freeze(['persona', 'title', 'url', 'content', 'page', 'count', 'context', 'note', 'question']);
@@ -102,7 +102,7 @@
 
   // Pulls the first JSON object out of a model reply, tolerating code fences and chatter.
   function parseJsonLoose(text) {
-    const cleaned = SoroAgent.stripThinking(text || '')
+    const cleaned = soroagent.stripThinking(text || '')
       .replace(/```(?:json)?/gi, '')
       .trim();
     try {
@@ -147,7 +147,7 @@
   // (the finished summary, the web sources, the search query).
   const JOB_PLACEHOLDERS = Object.freeze({ summary: '@@SOROAGENT_SUMMARY@@', sources: '@@SOROAGENT_SOURCES@@', query: '@@SOROAGENT_QUERY@@' });
 
-  Object.assign(SoroAgent, {
+  Object.assign(soroagent, {
     JOB_PLACEHOLDERS,
     PROMPT_ACTIONS: ACTIONS,
     PROMPT_PLACEHOLDERS: PLACEHOLDERS,

@@ -1,11 +1,11 @@
-// Backups and storage upgrades for SoroAgent's data (settings, snippets, summary history).
+// Backups and storage upgrades for soroagent's data (settings, snippets, summary history).
 // Data lives in chrome.storage.local, which survives extension updates as long as the extension
 // ID stays the same (the Chrome build pins it; see keys/README.md). Backups move data between
 // installs with different IDs (for example from an older unpacked copy to the store version).
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
   const SCHEMA_VERSION = 2;
   const FORMAT = 'soroagent-backup';
   const DATA_PREFIXES = ['snippet:', 'summary:'];
@@ -67,7 +67,7 @@
    * already there (matching ids are skipped). Returns { updates, counts }.
    */
   function planRestore(backup, all, { includeSettings = true } = {}) {
-    if (!backup || backup.format !== FORMAT) throw new Error('This file is not a SoroAgent backup.');
+    if (!backup || backup.format !== FORMAT) throw new Error('This file is not a soroagent backup.');
     const updates = {};
     const counts = { snippets: 0, summaries: 0, settings: false };
     for (const snippet of backup.snippets || []) {
@@ -89,5 +89,5 @@
     return { updates, counts };
   }
 
-  Object.assign(SoroAgent, { SCHEMA_VERSION, DATA_PREFIXES, planMigrations, migrate, buildBackup, planRestore });
+  Object.assign(soroagent, { SCHEMA_VERSION, DATA_PREFIXES, planMigrations, migrate, buildBackup, planRestore });
 })(globalThis);

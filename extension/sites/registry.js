@@ -1,10 +1,10 @@
 // Site profiles: per-website behaviour and prompts. See extension/sites/README.md.
 // This file loads first; every other extension/sites/*.js file (except names starting with "_")
-// is added to the content scripts automatically by the build and calls SoroAgent.registerSite().
+// is added to the content scripts automatically by the build and calls soroagent.registerSite().
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
   const profiles = [];
 
   // Used on every site that has no profile of its own.
@@ -92,7 +92,7 @@
     return { items: [...found.values()].slice(0, target), endY: window.scrollY, exhausted: idle >= SCROLL_LIMITS.idleSteps };
   }
 
-  Object.assign(SoroAgent, { DEFAULT_SITE, registerSite, siteFor, siteOptionValues, collectByScrolling, SCROLL_LIMITS });
+  Object.assign(soroagent, { DEFAULT_SITE, registerSite, siteFor, siteOptionValues, collectByScrolling, SCROLL_LIMITS });
   // (A getter inside Object.assign would be copied as a one-time value.)
-  Object.defineProperty(SoroAgent, 'siteProfiles', { get: () => profiles.slice(), configurable: true });
+  Object.defineProperty(soroagent, 'siteProfiles', { get: () => profiles.slice(), configurable: true });
 })(globalThis);

@@ -1,6 +1,6 @@
 # Extension ID key
 
-`chrome-public-key.txt` is the public key Chrome uses to derive SoroAgent's extension ID for
+`chrome-public-key.txt` is the public key Chrome uses to derive soroagent's extension ID for
 unpacked installs: **jomghmmgdlajfonjihmagbhomimadpcg**. Because the ID never changes, every
 new version you load keeps the same storage, so snippets, summary history and settings carry over
 across updates, whatever folder you unzip into.

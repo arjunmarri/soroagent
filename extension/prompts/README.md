@@ -1,6 +1,6 @@
 # Site-specific prompts
 
-Every prompt SoroAgent sends to the model lives in this folder as plain text. To change how SoroAgent summarizes, answers questions or labels what you save, edit the prompt here; you don't need to touch any extension code.
+Every prompt soroagent sends to the model lives in this folder as plain text. To change how soroagent summarizes, answers questions or labels what you save, edit the prompt here; you don't need to touch any extension code.
 
 | File | Used on |
 |---|---|
@@ -12,7 +12,7 @@ Every prompt SoroAgent sends to the model lives in this folder as plain text. To
 
 ## How prompts are chosen
 
-For each action, SoroAgent combines up to three layers. A later layer wins, separately for `system` and `user`:
+For each action, soroagent combines up to three layers. A later layer wins, separately for `system` and `user`:
 
 1. `prompts/default.js`
 2. `prompts/<site id>.js`, for example `x.js`, when the page matches the site profile with that id in [`../sites/`](../sites)
@@ -69,7 +69,7 @@ One focused prompt per page type works much better than a single prompt that say
 | `--url` | `http://127.0.0.1:11434` | Your local server (or set `SOROAGENT_URL`) |
 | `--show-prompt` | off | Print the exact messages sent to the model |
 
-For `save`, `try-prompt` also prints the title, summary and tags SoroAgent read from the reply.
+For `save`, `try-prompt` also prints the title, summary and tags soroagent read from the reply.
 
 ## Actions
 
@@ -82,7 +82,7 @@ For `save`, `try-prompt` also prints the title, summary and tags SoroAgent read 
 | `researchQuery` | **Research**, step 1: the web search query | JSON `{ "query" }` |
 | `research` | **Research**, step 2: the cited brief. `{{question}}` is the query, `{{content}}` the numbered web sources, `{{context}}` what the user already read | Markdown |
 
-You can reword anything, but **keep the JSON field names** in the `save` prompt so SoroAgent can read the reply. Every prompt set can also define a `persona` string, which fills `{{persona}}`.
+You can reword anything, but **keep the JSON field names** in the `save` prompt so soroagent can read the reply. Every prompt set can also define a `persona` string, which fills `{{persona}}`.
 
 ## Placeholders
 

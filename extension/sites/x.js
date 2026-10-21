@@ -4,7 +4,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = root.SoroAgent;
+  const soroagent = root.soroagent;
 
   const TWEET = 'article[data-testid="tweet"]';
   // First path segments that are app pages, not usernames.
@@ -148,7 +148,7 @@
   }
 
   /** Gathers more posts by scrolling (bounded; see collectByScrolling in registry.js). */
-  const collect = (args) => SoroAgent.collectByScrolling({ ...args, visible: visiblePosts });
+  const collect = (args) => soroagent.collectByScrolling({ ...args, visible: visiblePosts });
 
   /** The post to save when nothing is selected: the main post of a thread, else the one in view. */
   function focusedPost(doc, location) {
@@ -199,7 +199,7 @@
     }
   }
 
-  SoroAgent.registerSite({
+  soroagent.registerSite({
     id: 'x',
     name: 'X',
     matches: (location) => /(^|\.)(x|twitter)\.com$/i.test(location.hostname),
@@ -223,5 +223,5 @@
     },
   });
 
-  SoroAgent.siteHelpers = { ...(SoroAgent.siteHelpers || {}), x: { pageInfo, parseCount, compact, formatPosts } };
+  soroagent.siteHelpers = { ...(soroagent.siteHelpers || {}), x: { pageInfo, parseCount, compact, formatPosts } };
 })(globalThis);

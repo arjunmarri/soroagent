@@ -5,7 +5,7 @@
 
   if (!(document.documentElement instanceof HTMLElement) || !document.body) return; // XML, SVG, PDF viewers
 
-  const S = globalThis.SoroAgent;
+  const S = globalThis.soroagent;
   const { ext } = S;
 
   // ---------------------------------------------------------------------------
@@ -14,8 +14,8 @@
 
   const svg = (body, fill = 'none') =>
     `<svg viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
-  // The SoroAgent owl: a monochrome outline — always there, quietly watching.
-  // The SoroAgent owl (extension/shared/brand.js). No baked-in background: the button's
+  // The soroagent owl: a monochrome outline — always there, quietly watching.
+  // The soroagent owl (extension/shared/brand.js). No baked-in background: the button's
   // background follows the browser's light or dark theme.
   const OWL = S.BRAND.owlSvg({ frame: 'circle', background: false });
   const OWL_MARK = S.BRAND.owlSvg({ frame: 'tile', background: false, className: 'owl mark' });
@@ -62,10 +62,10 @@
 
   const ui = document.createElement('div');
   setHtml(ui, `
-    <button class="launcher" type="button" hidden aria-label="Open SoroAgent" title="SoroAgent (Alt+Shift+K) · drag to move">${OWL}</button>
-    <section class="panel" role="dialog" aria-label="SoroAgent" hidden>
+    <button class="launcher" type="button" hidden aria-label="Open soroagent" title="soroagent (Alt+Shift+K) · drag to move">${OWL}</button>
+    <section class="panel" role="dialog" aria-label="soroagent" hidden>
       <header>
-        <div class="brand"><span class="brand-mark">${OWL_MARK}</span>SoroAgent</div>
+        <div class="brand"><span class="brand-mark">${OWL_MARK}</span><span class="wordmark">soro<span>agent</span></span></div>
         <div class="status">
           <span class="dot" aria-hidden="true"></span>
           <span class="status-text">Not connected</span>
@@ -73,11 +73,11 @@
           <select class="model" aria-label="Model" hidden></select>
         </div>
         <div class="size-btns">
-          <button class="icon-btn size-btn" type="button" data-size="-1" aria-label="Make SoroAgent smaller" title="Smaller">--</button>
-          <button class="icon-btn size-btn" type="button" data-size="1" aria-label="Make SoroAgent bigger" title="Bigger">++</button>
+          <button class="icon-btn size-btn" type="button" data-size="-1" aria-label="Make soroagent smaller" title="Smaller">--</button>
+          <button class="icon-btn size-btn" type="button" data-size="1" aria-label="Make soroagent bigger" title="Bigger">++</button>
         </div>
         <button class="icon-btn menu-btn" type="button" aria-label="More options" aria-haspopup="menu">${ICONS.more}</button>
-        <button class="icon-btn close-btn" type="button" aria-label="Close SoroAgent">${ICONS.close}</button>
+        <button class="icon-btn close-btn" type="button" aria-label="Close soroagent">${ICONS.close}</button>
         <div class="menu" role="menu" hidden>
           <button type="button" role="menuitem" data-cmd="history">Summary history</button>
           <button type="button" role="menuitem" data-cmd="snippets">Saved snippets</button>
@@ -97,22 +97,22 @@
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="thread" aria-live="polite">
         <div class="empty">
-          <strong>Hi, I'm SoroAgent</strong>
+          <span class="empty-mark">${OWL_MARK}</span>
+          <strong>How can I help with this page?</strong>
           <span class="empty-note">Runs on the model served at your local URL. Nothing leaves your machine.</span>
-          <ul>
-            <li><b>Summarize</b> the page. It keeps going if you leave, and every summary is kept in your history</li>
-            <li><b>Hide ads</b> and distractions, keeping the layout</li>
-            <li><b>Dark mode</b> for any site, tuned to your eyes and remembered per site</li>
-            <li><b>Screenshot</b> what you see; screenshots get their own section in your snippets</li>
-            <li>Every summary is <b>saved</b> to your snippets; <b>Research</b> any of them further on the web</li>
-            <li>Or ask anything about the page below</li>
-          </ul>
+          <div class="suggest" role="group" aria-label="Suggested questions">
+            <button type="button" data-ask="What are the key points of this page?">What are the key points?</button>
+            <button type="button" data-ask="Explain this page simply, as if I'm new to the topic.">Explain it simply</button>
+            <button type="button" data-ask="What claims here need checking, and what might be missing?">What should I double-check?</button>
+          </div>
+          <p class="empty-hint">Summaries and screenshots are saved to your snippets automatically.</p>
         </div>
       </div>
       <form class="composer">
         <textarea rows="1" placeholder="Ask about this page…" aria-label="Ask about this page"></textarea>
         <button class="send" type="submit" aria-label="Send">${ICONS.send}</button>
       </form>
+      <footer class="foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a></footer>
     </section>`);
   shadow.append(...ui.childNodes);
   document.documentElement.append(host);
@@ -305,7 +305,7 @@
     const rest = models.filter((m) => !recommended.some((r) => r.id === m.id)).map((m) => option(m.id, m.size ? `${m.id} · ${m.size}` : m.id));
     if (recommended.length) {
       els.model.replaceChildren(
-        el('optgroup', { label: 'Recommended for SoroAgent' }, recommended.map((r) => option(r.id, `★ ${r.id} — ${r.label}`))),
+        el('optgroup', { label: 'Recommended for soroagent' }, recommended.map((r) => option(r.id, `★ ${r.id} — ${r.label}`))),
         el('optgroup', { label: 'All models' }, rest)
       );
     } else {
@@ -352,12 +352,12 @@
     state.tipShown = true;
     S.saveSettings({ modelTipSeen: true });
     if (needsPull) {
-      append(card({ icon: 'star', title: 'Tip: a better model for SoroAgent', body: `Your installed models aren't a great fit. Try ${status.pullSuggestion.reason}:`, pre: status.pullSuggestion.command }));
+      append(card({ icon: 'star', title: 'Tip: a better model for soroagent', body: `Your installed models aren't a great fit. Try ${status.pullSuggestion.reason}:`, pre: status.pullSuggestion.command }));
       return;
     }
     const node = card({
       icon: 'star',
-      title: 'A better model for SoroAgent is installed',
+      title: 'A better model for soroagent is installed',
       body: `You're using ${inUse}. Based on size and model family, these fit best. You can change this any time in the model menu or settings.`,
       actions: [{ label: 'Keep current model', onClick: () => node.remove() }],
     });
@@ -939,7 +939,7 @@
     append(node);
   }
 
-  // Screenshot of the visible page (without SoroAgent's own button and panel), saved as a snippet.
+  // Screenshot of the visible page (without soroagent's own button and panel), saved as a snippet.
   let capturing = false;
   async function takeScreenshot() {
     if (capturing) return;
@@ -1122,7 +1122,7 @@
         icon: 'check',
         kind: 'ok',
         title: `You've caught up on ${feed.done} ${noun} here.`,
-        body: `That's the limit for this page, so SoroAgent stops reading more here. Maybe take a break 🦉 (You can change the limit in settings.)`,
+        body: `That's the limit for this page, so soroagent stops reading more here. Maybe take a break 🦉 (You can change the limit in settings.)`,
       }));
       return;
     }
@@ -1133,7 +1133,7 @@
     const next = Math.min(site.batchSize || 50, limit - feed.done);
     const node = card({
       title: `Summarized ${noun} 1–${feed.done}. Would you like to read more?`,
-      body: `SoroAgent will scroll to load up to ${next} more, summarize only the new ones, then bring you back to where you are. It stops after ${limit} ${noun} on this page.`,
+      body: `soroagent will scroll to load up to ${next} more, summarize only the new ones, then bring you back to where you are. It stops after ${limit} ${noun} on this page.`,
       actions: [
         {
           label: `Read ${next} more`,
@@ -1268,7 +1268,7 @@
     try {
       state.site.applyOptions(siteOptions());
     } catch (err) {
-      console.warn('[SoroAgent] Site options failed:', err);
+      console.warn('[soroagent] Site options failed:', err);
     }
   }
 
@@ -1332,6 +1332,12 @@
     else if (action === 'screenshot') takeScreenshot();
     else if (action === 'dark') toggleDark();
     else if (action === 'page-history') showPageHistory();
+  });
+
+  // Suggested questions on the empty screen.
+  els.empty.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-ask]');
+    if (button) ask(button.dataset.ask);
   });
 
   // Clicking a chip would otherwise clear the user's text selection on the page.

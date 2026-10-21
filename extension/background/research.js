@@ -4,7 +4,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', '#39': "'", '#x27': "'", mdash: '—', ndash: '–', hellip: '…', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“' };
   function decodeEntities(text) {
@@ -160,7 +160,7 @@
   /** Resolves with { engine, results }. engine: 'auto' | 'duckduckgo' | 'brave' | 'bing' | 'searxng'. */
   async function searchWeb(query, { engine = 'auto', searxUrl = '', signal } = {}) {
     if (engine === 'searxng') {
-      if (!searxUrl) throw Object.assign(new Error('No SearXNG URL set.'), { hint: 'Add your SearXNG server in SoroAgent settings, or choose another search engine.' });
+      if (!searxUrl) throw Object.assign(new Error('No SearXNG URL set.'), { hint: 'Add your SearXNG server in soroagent settings, or choose another search engine.' });
       const base = searxUrl.replace(/\/+$/, '');
       const json = JSON.parse(await fetchText(`${base}/search?format=json&q=${encodeURIComponent(query)}`, { signal }));
       return { engine: 'SearXNG', results: parseSearx(json) };
@@ -205,5 +205,5 @@
     return final;
   }
 
-  Object.assign(SoroAgent, { parseDuckDuckGoLite, parseBrave, parseBing, parseSearx, htmlToText, formatSources, decodeEntities, searchWeb, gatherSources });
+  Object.assign(soroagent, { parseDuckDuckGoLite, parseBrave, parseBing, parseSearx, htmlToText, formatSources, decodeEntities, searchWeb, gatherSources });
 })(globalThis);

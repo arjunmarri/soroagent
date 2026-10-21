@@ -21,7 +21,7 @@ test('parseSnippetMeta cleans fields and falls back to the page title', () => {
 test('buildMessages renders placeholders and layers default < site file < inline', () => {
   const vars = S.pageVars({ title: 'T', url: 'https://x.test', text: 'Body', truncated: true }, { context: 'CTX', count: 3 });
   const [system, user] = S.buildMessages('summarize', vars);
-  assert.match(system.content, /^You are SoroAgent/);
+  assert.match(system.content, /^You are soroagent/);
   assert.match(user.content, /<page>\nBody\n<\/page>\n\[Content was truncated/);
 
   const inline = { summarize: { user: '{{context}} | {{count}} | {{content}} | {{missing}}' } };

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SoroAgent settings</title>
+  <title>Settings · soroagent</title>
   <link rel="stylesheet" href="pages.css">
   <style>
     main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
@@ -47,14 +47,14 @@
 <body>
 <main>
   <header>
-    <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture>SoroAgent settings</div>
+    <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Settings</span></div>
     <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="snippets.html">Saved snippets</a></div>
   </header>
 
   <form id="form">
     <section>
       <h2>Model</h2>
-      <p>Choose where SoroAgent's AI runs.</p>
+      <p>Choose where soroagent's AI runs.</p>
       <div class="sources" role="radiogroup" aria-label="Where the model runs">
         <label class="source"><input type="radio" name="source" value="local">
           <span><b>Local model</b><small>Ollama, LM Studio, llama.cpp… Private and free: page text stays on your computer.</small></span>
@@ -154,7 +154,7 @@
           <option value="top-right">Top right</option>
           <option value="top-left">Top left</option>
         </select>
-        <small>You can also drag the button to either edge of any page; SoroAgent remembers it for that site.</small>
+        <small>You can also drag the button to either edge of any page; soroagent remembers it for that site.</small>
       </label>
       <div class="row" id="placementsRow" hidden style="margin-bottom:14px">
         <span class="muted" id="placementsText"></span>
@@ -185,7 +185,7 @@
 
     <section>
       <h2>Backup &amp; restore</h2>
-      <p>Your snippets, summary history and settings stay on this device and carry over to every new SoroAgent version automatically. Use a backup to move them to another browser or computer, or from an older copy of SoroAgent. API keys are never included.</p>
+      <p>Your snippets, summary history and settings stay on this device and carry over to every new soroagent version automatically. Use a backup to move them to another browser or computer, or from an older copy of soroagent. API keys are never included.</p>
       <div class="row">
         <button class="btn" type="button" id="backup">Download backup</button>
         <label class="btn">Restore from backup…<input type="file" id="restore" accept="application/json,.json" hidden></label>
@@ -202,7 +202,7 @@
       </details>
       <details>
         <summary>403 Forbidden</summary>
-        <p>SoroAgent normally handles this. If your setup still rejects the extension, allow extension origins and restart Ollama:</p>
+        <p>soroagent normally handles this. If your setup still rejects the extension, allow extension origins and restart Ollama:</p>
         <p><b>macOS</b></p>
         <pre>launchctl setenv OLLAMA_ORIGINS "chrome-extension://*,moz-extension://*"</pre>
         <p><b>Windows</b> (PowerShell or Command Prompt)</p>
@@ -225,6 +225,7 @@
     </div>
   </form>
 </main>
+<footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a></footer>
 <script src="../shared/config.js"></script>
 <script src="../shared/backup.js"></script>
 <script src="options.js"></script>

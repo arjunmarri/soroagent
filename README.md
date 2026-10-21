@@ -1,43 +1,43 @@
-# SoroAgent
+# soroagent
 
-An AI assistant on every web page. SoroAgent is a browser extension for Chrome (and Chromium browsers such as Edge and Brave) and Firefox, on macOS and Windows. It runs on either:
+An AI assistant on every web page. soroagent is a browser extension for Chrome (and Chromium browsers such as Edge and Brave) and Firefox, on macOS and Windows. It runs on either:
 
 - **A local model on your computer:** [Ollama](https://ollama.com), LM Studio, llama.cpp, Jan, or any OpenAI-compatible server. This is private and free.
 - **A cloud API with your own key:** Anthropic (Claude), OpenAI, Google Gemini, OpenRouter, Groq, Mistral, DeepSeek, xAI, or any OpenAI-compatible API. Use this if you don't have a local model.
 
-Click the owl 🦉 on any page to get started. SoroAgent's mascot is a mint owl perched on a branch, always there and quietly watching. Its button and toolbar icon switch between light and dark with your browser's theme. Then:
+Click the owl 🦉 on any page to get started. soroagent's mascot is a mint owl perched on a branch, always there and quietly watching. Its button and toolbar icon switch between light and dark with your browser's theme. Then:
 
 - **Summarize** the page. Ask again while nothing has changed and you get the earlier summary instantly, with a **Regenerate** link.
-- **Work in parallel.** Summaries run in the background, so you can move on to another page or tab while SoroAgent works. When you come back, the result is waiting in the panel. The toolbar owl shows how many summaries finished while you were away.
+- **Work in parallel.** Summaries run in the background, so you can move on to another page or tab while soroagent works. When you come back, the result is waiting in the panel. The toolbar owl shows how many summaries finished while you were away.
 - **Summary history.** Every summary is kept. Browse them by day in **Summary history**, search them, filter by site or status, and copy, re-open or save any of them as a snippet.
 - **Ask** follow-up questions about the page in a chat.
-- **Snippets are saved automatically.** Every summary becomes a snippet with a title, short summary and tags, and re-summarizing the same page updates it instead of duplicating it. To keep just a passage, select it and right-click → *Save selection to SoroAgent*.
-- **Research** any summary or snippet: SoroAgent writes a search query, searches the web (DuckDuckGo, Brave Search or Bing, whichever answers, or your own SearXNG), reads the top sources and writes a cited brief on what they add. The brief and its sources are saved with the snippet. Only the search query leaves your machine; the page text doesn't.
-- **Hide ads** removes ads and distractions (ad slots, sponsored and "recommended" widgets, cookie and newsletter pop-ups, sticky video players) **without changing the layout**: ads in the page become invisible but keep their space, so nothing jumps. You can show them again, or have SoroAgent always hide them on a site.
+- **Snippets are saved automatically.** Every summary becomes a snippet with a title, short summary and tags, and re-summarizing the same page updates it instead of duplicating it. To keep just a passage, select it and right-click → *Save selection to soroagent*.
+- **Research** any summary or snippet: soroagent writes a search query, searches the web (DuckDuckGo, Brave Search or Bing, whichever answers, or your own SearXNG), reads the top sources and writes a cited brief on what they add. The brief and its sources are saved with the snippet. Only the search query leaves your machine; the page text doesn't.
+- **Hide ads** removes ads and distractions (ad slots, sponsored and "recommended" widgets, cookie and newsletter pop-ups, sticky video players) **without changing the layout**: ads in the page become invisible but keep their space, so nothing jumps. You can show them again, or have soroagent always hide them on a site.
 - **Dark mode** (moon button in the panel) turns any site dark for eye comfort, even sites with no dark theme of their own. Photos and videos keep their real colours. Adjust **brightness**, **contrast** and **sepia** with sliders; the choice is remembered per site and applied as the page starts loading, so there's no white flash. Click **Light mode** to turn it off for that site.
-- **Screenshot** (camera button in the panel, or right-click → *Take a screenshot*) captures what you see, without SoroAgent's own button and panel, and keeps it in a separate **Screenshots** section of your snippets, where you can view, download, copy or delete it. Screenshots stay on your computer and are included in backups.
+- **Screenshot** (camera button in the panel, or right-click → *Take a screenshot*) captures what you see, without soroagent's own button and panel, and keeps it in a separate **Screenshots** section of your snippets, where you can view, download, copy or delete it. Screenshots stay on your computer and are included in backups.
 - **History** (clock button in the panel) lists everything you saved from the exact page you're on (summaries, selections, research and screenshots), newest first; click one to open it in your snippets.
-- **++ / --** in the panel header make SoroAgent's panel bigger or smaller (four sizes); the size is remembered.
+- **++ / --** in the panel header make soroagent's panel bigger or smaller (four sizes); the size is remembered.
 
 **Feeds on X and Reddit**, detected automatically:
 
 - **Summarize reads only what's loaded.** No surprise scrolling. You get themes, notable posts (by @handle or title) and the overall sentiment.
 - **Then it asks if you'd like to read more.** If you say yes, it scrolls to load up to 50 more posts, summarizes only the new ones, and puts you back where you were.
-- **No doom-scrolling.** Every batch needs your yes, and each one is capped in posts, scroll steps and time. After 200 posts on a page (adjustable in settings), SoroAgent stops offering and suggests a break.
+- **No doom-scrolling.** Every batch needs your yes, and each one is capped in posts, scroll steps and time. After 200 posts on a page (adjustable in settings), soroagent stops offering and suggests a break.
 - **Threads.** On a Reddit thread or an X post, it summarizes the discussion: the post, what people say, and where they agree.
 - **Panel toggles:** **Verified only** on X and **Hide ads** on both, for higher-signal feeds and summaries.
 - **Site-specific prompts** for X and Reddit. Any website can get its own: see [Site profiles](#site-profiles).
 
-With a local model, page text never leaves your computer. With a cloud API, the text you act on goes only to the provider you choose, and is billed to your key. There are no SoroAgent accounts, servers or analytics.
+With a local model, page text never leaves your computer. With a cloud API, the text you act on goes only to the provider you choose, and is billed to your key. There are no soroagent accounts, servers or analytics.
 
 ## Download
 
-Current version: **v2.11.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.12.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.11.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.11.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.11.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.11.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.12.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.12.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.12.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.12.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -45,7 +45,7 @@ Both work on macOS and Windows. Full steps are below.
 
 ### 1. Choose a model
 
-**No local model? Use a cloud API.** Skip to step 2. After installing, open SoroAgent's settings, choose **Cloud API**, pick a provider and paste your API key. Each provider has a **Get a key** link. Then click **Test connection** and choose a model.
+**No local model? Use a cloud API.** Skip to step 2. After installing, open soroagent's settings, choose **Cloud API**, pick a provider and paste your API key. Each provider has a **Get a key** link. Then click **Test connection** and choose a model.
 
 | Provider | Where to get a key | Notes |
 |---|---|---|
@@ -66,14 +66,14 @@ ollama pull llama3.2
 
 Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter noticeably better.
 
-**Other servers:** start the server and use its `/v1` URL in SoroAgent's settings. For example, LM Studio is `http://127.0.0.1:1234/v1`, the llama.cpp server is `http://127.0.0.1:8080/v1` and Jan is `http://127.0.0.1:1337/v1`.
+**Other servers:** start the server and use its `/v1` URL in soroagent's settings. For example, LM Studio is `http://127.0.0.1:1234/v1`, the llama.cpp server is `http://127.0.0.1:8080/v1` and Jan is `http://127.0.0.1:1337/v1`.
 
 ### 2. Get the extension
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.11.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.11.0.zip)
-- Firefox: [soroagent-firefox-2.11.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.11.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.12.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.12.0.zip)
+- Firefox: [soroagent-firefox-2.12.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.12.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -89,7 +89,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.11.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.12.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -99,22 +99,22 @@ On first install the settings page opens and tests the connection to `http://127
 |---|---|
 | Any page | Click the owl button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). |
 | Keyboard | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens or closes the assistant (Option on a Mac). You can change it at `chrome://extensions/shortcuts`. |
-| Right-click menu | *Save selection to SoroAgent*, *Summarize this page* |
-| Toolbar owl | Click to open SoroAgent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets** and **Settings**. |
+| Right-click menu | *Save selection to soroagent*, *Summarize this page* |
+| Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets** and **Settings**. |
 
 **Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, selections, research), or search everything. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
 
-**Your data carries over to every update.** Snippets, summary history and settings live in the browser's storage for SoroAgent. The Chrome build has a fixed extension ID (`jomghmmgdlajfonjihmagbhomimadpcg`), so a newer version loaded from any folder keeps the same storage, and stored data is upgraded automatically when the format changes. To move to another browser or computer, or from a copy older than v2.8 (which had a different ID), use **Settings → Backup & restore**. API keys are never included in backups.
+**Your data carries over to every update.** Snippets, summary history and settings live in the browser's storage for soroagent. The Chrome build has a fixed extension ID (`jomghmmgdlajfonjihmagbhomimadpcg`), so a newer version loaded from any folder keeps the same storage, and stored data is upgraded automatically when the format changes. To move to another browser or computer, or from a copy older than v2.8 (which had a different ID), use **Settings → Backup & restore**. API keys are never included in backups.
 
 **Playing with the owl.** Its eyes follow your mouse, and it blinks and looks around while it works. Pick it up by dragging: it flaps its wings while you carry it, and when you let go it flies across the page and perches on the opposite side, remembered for that site. Turn on your system's *reduce motion* setting and it moves without animation.
 
 The panel's **⋯** menu can hide the button on the current site or reset a dragged position. In settings you can turn the button off everywhere or pin it to a corner. You can also change the server URL, model, temperature, context window and how much page text to send.
 
-**Picking a local model.** When you connect a local server, SoroAgent ranks your installed models for its tasks by family, size and speed. Mixture-of-experts models such as `qwen3:30b-a3b` give large-model quality at small-model speed. Settings always shows the best fit, plus a lighter option and a higher-quality one. The panel suggests a better model only once, the first time, and never again once you've picked a model yourself. If nothing installed fits well, it suggests a model to download.
+**Picking a local model.** When you connect a local server, soroagent ranks your installed models for its tasks by family, size and speed. Mixture-of-experts models such as `qwen3:30b-a3b` give large-model quality at small-model speed. Settings always shows the best fit, plus a lighter option and a higher-quality one. The panel suggests a better model only once, the first time, and never again once you've picked a model yourself. If nothing installed fits well, it suggests a model to download.
 
 ## Site-specific prompts
 
-Every prompt SoroAgent uses is plain text in [`extension/prompts/`](extension/prompts), so you can fine-tune it without touching the extension code:
+Every prompt soroagent uses is plain text in [`extension/prompts/`](extension/prompts), so you can fine-tune it without touching the extension code:
 
 - [`default.js`](extension/prompts/default.js): prompts for every site (Summarize, Ask, Save).
 - [`x.js`](extension/prompts/x.js) and [`reddit.js`](extension/prompts/reddit.js): prompts for X and Reddit, overriding only what differs. Reddit also has separate prompts for thread pages.
@@ -130,7 +130,7 @@ The **[prompts guide](extension/prompts/README.md)** covers the fine-tuning loop
 
 ## Site profiles
 
-Profiles in [`extension/sites/`](extension/sites) give SoroAgent site-specific behaviour: page detection, reading posts instead of page text, scrolling to gather more, and panel toggles. Their prompts live in [`extension/prompts/`](extension/prompts). [`x.js`](extension/sites/x.js) is the full X example; [`_template.js`](extension/sites/_template.js) is a starting point. To add your own site, copy the template, set `matches()` and override the prompts you need, then run `npm run build`. New files are picked up automatically. [`extension/sites/README.md`](extension/sites/README.md) documents every field and placeholder.
+Profiles in [`extension/sites/`](extension/sites) give soroagent site-specific behaviour: page detection, reading posts instead of page text, scrolling to gather more, and panel toggles. Their prompts live in [`extension/prompts/`](extension/prompts). [`x.js`](extension/sites/x.js) is the full X example; [`_template.js`](extension/sites/_template.js) is a starting point. To add your own site, copy the template, set `matches()` and override the prompts you need, then run `npm run build`. New files are picked up automatically. [`extension/sites/README.md`](extension/sites/README.md) documents every field and placeholder.
 
 ## How it works
 
@@ -143,11 +143,11 @@ Profiles in [`extension/sites/`](extension/sites) give SoroAgent site-specific b
 
 - All model requests come from the background worker, so page Content Security Policies and mixed-content rules don't block them.
 - Three wire formats cover every provider: Ollama's native API, OpenAI chat completions (local servers and most cloud APIs), and Anthropic's Messages API. Claude requests send the system prompt as `system`, skip `temperature` (current Claude models don't accept it) and use `effort: low` for speed. Current models also opt in to server-side refusal fallbacks. If an OpenAI reasoning model rejects a custom temperature, the request is retried without it.
-- **API keys** are encrypted at rest with AES-256-GCM. The encryption key is a non-extractable WebCrypto key: the browser can use it, but no script can read its bytes. Both the key and the ciphertext live in the extension's own IndexedDB, which websites, SoroAgent's page-side scripts and other extensions can't open. Only the background worker decrypts keys, and it sends each key only to its own provider. The settings page never receives a saved key back; it shows only the last four characters. Key changes are announced with a version number, never the key itself. Messages that read or change keys, or test unsaved settings, are accepted only from SoroAgent's own pages. Keys saved in plain text by 2.1.0 are migrated automatically on first run.
+- **API keys** are encrypted at rest with AES-256-GCM. The encryption key is a non-extractable WebCrypto key: the browser can use it, but no script can read its bytes. Both the key and the ciphertext live in the extension's own IndexedDB, which websites, soroagent's page-side scripts and other extensions can't open. Only the background worker decrypts keys, and it sends each key only to its own provider. The settings page never receives a saved key back; it shows only the last four characters. Key changes are announced with a version number, never the key itself. Messages that read or change keys, or test unsaved settings, are accepted only from soroagent's own pages. Keys saved in plain text by 2.1.0 are migrated automatically on first run.
   - *Limits:* this protects against websites, other extensions, and copies or backups of extension storage. It can't stop malware running as your user account, which could control the browser itself. Treat API keys like passwords: give them a spending limit and revoke them if a device is lost.
-- **Ollama and 403 errors:** Ollama rejects requests from `chrome-extension://` and `moz-extension://` origins by default. SoroAgent rewrites the `Origin` header to the server's own origin, which Ollama always accepts. This applies only to the extension's own background requests: Chrome uses a session `declarativeNetRequest` rule and Firefox uses `webRequest`. Requests from web pages are never changed, so you don't need to set `OLLAMA_ORIGINS`.
+- **Ollama and 403 errors:** Ollama rejects requests from `chrome-extension://` and `moz-extension://` origins by default. soroagent rewrites the `Origin` header to the server's own origin, which Ollama always accepts. This applies only to the extension's own background requests: Chrome uses a session `declarativeNetRequest` rule and Firefox uses `webRequest`. Requests from web pages are never changed, so you don't need to set `OLLAMA_ORIGINS`.
 - Reasoning models (Qwen3, DeepSeek-R1, Gemma 4…) run with thinking turned off for speed, and any `<think>` output is removed. You can turn thinking on in settings.
-- **Summaries are background jobs.** The page hands the work to the background worker, which saves progress in the summary history (`summary:<id>` in extension storage, newest 300 kept), streams to whichever page is open, and keeps running if you leave. If the browser itself stops SoroAgent mid-summary, the entry is marked *interrupted* and you can run it again.
+- **Summaries are background jobs.** The page hands the work to the background worker, which saves progress in the summary history (`summary:<id>` in extension storage, newest 300 kept), streams to whichever page is open, and keeps running if you leave. If the browser itself stops soroagent mid-summary, the entry is marked *interrupted* and you can run it again.
 - Settings, keys and snippets are stored in `chrome.storage.local` on your machine (one key per snippet, so saves from several tabs can't overwrite each other).
 
 ## Development
@@ -191,4 +191,8 @@ After editing, run `npm run build` and click **Reload** on the extension card (o
 
 ## Earlier versions
 
-SoroAgent was called **SoroTrack** until version 2.2 and was developed in [arjunmarri/sorotracker](https://github.com/arjunmarri/sorotracker). SoroTrack 1.x, an 𝕏-history archive with a React dashboard, Express server, Firestore and Gemini, lives on there.
+soroagent was called **SoroTrack** until version 2.2 and was developed in [arjunmarri/sorotracker](https://github.com/arjunmarri/sorotracker). SoroTrack 1.x, an 𝕏-history archive with a React dashboard, Express server, Firestore and Gemini, lives on there.
+
+---
+
+<p align="center"><sub>tech is art. © 2026 <a href="https://soroai.com">soroai.com</a></sub></p>

@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   // ---------------------------------------------------------------------------
   // Timeline grouping (pure; unit tested)
@@ -50,5 +50,5 @@
     return months;
   }
 
-  Object.assign(SoroAgent, { dayLabel, groupTimeline });
+  Object.assign(soroagent, { dayLabel, groupTimeline });
 })(globalThis);

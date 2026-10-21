@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const S = globalThis.SoroAgent;
+  const S = globalThis.soroagent;
   const { ext, DEFAULT_SETTINGS, PROVIDER_PRESETS, CLOUD_PROVIDERS } = S;
   const $ = (id) => document.getElementById(id);
   const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl'];
@@ -127,7 +127,7 @@
     $('placementsText').textContent = `You've moved the button on ${count} site${count === 1 ? '' : 's'}.`;
   }
 
-  // Local models only: the background ranks installed models for SoroAgent's tasks.
+  // Local models only: the background ranks installed models for soroagent's tasks.
   function renderRecommendations(res) {
     const box = $('recs');
     box.replaceChildren();
@@ -135,7 +135,7 @@
     box.hidden = !recs.length && !(res && res.pullSuggestion);
     if (box.hidden) return;
     const make = (tag, props) => Object.assign(document.createElement(tag), props);
-    box.append(make('div', { className: 'recs-title', textContent: 'Best installed models for SoroAgent' }));
+    box.append(make('div', { className: 'recs-title', textContent: 'Best installed models for soroagent' }));
     for (const rec of recs) {
       const text = make('div', {});
       text.append(make('b', { textContent: `${rec.label}: ${rec.id}` }), make('small', { textContent: rec.reason }));

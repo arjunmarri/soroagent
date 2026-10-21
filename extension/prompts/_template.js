@@ -4,9 +4,9 @@
 (function (root) {
   'use strict';
 
-  root.SoroAgent.definePrompts('example', {
+  root.soroagent.definePrompts('example', {
     // Optional: a different persona for this site.
-    // persona: `You are SoroAgent, a careful reader of engineering news. …`,
+    // persona: `You are soroagent, a careful reader of engineering news. …`,
 
     summarize: {
       // Leave out `system` to keep the default one.

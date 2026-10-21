@@ -12,7 +12,7 @@ const OUT_DIR = join(ROOT, 'extension/icons');
 const SIZES = [16, 32, 48, 128];
 
 await import(pathToFileURL(join(ROOT, 'extension/shared/brand.js')).href);
-const { PALETTE, SHAPES, FIT } = globalThis.SoroAgent.BRAND;
+const { PALETTE, SHAPES, FIT } = globalThis.soroagent.BRAND;
 
 // ---------------------------------------------------------------------------
 // Geometry: a tiny renderer for the shapes brand.js uses (M/L/Q/Z paths, circles,

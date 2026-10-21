@@ -1,10 +1,10 @@
-// Ranks installed local models for SoroAgent's work: reading a page and replying quickly with
+// Ranks installed local models for soroagent's work: reading a page and replying quickly with
 // good instruction following and reliable JSON. Uses only what the server reports (name, size,
 // capabilities), so it's a heuristic: bigger models need more memory and are slower.
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   // Families that follow instructions and produce JSON well, best first.
   const FAMILIES = [
@@ -88,7 +88,7 @@
   }
 
   /**
-   * Up to three picks: { id, label, reason, score }. "Best for SoroAgent" is the top score;
+   * Up to three picks: { id, label, reason, score }. "Best for soroagent" is the top score;
    * "Lighter on memory" (≤ 9B total) and "Highest quality" (larger, still responsive) are added
    * when they're different models that score close to the best.
    */
@@ -96,7 +96,7 @@
     const scored = models.map(scoreModel).filter((m) => m && m.score > 0).sort((a, b) => b.score - a.score);
     if (!scored.length) return [];
     const best = scored[0];
-    const picks = [{ ...best, label: 'Best for SoroAgent' }];
+    const picks = [{ ...best, label: 'Best for soroagent' }];
     const close = scored.filter((m) => m.id !== best.id && m.score >= best.score - 3.5);
     const light = close.find((m) => m.total && m.total <= 9 && (!best.total || best.total > 9));
     if (light) picks.push({ ...light, label: 'Lighter on memory' });
@@ -110,5 +110,5 @@
   // Suggested download when nothing installed fits well.
   const PULL_SUGGESTION = { command: 'ollama pull qwen2.5:7b', reason: 'a fast, reliable all-rounder for summaries and JSON' };
 
-  Object.assign(SoroAgent, { scoreModel, recommendModels, modelParameters: parameters, PULL_SUGGESTION });
+  Object.assign(soroagent, { scoreModel, recommendModels, modelParameters: parameters, PULL_SUGGESTION });
 })(globalThis);

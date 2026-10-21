@@ -1,6 +1,6 @@
 # Site profiles
 
-SoroAgent works on any page, but a **site profile** makes it smarter on a specific website. A profile can:
+soroagent works on any page, but a **site profile** makes it smarter on a specific website. A profile can:
 
 - use **specialized prompts** for each action (summarize, ask, save). The prompt texts live in [`../prompts/`](../prompts), one file per site, so they're easy to fine-tune;
 - read the page as **items** (posts, comments, results) rather than plain text;
@@ -45,7 +45,7 @@ For sites made of posts or results, add an `items` object:
 | `format(items, { start })` | Turns items into numbered text (`[1] …`) for prompts. |
 | `isFeed(pageInfo)` | Return `true` for feed pages. There, **Summarize** reads what's loaded and then offers **Read more**. |
 | `batchSize` | How many items one **Read more** loads (X and Reddit use 50). |
-| `collect({ target, skip, options, signal, onProgress, fromY })` | Scrolls and gathers more items. Use `SoroAgent.collectByScrolling({ ...args, visible })`, which enforces the anti-doom-scrolling limits (steps, time, no-progress), unless you have a good reason not to. |
+| `collect({ target, skip, options, signal, onProgress, fromY })` | Scrolls and gathers more items. Use `soroagent.collectByScrolling({ ...args, visible })`, which enforces the anti-doom-scrolling limits (steps, time, no-progress), unless you have a good reason not to. |
 | `focused(document, location)` | The item **Save** stores when nothing is selected. |
 | `describe(item)` | Plain-text version of an item for saving. |
 

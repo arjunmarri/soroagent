@@ -3,7 +3,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   const SKIP =
     'script, style, noscript, template, svg, canvas, iframe, nav, footer, aside, button, select, textarea, ' +
@@ -84,5 +84,5 @@
     return selection ? squash(selection.toString()) : '';
   }
 
-  Object.assign(SoroAgent, { extractPage, currentSelection });
+  Object.assign(soroagent, { extractPage, currentSelection });
 })(globalThis);

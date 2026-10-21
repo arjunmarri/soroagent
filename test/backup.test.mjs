@@ -44,5 +44,5 @@ test('restoring never overwrites existing items and keeps the current local key'
   assert.deepEqual(updates.settings, { model: 'restored', apiKey: 'k' });
   assert.deepEqual(counts, { snippets: 1, summaries: 1, settings: true });
   assert.equal(S.planRestore(backup, all, { includeSettings: false }).updates.settings, undefined);
-  assert.throws(() => S.planRestore({ format: 'nope' }, all), /not a SoroAgent backup/);
+  assert.throws(() => S.planRestore({ format: 'nope' }, all), /not a soroagent backup/);
 });

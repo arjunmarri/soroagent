@@ -8,7 +8,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
   const PREFIX = 'summary:';
   const MAX_RECORDS = 300;
 
@@ -42,7 +42,7 @@
 
   // Placeholders the page leaves in job messages for things only known while the job runs.
   // (Defined in shared/prompts.js, which the page and the worker both load.)
-  const { summary: SUMMARY_PLACEHOLDER, sources: SOURCES_PLACEHOLDER, query: QUERY_PLACEHOLDER } = SoroAgent.JOB_PLACEHOLDERS || {};
+  const { summary: SUMMARY_PLACEHOLDER, sources: SOURCES_PLACEHOLDER, query: QUERY_PLACEHOLDER } = soroagent.JOB_PLACEHOLDERS || {};
 
   /**
    * opts: { ext, runChat({ messages, model, signal, onToken, onThinking, json }) → text, errorPayload(err), getSettings }
@@ -167,7 +167,7 @@
         progress('Choosing what to search for…');
         try {
           const reply = await runChat({ messages: spec.queryMessages, model: record.model, signal: job.controller.signal, json: true });
-          const json = SoroAgent.parseJsonLoose(reply);
+          const json = soroagent.parseJsonLoose(reply);
           query = String((json && json.query) || '').replace(/\s+/g, ' ').trim().slice(0, 120);
         } catch (err) {
           if (err && err.name === 'AbortError') throw err;
@@ -176,7 +176,7 @@
       query = query || String(spec.fallbackQuery || record.pageTitle || '').slice(0, 120);
       record.query = query;
       const settings = await getSettings();
-      const sources = await SoroAgent.gatherSources(query, {
+      const sources = await soroagent.gatherSources(query, {
         count: 5,
         engine: settings.researchEngine,
         searxUrl: settings.searxUrl,
@@ -187,18 +187,18 @@
       record.engine = sources.engine || '';
       broadcast(job, { type: 'sources', query, sources: record.sources });
       progress(`Writing the research brief from ${sources.length} sources…`);
-      return fillPlaceholder(fillPlaceholder(spec.final, SOURCES_PLACEHOLDER, SoroAgent.formatSources(sources)), QUERY_PLACEHOLDER, query);
+      return fillPlaceholder(fillPlaceholder(spec.final, SOURCES_PLACEHOLDER, soroagent.formatSources(sources)), QUERY_PLACEHOLDER, query);
     }
 
     async function autoSave(record, spec) {
-      let meta = SoroAgent.parseSnippetMeta('', record.pageTitle || record.label);
+      let meta = soroagent.parseSnippetMeta('', record.pageTitle || record.label);
       try {
         const reply = await runChat({ messages: fillPlaceholder(spec.saveMessages, SUMMARY_PLACEHOLDER, record.text.slice(0, 6000)), model: record.model, json: true });
-        meta = SoroAgent.parseSnippetMeta(reply, record.pageTitle || record.label);
+        meta = soroagent.parseSnippetMeta(reply, record.pageTitle || record.label);
       } catch {
         // Saved with the page title if labelling fails.
       }
-      const snippet = await SoroAgent.upsertSnippet({
+      const snippet = await soroagent.upsertSnippet({
         ...meta,
         kind: 'summary',
         source: 'summary',
@@ -216,11 +216,11 @@
 
     async function attachResearch(record, spec) {
       const research = { text: record.text, query: record.query, sources: record.sources || [], at: record.finishedAt, model: record.model, summaryId: record.id };
-      if (spec.snippetId && (await SoroAgent.updateSnippet(spec.snippetId, { research }))) {
+      if (spec.snippetId && (await soroagent.updateSnippet(spec.snippetId, { research }))) {
         record.snippetId = spec.snippetId;
         return;
       }
-      const snippet = await SoroAgent.addSnippet({
+      const snippet = await soroagent.addSnippet({
         kind: 'research',
         source: 'research',
         title: `Research: ${record.query || record.pageTitle}`.slice(0, 120),
@@ -325,7 +325,7 @@
           updates[key(r.id)] = {
             ...r,
             status: 'interrupted',
-            error: 'This summary was interrupted when the browser stopped SoroAgent.',
+            error: 'This summary was interrupted when the browser stopped soroagent.',
             hint: 'Run Summarize again on the page.',
             finishedAt: new Date().toISOString(),
           };
@@ -338,7 +338,7 @@
     return { start, attach, detach, stop, markSeen, remove, find, forUrl, recover, updateBadge };
   }
 
-  Object.assign(SoroAgent, {
+  Object.assign(soroagent, {
     createJobRunner,
     fillPlaceholder,
     idsToPrune,

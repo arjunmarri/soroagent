@@ -4,7 +4,7 @@
 (function (root) {
   'use strict';
 
-  root.SoroAgent.registerSite({
+  root.soroagent.registerSite({
     // Unique id; also the key for this site's saved option values.
     id: 'example',
     name: 'Example News',

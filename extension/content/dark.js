@@ -6,8 +6,8 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
-  if (SoroAgent.dark) return; // injected twice (e.g. after an extension reload)
+  const soroagent = (root.soroagent = root.soroagent || {});
+  if (soroagent.dark) return; // injected twice (e.g. after an extension reload)
 
   const DARK_DEFAULTS = { brightness: 100, contrast: 100, sepia: 0 };
   const LIMITS = { brightness: [50, 150], contrast: [50, 150], sepia: [0, 100] };
@@ -38,7 +38,7 @@ html { filter: ${FLIP} ${tune} !important; background-color: #fff !important; co
 
   const state = { on: false, options: { ...DARK_DEFAULTS }, sheet: null, style: null, listeners: new Set() };
 
-  // SoroAgent's own button and panel sit inside <html>, so they get flipped back too (set on the
+  // soroagent's own button and panel sit inside <html>, so they get flipped back too (set on the
   // shadow host; assistant.js turns it into a filter on the launcher and panel).
   function markHost() {
     const host = root.document && root.document.querySelector('soroagent-assistant');
@@ -81,14 +81,14 @@ html { filter: ${FLIP} ${tune} !important; background-color: #fff !important; co
     return Object.prototype.hasOwnProperty.call(sites, host) ? sites[host] : null;
   };
 
-  SoroAgent.dark = {
+  soroagent.dark = {
     apply,
     isOn: () => state.on,
     options: () => ({ ...state.options }),
     onChange: (listener) => state.listeners.add(listener),
     markHost,
   };
-  Object.assign(SoroAgent, { DARK_DEFAULTS, normalizeDark, darkCss });
+  Object.assign(soroagent, { DARK_DEFAULTS, normalizeDark, darkCss });
 
   // In a web page: apply the saved choice for this site straight away and follow changes made in
   // other tabs (or the settings page).

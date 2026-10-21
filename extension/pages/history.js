@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const S = globalThis.SoroAgent;
+  const S = globalThis.soroagent;
   const { ext, groupTimeline, renderMarkdown, stripThinking, addSnippet } = S;
   const PREFIX = 'summary:';
   const $ = (id) => document.getElementById(id);

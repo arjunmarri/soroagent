@@ -8,7 +8,7 @@
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   const DB_NAME = 'sorotrack-secrets';
   const STORE = 'kv';
@@ -115,5 +115,5 @@
     };
   }
 
-  SoroAgent.createSecretStore = createSecretStore;
+  soroagent.createSecretStore = createSecretStore;
 })(globalThis);

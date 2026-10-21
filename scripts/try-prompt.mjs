@@ -1,4 +1,4 @@
-// Runs one SoroAgent action against your local model, outside the browser, so you can tune
+// Runs one soroagent action against your local model, outside the browser, so you can tune
 // prompts in extension/prompts/ quickly.
 //
 //   npm run try-prompt -- --action summarize
@@ -31,7 +31,7 @@ const args = parseArgs(process.argv.slice(2));
 const load = async (rel) => import(pathToFileURL(join(EXT, rel)).href);
 for (const file of ['shared/config.js', 'shared/markdown.js', 'shared/prompts.js', 'background/llm.js', 'background/recommend.js']) await load(file);
 for (const file of readdirSync(join(EXT, 'prompts')).filter((f) => f.endsWith('.js') && !f.startsWith('_')).sort()) await load(`prompts/${file}`);
-const S = globalThis.SoroAgent;
+const S = globalThis.soroagent;
 
 if (!S.PROMPT_ACTIONS.includes(args.action)) {
   console.error(`Unknown action "${args.action}". Actions: ${S.PROMPT_ACTIONS.join(', ')}`);
@@ -78,5 +78,5 @@ console.log(`\n\x1b[2m──── ${((Date.now() - started) / 1000).toFixed(1)}
 
 if (json) {
   const parsed = S.parseSnippetMeta(reply, basename(inputFile));
-  console.log('Parsed by SoroAgent:', JSON.stringify(parsed, null, 2));
+  console.log('Parsed by soroagent:', JSON.stringify(parsed, null, 2));
 }

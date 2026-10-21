@@ -1,11 +1,11 @@
-// The extension's scripts are classic browser scripts that attach to globalThis.SoroAgent.
+// The extension's scripts are classic browser scripts that attach to globalThis.soroagent.
 import { fileURLToPath } from 'node:url';
 
 export const root = fileURLToPath(new URL('..', import.meta.url));
 
 export async function load(...files) {
   for (const file of files) await import(new URL(`../extension/${file}`, import.meta.url));
-  return globalThis.SoroAgent;
+  return globalThis.soroagent;
 }
 
 // Builds a fetch stand-in that answers by URL and records requests.

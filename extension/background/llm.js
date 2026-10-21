@@ -3,11 +3,11 @@
 //   - OpenAI chat completions (local servers like LM Studio/llama.cpp/Jan, and hosted APIs:
 //     OpenAI, Gemini, OpenRouter, Groq, Mistral, DeepSeek, xAI, custom)
 //   - Anthropic's Messages API (Claude)
-// Works on a "connection" from SoroAgent.resolveConnection. No browser APIs, so it runs under Node tests.
+// Works on a "connection" from soroagent.resolveConnection. No browser APIs, so it runs under Node tests.
 (function (root) {
   'use strict';
 
-  const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
+  const soroagent = (root.soroagent = root.soroagent || {});
 
   class LLMError extends Error {
     constructor(code, message, hint, status) {
@@ -70,7 +70,7 @@
     }
     if (!conn.apiKey) {
       const what = /API$/.test(conn.label) ? `${conn.label} key` : `${conn.label} API key`;
-      throw new LLMError('no_key', `Add your ${what} to use it.`, 'Open SoroAgent settings and paste a key.');
+      throw new LLMError('no_key', `Add your ${what} to use it.`, 'Open soroagent settings and paste a key.');
     }
   }
 
@@ -110,7 +110,7 @@
       throw new LLMError(
         'unauthorized',
         conn.cloud ? `${conn.label} rejected the API key.` : 'The server needs an API key.',
-        conn.cloud ? 'Check the key in SoroAgent settings, and that it has access to this model.' : 'Add the key in SoroAgent settings.',
+        conn.cloud ? 'Check the key in soroagent settings, and that it has access to this model.' : 'Add the key in soroagent settings.',
         status
       );
     }
@@ -140,7 +140,7 @@
     if (/embed/i.test(model.id)) return false;
     if (!catalog) return true;
     if (catalog.include && !catalog.include.test(model.id)) return false;
-    return !SoroAgent.NON_CHAT.test(model.id);
+    return !soroagent.NON_CHAT.test(model.id);
   }
 
   // The model to use when none is chosen: the first catalog preference that matches, else the first.
@@ -389,12 +389,12 @@
       }
       return !chunk.done;
     });
-    const reply = SoroAgent.stripThinking(text);
+    const reply = soroagent.stripThinking(text);
     if (refused && !reply) throw new LLMError('refused', 'The model declined to answer this request.', 'Try another model or a different page.');
     return reply;
   }
 
-  Object.assign(SoroAgent, {
+  Object.assign(soroagent, {
     LLMError,
     normalizeBaseUrl,
     listModels,
