@@ -26,6 +26,8 @@
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
     clean: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5.5 0 9 5 10 7a17 17 0 0 1-3 3.8M6.3 6.3C3.9 7.9 2.5 10.4 2 12c1 2 4.5 7 10 7 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
     history: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
+    home: svg('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'),
+    heart: svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
     moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
     camera: svg('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
     research: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6M11 8v6"/>'),
@@ -72,6 +74,7 @@
           <span class="where" hidden></span>
           <select class="model" aria-label="Model" hidden></select>
         </div>
+        <button class="icon-btn home-btn" type="button" aria-label="Home" title="Home">${ICONS.home}</button>
         <div class="size-btns">
           <button class="icon-btn size-btn" type="button" data-size="-1" aria-label="Make soroagent smaller" title="Smaller">--</button>
           <button class="icon-btn size-btn" type="button" data-size="1" aria-label="Make soroagent bigger" title="Bigger">++</button>
@@ -89,7 +92,8 @@
         </div>
       </header>
       <div class="actions">
-        <button class="chip" type="button" data-action="summarize">${ICONS.summarize}<span>Summarize</span></button>
+        <button class="chip" type="button" data-action="summarize" title="TL;DR: a short summary of this page">${ICONS.summarize}<span>TL;DR</span></button>
+        <button class="chip spark" type="button" data-action="wishlist" hidden title="Save this product to your wish list to buy later">${ICONS.heart}<span>Buy later</span></button>
         <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
         <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
         <button class="chip" type="button" data-action="dark" title="Dark mode for this site, with brightness, contrast and sepia">${ICONS.moon}<span>Dark mode</span></button>
@@ -103,11 +107,14 @@
           <strong>How can I help with this page?</strong>
           <span class="empty-note">Runs on the model served at your local URL. Nothing leaves your machine.</span>
           <div class="suggest" role="group" aria-label="Suggested questions">
+            <button type="button" class="wish" data-cmd="wishlist" hidden>Add to wish list</button>
+            <button type="button" class="deal" data-ask="Is this a good deal? Weigh the price, specs and what reviewers say, and mention anything that should make me wait or look elsewhere." hidden>Is this a good deal?</button>
             <button type="button" data-ask="What are the key points of this page?">What are the key points?</button>
             <button type="button" data-ask="Explain this page simply, as if I'm new to the topic.">Explain it simply</button>
             <button type="button" data-ask="What claims here need checking, and what might be missing?">What should I double-check?</button>
           </div>
           <p class="empty-hint">Summaries and screenshots are saved to your snippets automatically.</p>
+          <button type="button" class="back-to-chat" hidden>Back to the conversation ↓</button>
         </div>
       </div>
       <form class="composer">
@@ -393,6 +400,7 @@
   }
 
   function append(node) {
+    leaveHome();
     els.empty.hidden = true;
     els.thread.append(node);
     scrollToEnd(true);
@@ -485,7 +493,7 @@
   function updateControls() {
     const busy = Boolean(state.busy);
     const ready = state.status === 'ready';
-    // Only Summarize needs the model; Hide ads and Screenshot always work.
+    // Only TL;DR needs the model; the other buttons always work.
     for (const chip of els.actions.querySelectorAll('.chip')) chip.disabled = chip.dataset.action === 'summarize' && (busy || !ready);
     els.input.disabled = !ready;
     els.send.disabled = !busy && !ready;
@@ -656,11 +664,11 @@
       state.pageContext = { url: location.href, page };
       const print = fingerprint(`${location.href}\n${page.text}`);
       const cached = !fresh && (await findSummary(print));
-      if (cached) return showCachedSummary('Summarize this page', cached, () => summarize({ fresh: true }));
-      addUserMessage('Summarize this page');
+      if (cached) return showCachedSummary('TL;DR of this page', cached, () => summarize({ fresh: true }));
+      addUserMessage('TL;DR of this page');
       const vars = S.pageVars(page, { context: pageInfo().context || '' });
       await runSummaryJob(
-        { label: 'Summarize this page', kind: 'page', fingerprint: print, final: S.buildMessages('summarize', vars, sitePrompts()) },
+        { label: 'TL;DR of this page', kind: 'page', fingerprint: print, final: S.buildMessages('summarize', vars, sitePrompts()) },
         { signal, reply: addAssistantMessage() }
       );
     });
@@ -670,7 +678,7 @@
   function summarizeVisibleItems(posts, { fresh }) {
     return runTask(async (signal) => {
       const print = fingerprint(location.href + JSON.stringify(siteOptions()) + posts.map((p) => p.id).join(','));
-      const label = `Summarize ${posts.length} ${items().noun || 'items'}`;
+      const label = `TL;DR of ${posts.length} ${items().noun || 'items'}`;
       const cached = !fresh && (await findSummary(print));
       if (cached) return showCachedSummary(label, cached, () => summarize({ fresh: true }));
       addUserMessage(label);
@@ -948,6 +956,71 @@
   }
   S.dark.onChange(() => updateDarkChip());
 
+  // Home: the opening screen ("How can I help with this page?"). The conversation stays and comes
+  // back with "Back to the conversation" or the next message.
+  function showHome() {
+    refreshProduct();
+    els.empty.hidden = false;
+    els.thread.classList.add('home');
+    els.empty.querySelector('.back-to-chat').hidden = !els.thread.querySelector('.msg, .card, .cached');
+    els.thread.scrollTop = 0;
+  }
+  function leaveHome() {
+    els.thread.classList.remove('home');
+    els.empty.querySelector('.back-to-chat').hidden = true;
+  }
+
+  // Shop product pages: "Buy later" saves the product to the wish list in snippets.
+  let product = null;
+  let productUrl = '';
+  function refreshProduct() {
+    if (productUrl !== location.href || !product) {
+      try {
+        product = S.detectProduct(document, location);
+      } catch {
+        product = null;
+      }
+      productUrl = location.href;
+    }
+    const on = Boolean(product);
+    els.actions.querySelector('[data-action="wishlist"]').hidden = !on;
+    for (const b of els.empty.querySelectorAll('.wish, .deal')) b.hidden = !on;
+    return product;
+  }
+  // Single-page shops change product without reloading; re-check while the panel is open.
+  setInterval(() => {
+    if (isOpen() && productUrl !== location.href) refreshProduct();
+  }, 2000);
+
+  async function addToWishlist() {
+    const item = refreshProduct() || S.detectProduct(document, location);
+    if (!item) {
+      append(card({ icon: 'heart', title: 'This doesn\'t look like a product page.', body: 'Open a product with an "Add to cart" button to save it for later.' }));
+      return;
+    }
+    const open = { label: 'Open wish list', onClick: () => sendMessage({ type: 'open:snippets', view: 'wishlist' }) };
+    try {
+      const saved = (await S.snippetsForPage(item.url)).find((s) => s.kind === 'wishlist');
+      if (saved) {
+        append(card({ kind: 'ok', icon: 'heart', title: 'Already on your wish list.', body: `${saved.title}${saved.price ? ` · ${saved.price}` : ''}`, actions: [open] }));
+        return;
+      }
+      await S.addSnippet({
+        kind: 'wishlist',
+        source: 'wishlist',
+        title: item.title || document.title,
+        pageTitle: document.title,
+        url: item.url,
+        price: item.price,
+        image: /^https:\/\//.test(item.image) ? item.image : '',
+        summary: [item.price, item.site].filter(Boolean).join(' · '),
+      });
+      append(card({ kind: 'ok', icon: 'heart', title: 'Added to your wish list.', body: `${item.title}${item.price ? ` · ${item.price}` : ''}`, actions: [open] }));
+    } catch (err) {
+      showError(err, '', false);
+    }
+  }
+
   // Read later: keep this page in the Read later list (once per page).
   async function readLater() {
     const done = (title, body) => append(card({ kind: 'ok', icon: 'save', title, body, actions: [{ label: 'Open Read later', onClick: () => sendMessage({ type: 'open:snippets', view: 'readlater' }) }] }));
@@ -978,7 +1051,7 @@
   }
 
   // History: everything saved from this exact page before (summaries, selections, screenshots).
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot', readlater: 'Later' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot', readlater: 'Later', wishlist: 'Wish' };
   async function showPageHistory() {
     let items = [];
     try {
@@ -1125,7 +1198,7 @@
       const cached = state.summaries.get(key);
       const onScreen = loaded.filter((p) => inViewport(site, p)).map((p) => p.id);
       const unchanged = cached && onScreen.length > 0 && onScreen.every((postId) => cached.ids.has(postId));
-      const label = `Summarize ${loaded.length} loaded ${noun}${info.label ? ` · ${info.label}` : ''}`;
+      const label = `TL;DR of ${loaded.length} loaded ${noun}${info.label ? ` · ${info.label}` : ''}`;
       if (unchanged && !fresh) {
         showCachedSummary(cached.label, cached.summary, () => summarize({ fresh: true }));
         if (!state.feed || state.feed.url !== location.href) state.feed = { ...cached.feed, seen: new Set(cached.feed.seen) };
@@ -1320,6 +1393,7 @@
       els.launcher.classList.add('open');
       renderSiteBar();
       launcherCtl.placePanel();
+      refreshProduct();
       if (state.status !== 'ready') connect();
     }
     if (focus) els.input.focus({ preventScroll: true });
@@ -1355,13 +1429,21 @@
     else if (action === 'dark') toggleDark();
     else if (action === 'page-history') showPageHistory();
     else if (action === 'read-later') readLater();
+    else if (action === 'wishlist') addToWishlist();
   });
 
   // Suggested questions on the empty screen.
   els.empty.addEventListener('click', (e) => {
     const button = e.target.closest('[data-ask]');
     if (button) ask(button.dataset.ask);
+    else if (e.target.closest('[data-cmd="wishlist"]')) addToWishlist();
+    else if (e.target.closest('.back-to-chat')) {
+      leaveHome();
+      if (els.thread.querySelector('.msg, .card, .cached')) els.empty.hidden = true;
+      scrollToEnd(true);
+    }
   });
+  shadow.querySelector('.home-btn').addEventListener('click', showHome);
 
   // Clicking a chip would otherwise clear the user's text selection on the page.
   els.actions.addEventListener('mousedown', (e) => e.preventDefault());
@@ -1410,6 +1492,7 @@
       state.history = [];
       state.pageContext = null;
       els.thread.querySelectorAll('.msg, .card, .cached').forEach((n) => n.remove());
+      leaveHome();
       els.empty.hidden = false;
     } else if (cmd === 'reset-position') {
       const placements = { ...(state.settings.launcherPlacements || {}) };

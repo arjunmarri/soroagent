@@ -181,6 +181,17 @@ header {
 .chip:hover:not(:disabled) { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
 .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .chip.active svg { color: var(--spark); }
+.chip.spark svg { color: var(--spark); }
+.chip.spark { border-color: color-mix(in srgb, var(--spark) 45%, var(--border)); }
+.chip.spark:hover:not(:disabled) { background: var(--spark-soft); border-color: var(--spark); }
+
+/* Home: the opening screen over the conversation, which stays underneath */
+.thread.home > :not(.empty) { display: none; }
+.back-to-chat { margin-top: 10px; border: none; background: none; color: var(--accent); font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 8px; }
+.back-to-chat:hover { background: var(--accent-soft); }
+.suggest button.wish { border-color: color-mix(in srgb, var(--spark) 50%, var(--border)); background: var(--spark-soft); font-weight: 600; }
+.suggest button.wish::before { content: "♡"; color: var(--spark); }
+.suggest button.wish:hover { border-color: var(--spark); }
 .shutter { position: fixed; inset: 0; z-index: 2147483647; background: #fff; pointer-events: none; animation: shutter .45s ease-out forwards; }
 @keyframes shutter { from { opacity: .55; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .shutter { display: none; } }
