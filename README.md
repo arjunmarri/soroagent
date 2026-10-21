@@ -1,40 +1,74 @@
-# soroagent
+<p align="center"><img src="extension/icons/icon-128.png" width="96" height="96" alt="soroagent owl"></p>
 
-An AI assistant on every web page. soroagent is a browser extension for Chrome (and Chromium browsers such as Edge and Brave) and Firefox, on macOS and Windows. It runs on either:
+<h1 align="center">soroagent</h1>
 
-- **A local model on your computer:** [Ollama](https://ollama.com), LM Studio, llama.cpp, Jan, or any OpenAI-compatible server. This is private and free.
-- **A cloud API with your own key:** Anthropic (Claude), OpenAI, Google Gemini, OpenRouter, Groq, Mistral, DeepSeek, xAI, or any OpenAI-compatible API. Use this if you don't have a local model.
+<p align="center"><b>Your browser, on steroids.</b><br>
+An AI companion for every web page that turns what you read into knowledge you keep.</p>
 
-Click the owl 🦉 on any page to get started. soroagent's mascot is a mint owl perched on a branch, always there and quietly watching. Its button and toolbar icon switch between light and dark with your browser's theme. Then:
+<p align="center">Chrome · Edge · Brave · Arc · Firefox &nbsp;|&nbsp; macOS · Windows &nbsp;|&nbsp; Local AI (Ollama, LM Studio…) or your own Claude, OpenAI or Gemini key</p>
 
-- **TL;DR** summarizes the page. Ask again while nothing has changed and you get the earlier summary instantly, with a **Regenerate** link.
-- **Work in parallel.** Summaries run in the background, so you can move on to another page or tab while soroagent works. When you come back, the result is waiting in the panel. The toolbar owl shows how many summaries finished while you were away.
-- **Summary history.** Every summary is kept. Browse them by day in **Summary history**, search them, filter by site or status, and copy, re-open or save any of them as a snippet.
-- **Ask** follow-up questions about the page in a chat.
-- **Snippets are saved automatically.** Every summary becomes a snippet with a title, short summary and tags, and re-summarizing the same page updates it instead of duplicating it.
-- **Research** any summary or snippet: first soroagent asks what to focus on, offering topics your model (local or cloud) picks out of the summary; choose one, research everything, or type your own. Then it searches the web (DuckDuckGo, Brave Search or Bing, whichever answers, or your own SearXNG), reads the top sources and writes a cited brief on what they add. The brief and its sources are saved with the snippet. Only the search query leaves your machine; the page text doesn't.
-- **Hide ads** removes ads and distractions (ad slots, sponsored and "recommended" widgets, cookie and newsletter pop-ups, sticky video players) **without changing the layout**: ads in the page become invisible but keep their space, so nothing jumps. You can show them again, or have soroagent always hide them on a site.
-- **Dark mode** (moon button in the panel) turns any site dark for eye comfort, even sites with no dark theme of their own. Photos and videos keep their real colours. Adjust **brightness**, **contrast** and **sepia** with sliders; the choice is remembered per site and applied as the page starts loading, so there's no white flash. Click **Light mode** to turn it off for that site.
-- **Screenshot** (camera button in the panel, or right-click → *Take a screenshot*) captures what you see, without soroagent's own button and panel, and keeps it in a separate **Screenshots** section of your snippets, where you can view, download, copy or delete it. Screenshots stay on your computer and are included in backups.
-- **Buy later** on shop product pages (Amazon, Shopify stores and most online shops with an *Add to cart* button): soroagent spots the product and offers **Add to wish list** right on its opening screen, along with *Is this a good deal?*. The product's name, price, picture and link go to a **Wish list** section in your snippets, where you can mark it as bought.
-- **Home** (house button in the panel header) brings back the opening screen with its suggestions; your conversation stays and comes back with *Back to the conversation*.
-- **Read later** (bookmark button in the panel) keeps the page in a **Read later** section of your snippets, with a short excerpt. Open it from there when you have time; it's marked as read when you do, or mark it yourself.
-- **History** (clock button in the panel) lists everything you saved from the exact page you're on (summaries, research, read-later pages and screenshots), newest first; click one to open it in your snippets.
-- **Stats** shows where your browsing time goes: total and daily average, time per day, and time per website and per page (click a website to see its pages). Time is counted only while a tab is in front and you're active, or media is playing. It's stored only in this browser for 90 days, and you can turn it off or clear it.
-- **Clickable accounts:** in summaries of X, every @handle links to that account; on Reddit, u/ and r/ names link to the user or community.
-- **Prompts in settings:** rewrite the system prompt for all websites or for a specific site, and click **Optimize with AI** to have your own model (local or cloud) improve it. Built-in prompts are tuned for X, Reddit, YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon, Stack Overflow and major news sites.
-- **++ / --** in the panel header make soroagent's panel bigger or smaller (four sizes); the size is remembered.
+---
 
-**Feeds on X and Reddit**, detected automatically:
+## Why soroagent exists
 
-- **TL;DR reads only what's loaded.** No surprise scrolling. You get themes, notable posts (by @handle or title) and the overall sentiment.
-- **Then it asks if you'd like to read more.** If you say yes, it scrolls to load up to 50 more posts, summarizes only the new ones, and puts you back where you were.
-- **No doom-scrolling.** Every batch needs your yes, and each one is capped in posts, scroll steps and time. After 200 posts on a page (adjustable in settings), soroagent stops offering and suggests a break.
-- **Threads.** On a Reddit thread or an X post, it summarizes the discussion: the post, what people say, and where they agree.
-- **Panel toggles:** **Verified only** on X and **Hide ads** on both, for higher-signal feeds and summaries.
-- **Site-specific prompts** for X and Reddit. Any website can get its own: see [Site profiles](#site-profiles).
+We read more online than ever, and keep almost none of it.
 
-With a local model, page text never leaves your computer. With a cloud API, the text you act on goes only to the provider you choose, and is billed to your key. There are no soroagent accounts, servers or analytics.
+Browsers were built to *fetch* pages, not to help you *understand* them. Your browsing history is a list of URLs and timestamps: it remembers **where you went**, not **what you learned**. Interesting articles get "saved for later" and never opened again. Tabs pile up. Feeds are designed to keep you scrolling, and ads and pop-ups compete for the attention you came to spend on the content.
+
+**soroagent changes what a browser is for.** It sits quietly beside every page, an owl in the corner, and turns browsing from consumption into learning:
+
+- **Understand faster.** A TL;DR of any page, thread or feed in seconds, and answers to your questions about it.
+- **Remember automatically.** Every summary becomes a searchable snippet, so your history becomes a record of ideas, facts and sources rather than links.
+- **Go deeper on purpose.** When something matters, Research reads the web for you and writes a brief with citations.
+- **Take back your attention.** No doom-scrolling, no clutter, a comfortable dark mode on any site, and an honest view of where your time goes.
+- **Keep it private.** Run it on a model on your own computer and nothing you read leaves your machine. No accounts, no servers, no analytics.
+
+> **Browsing history, reinvented.** Not *"you visited 214 pages yesterday"* but *"here's what you read, what it said, what you found worth keeping, and where to go deeper."*
+
+## What it does
+
+### Understand any page
+- **TL;DR** summarizes the page in a clear, scannable format. Ask again while nothing has changed and you get the earlier summary instantly, with **Regenerate** if you want a fresh one.
+- **Ask anything** about the page in a chat, or tap a suggestion on the opening screen: *What are the key points?*, *Explain it simply*, *What should I double-check?*
+- **Tuned for the sites you use.** Built-in prompts for X, Reddit, YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon, Stack Overflow and major news sites: thread consensus on Reddit, the accepted answer on Stack Overflow, pros and cons from reviews on Amazon.
+- **Works while you move on.** Summaries run in the background. Switch tabs or leave the page, and the result is waiting when you come back. The toolbar owl counts what finished while you were away.
+
+### Read feeds without the feed reading you
+On **X** and **Reddit**, soroagent reads only what's already on screen: themes, notable posts and overall sentiment, with every **@handle**, **u/user** and **r/community** linked. Then it *asks* whether you'd like to read more. Each batch needs your yes, is capped in posts, scrolling and time, and after 200 posts (adjustable) it stops offering and suggests a break. Threads get a summary of the post and where the discussion agrees and disagrees. Toggles in the panel give you **Verified only** on X and **Hide ads** on both.
+
+### Remember what you read
+- **Snippets, automatically.** Every TL;DR is saved with a title, short summary and tags. Re-summarizing the same page updates it instead of duplicating it. Browse by day, site or topic, search everything, and read in a clean reading view.
+- **History of this page.** The clock button lists everything you've saved from the exact page you're on.
+- **Read later** keeps a page with a short excerpt in its own list, marked as read once you open it.
+- **Screenshots** of what you see (without soroagent's own button) in their own gallery: view, download, copy, delete.
+- **Buy later.** On shop product pages (Amazon, Shopify stores and most shops with an *Add to cart* button), soroagent spots the product and offers **Add to wish list** right away, plus *Is this a good deal?*. Name, price, picture and link go to your **Wish list**.
+- **Summary history** keeps every summary run, searchable and filterable, with status.
+- **Export and back up** snippets as Markdown or JSON, and everything (except API keys) as a backup file. Your data carries over to every update automatically.
+
+### Go deeper
+**Research** turns a summary into a starting point. First soroagent asks what to focus on, offering specific topics your model picks out of the summary (or type your own). Then it searches the web (DuckDuckGo, Brave Search or Bing, or your own SearXNG), reads the top sources and writes a brief with numbered citations, saved alongside the snippet. Only the search query leaves your machine; the page you were reading doesn't.
+
+### Browse calmer
+- **Hide ads** removes ads, sponsored widgets, cookie walls and sticky video players **without shifting the layout**, so nothing jumps while you read. Remember it per site if you like.
+- **Dark mode for any site**, even ones without their own, with brightness, contrast and sepia sliders. Photos and videos keep their real colours, and it's applied before the page paints, so there's no white flash.
+- **Stats** show exactly where your browsing time goes: per day, per website and per page. Time counts only while a tab is in front and you're active (or a video plays), and stays in your browser for 90 days.
+
+### Make it yours
+- **Prompts in settings.** Rewrite the system prompt for all websites or for any site, and click **Optimize with AI** to have your own model improve it.
+- **Any model.** A local model (Ollama, LM Studio, llama.cpp, Jan, any OpenAI-compatible server) or your own key for Anthropic Claude, OpenAI, Google Gemini, OpenRouter, Groq, Mistral, DeepSeek or xAI. soroagent recommends the best of your installed local models.
+- **An owl that stays out of the way.** It finds a spot that doesn't cover the page's own buttons, follows your mouse with its eyes, and can be dragged anywhere (it flies to the other side and perches there). **Home** brings back the opening screen; **++ / --** resize the panel; <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens it from the keyboard. Everything follows your browser's light or dark theme.
+
+## Who it's for
+
+- **Students and lifelong learners** who want to keep what they read, not just read it.
+- **Researchers, analysts and writers** who need the gist fast, then cited sources to go deeper.
+- **Engineers** reading docs, issues, pull requests and Stack Overflow all day.
+- **Anyone keeping up** with X, Reddit, Hacker News or the news without losing hours to the feed.
+- **Shoppers** who want a second opinion on a deal and one place for everything they plan to buy.
+
+## Private by design
+
+With a local model, page text never leaves your computer. With a cloud API, the text you act on goes only to the provider you chose, billed to your own key. API keys are encrypted with a key that can't be exported, and soroagent sends each one only to its own provider. Snippets, history, stats and settings live in your browser. There are no soroagent accounts, servers, trackers or analytics.
 
 ## Download
 
@@ -105,10 +139,10 @@ On first install the settings page opens and tests the connection to `http://127
 |---|---|
 | Any page | Click the owl button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). |
 | Keyboard | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens or closes the assistant (Option on a Mac). You can change it at `chrome://extensions/shortcuts`. |
-| Right-click menu | *Summarize this page*, *Take a screenshot* |
-| Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets** and **Settings**. |
+| Right-click menu | *TL;DR of this page*, *Take a screenshot* |
+| Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets**, **Browsing stats** and **Settings**. |
 
-**Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, research), or search everything. **Read later** and **Screenshots** have sections of their own. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
+**Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, research), or search everything. **Read later**, **Wish list** and **Screenshots** have sections of their own. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
 
 **Your data carries over to every update.** Snippets, summary history and settings live in the browser's storage for soroagent. The Chrome build has a fixed extension ID (`jomghmmgdlajfonjihmagbhomimadpcg`), so a newer version loaded from any folder keeps the same storage, and stored data is upgraded automatically when the format changes. To move to another browser or computer, or from a copy older than v2.8 (which had a different ID), use **Settings → Backup & restore**. API keys are never included in backups.
 
@@ -122,9 +156,12 @@ The panel's **⋯** menu can hide the button on the current site or reset a drag
 
 Every prompt soroagent uses is plain text in [`extension/prompts/`](extension/prompts), so you can fine-tune it without touching the extension code:
 
-- [`default.js`](extension/prompts/default.js): prompts for every site (Summarize, Ask, Save).
+- [`default.js`](extension/prompts/default.js): prompts for every site (TL;DR, Ask, Research).
 - [`x.js`](extension/prompts/x.js) and [`reddit.js`](extension/prompts/reddit.js): prompts for X and Reddit, overriding only what differs. Reddit also has separate prompts for thread pages.
+- `youtube.js`, `github.js`, `hackernews.js`, `wikipedia.js`, `linkedin.js`, `amazon.js`, `stackoverflow.js`, `news.js`: prompts for popular sites, matched by their `hosts`.
 - `<site>.js`: add your own. A site file only needs the parts it changes.
+
+You don't need to edit files to change how soroagent talks: **Settings → Prompts** lets you rewrite the system prompt for any of these, and optimize it with your model.
 
 Try a prompt against your local model before reloading the extension:
 
@@ -162,11 +199,11 @@ Profiles in [`extension/sites/`](extension/sites) give soroagent site-specific b
 extension/
   manifest.json        base manifest; the build writes per-browser variants
   background/          sw.js (Chrome entry) · background.js (routing, menus, Origin rewrite) · llm.js (Ollama, OpenAI-compatible and Anthropic client) · recommend.js (local model ranking) · secrets.js (encrypted API keys)
-  content/             assistant.js (panel and tasks) · launcher.js (button placement, dragging) · extract.js (readable text) · styles.js
-  prompts/             prompt texts: default.js, x.js, _template.js, samples/ and the fine-tuning guide
-  sites/               site profiles: registry.js, x.js, _template.js and a README for contributors
-  shared/              config.js (settings) · prompts.js · markdown.js (safe renderer) · snippets.js
-  pages/               settings and snippets pages
+  content/             assistant.js (panel and tasks) · launcher.js (button placement, dragging) · extract.js (readable text) · declutter.js (Hide ads) · dark.js (dark mode) · product.js (shop product pages) · timetrack.js (Stats) · styles.js
+  prompts/             prompt texts: default.js, site and popular-site prompts, _template.js, samples/ and the fine-tuning guide
+  sites/               site profiles: registry.js, x.js, reddit.js, _template.js and a README for contributors
+  shared/              config.js (settings) · prompts.js · markdown.js (safe renderer) · snippets.js · stats.js · backup.js · ask.js
+  pages/               settings, snippets, summary history and stats pages
   icons/               generated by scripts/make-icons.mjs
 scripts/build.mjs      copies extension/ to dist/<browser>/ with the right manifest; --zip packs it
 test/                  node:test unit tests (LLM client, prompts and parsers, Markdown, manifest wiring)
