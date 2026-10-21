@@ -14,6 +14,7 @@ Click the owl 🦉 on any page to get started. SoroAgent's mascot is a mint owl 
 - **Snippets are saved automatically.** Every summary becomes a snippet with a title, short summary and tags, and re-summarizing the same page updates it instead of duplicating it. To keep just a passage, select it and right-click → *Save selection to SoroAgent*.
 - **Research** any summary or snippet: SoroAgent writes a search query, searches the web (DuckDuckGo, Brave Search or Bing, whichever answers, or your own SearXNG), reads the top sources and writes a cited brief on what they add. The brief and its sources are saved with the snippet. Only the search query leaves your machine; the page text doesn't.
 - **Hide ads** removes ads and distractions (ad slots, sponsored and "recommended" widgets, cookie and newsletter pop-ups, sticky video players) **without changing the layout**: ads in the page become invisible but keep their space, so nothing jumps. You can show them again, or have SoroAgent always hide them on a site.
+- **Screenshot** (camera button in the panel, or right-click → *Take a screenshot*) captures what you see, without SoroAgent's own button and panel, and keeps it in a separate **Screenshots** section of your snippets, where you can view, download, copy or delete it. Screenshots stay on your computer and are included in backups.
 
 **Feeds on X and Reddit**, detected automatically:
 
@@ -28,12 +29,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.8.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.9.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.8.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.8.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.8.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.8.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.9.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.9.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.9.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.9.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -68,8 +69,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.8.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.8.0.zip)
-- Firefox: [soroagent-firefox-2.8.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.8.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.9.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.9.0.zip)
+- Firefox: [soroagent-firefox-2.9.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.9.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -85,7 +86,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.8.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.9.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 

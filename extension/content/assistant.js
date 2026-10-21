@@ -25,6 +25,7 @@
     summarize: svg('<path d="M4 6h16M4 12h16M4 18h10"/>'),
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
     clean: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5.5 0 9 5 10 7a17 17 0 0 1-3 3.8M6.3 6.3C3.9 7.9 2.5 10.4 2 12c1 2 4.5 7 10 7 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
+    camera: svg('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
     research: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6M11 8v6"/>'),
     send: svg('<path d="M12 19V5M5 12l7-7 7 7"/>'),
     stop: svg('<rect x="7" y="7" width="10" height="10" rx="1.5"/>', 'currentColor'),
@@ -83,6 +84,7 @@
       <div class="actions">
         <button class="chip" type="button" data-action="summarize">${ICONS.summarize}<span>Summarize</span></button>
         <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
+        <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="thread" aria-live="polite">
@@ -92,6 +94,7 @@
           <ul>
             <li><b>Summarize</b> the page. It keeps going if you leave, and every summary is kept in your history</li>
             <li><b>Hide ads</b> and distractions, keeping the layout</li>
+            <li><b>Screenshot</b> what you see; screenshots get their own section in your snippets</li>
             <li>Every summary is <b>saved</b> to your snippets; <b>Research</b> any of them further on the web</li>
             <li>Or ask anything about the page below</li>
           </ul>
@@ -439,7 +442,8 @@
   function updateControls() {
     const busy = Boolean(state.busy);
     const ready = state.status === 'ready';
-    for (const chip of els.actions.querySelectorAll('.chip')) chip.disabled = busy || !ready;
+    // Only Summarize needs the model; Hide ads and Screenshot always work.
+    for (const chip of els.actions.querySelectorAll('.chip')) chip.disabled = chip.dataset.action === 'summarize' && (busy || !ready);
     els.input.disabled = !ready;
     els.send.disabled = !busy && !ready;
     els.send.classList.toggle('stop', busy);
@@ -779,6 +783,43 @@
       el('p', { textContent: 'The page layout stays exactly the same; only the clutter is gone.' }),
       el('div', { className: 'card-actions' }, [undo, always]),
     ]));
+  }
+
+  // Screenshot of the visible page (without SoroAgent's own button and panel), saved as a snippet.
+  let capturing = false;
+  async function takeScreenshot() {
+    if (capturing) return;
+    capturing = true;
+    const chip = els.actions.querySelector('[data-action="screenshot"]');
+    chip.disabled = true;
+    const wasOpen = isOpen();
+    host.style.setProperty('display', 'none', 'important');
+    // Let the page repaint without us before the browser captures it.
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 60))));
+    let result;
+    try {
+      result = await sendMessage({ type: 'screenshot:capture', title: document.title, width: innerWidth, height: innerHeight });
+    } catch (err) {
+      result = { error: err };
+    } finally {
+      host.style.removeProperty('display');
+      capturing = false;
+      chip.disabled = false;
+    }
+    if (!wasOpen) openPanel({ focus: false });
+    const flash = el('div', { className: 'shutter' });
+    shadow.append(flash);
+    setTimeout(() => flash.remove(), 450);
+    if (result.error) {
+      append(card({ kind: 'error', icon: 'alert', title: 'Couldn\'t take the screenshot.', pre: result.error.message || String(result.error) }));
+      return;
+    }
+    append(card({
+      kind: 'ok',
+      icon: 'camera',
+      title: 'Screenshot saved to your snippets.',
+      actions: [{ label: 'View screenshot', onClick: () => sendMessage({ type: 'open:snippets', id: result.id }) }],
+    }));
   }
 
   // Coming back to a page: show summaries that finished while the reader was away, and
@@ -1134,6 +1175,7 @@
     const action = chip.dataset.action;
     if (action === 'summarize') summarize();
     else if (action === 'declutter') toggleDeclutter();
+    else if (action === 'screenshot') takeScreenshot();
   });
 
   // Clicking a chip would otherwise clear the user's text selection on the page.
@@ -1209,6 +1251,8 @@
     if (msg.type === 'assistant:toggle') {
       if (isOpen()) closePanel();
       else openPanel();
+    } else if (msg.type === 'assistant:run' && msg.action === 'screenshot') {
+      takeScreenshot();
     } else if (msg.type === 'assistant:run') {
       openPanel();
       if (msg.action === 'summarize') summarize();

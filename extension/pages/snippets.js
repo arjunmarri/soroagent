@@ -32,7 +32,7 @@
   };
   const research = new Map(); // snippet id -> { status, text, error, sources } while running
 
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot' };
   const kindOf = (s) => s.kind || (s.source === 'selection' ? 'selection' : s.source === 'summary' ? 'summary' : 'page');
   const hostOf = (url) => {
     try {
@@ -54,6 +54,8 @@
 
   function matches(s, query) {
     const kind = kindOf(s);
+    // Screenshots have their own section and stay out of the text views.
+    if ((prefs.kind === 'screenshot') !== (kind === 'screenshot')) return false;
     if (prefs.kind === 'summary' && kind !== 'summary') return false;
     if (prefs.kind === 'selection' && kind !== 'selection' && kind !== 'page') return false;
     if (prefs.kind === 'research' && !s.research && kind !== 'research') return false;
@@ -94,6 +96,18 @@
     return card;
   }
 
+  function renderShot(s) {
+    const host = hostOf(s.url);
+    const shot = el('button', { type: 'button', className: 'shot' }, [
+      el('img', { src: s.image, alt: '', loading: 'lazy', decoding: 'async' }),
+      el('div', { className: 'card-title', textContent: s.title || s.pageTitle || 'Screenshot' }),
+      el('div', { className: 'meta' }, [host ? siteBadge(host) : '', el('span', { textContent: when(s.createdAt, { hour: 'numeric', minute: '2-digit' }) })]),
+    ]);
+    shot.setAttribute('aria-current', String(s.id === selectedId));
+    shot.addEventListener('click', () => select(s.id));
+    return shot;
+  }
+
   function groups(visible) {
     if (prefs.group === 'site') {
       const bySite = new Map();
@@ -120,14 +134,18 @@
     if (!visible.length) {
       $('list').replaceChildren(el('div', {
         className: 'empty',
-        textContent: snippets.length ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
+        textContent: prefs.kind === 'screenshot'
+          ? 'No screenshots yet. Use Screenshot in the SoroAgent panel (or right-click a page) to take one.'
+          : snippets.length ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
       }));
+      $('list').classList.remove('gallery');
       return;
     }
+    $('list').classList.toggle('gallery', prefs.kind === 'screenshot');
     const nodes = [];
     for (const group of groups(visible)) {
       nodes.push(el('div', { className: 'group-head' }, [el('span', { textContent: group.label }), el('small', { textContent: String(group.items.length) })]));
-      for (const s of group.items) nodes.push(renderCard(s));
+      for (const s of group.items) nodes.push(kindOf(s) === 'screenshot' ? renderShot(s) : renderCard(s));
     }
     $('list').replaceChildren(...nodes);
   }
@@ -171,6 +189,11 @@
         });
         return chip;
       })));
+    }
+
+    if (kind === 'screenshot') {
+      renderShotReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Screenshot' })]);
+      return;
     }
 
     const body = el('div', { className: 'prose' });
@@ -219,6 +242,45 @@
       selectedId = '';
     });
     actions.append(copy, remove);
+    nodes.push(actions);
+    reader.replaceChildren(...nodes);
+  }
+
+  function shotFileName(s) {
+    const name = (hostOf(s.url) || 'screenshot').replace(/[^a-z0-9.-]+/gi, '-');
+    return `soroagent-${name}-${String(s.createdAt).slice(0, 19).replace(/[T:]/g, '-')}.jpg`;
+  }
+
+  function renderShotReader(s, reader, nodes) {
+    const img = el('img', { className: 'shot-full', src: s.image, alt: `Screenshot of ${s.pageTitle || s.url}` });
+    // Full size in a new tab (browsers block opening data: URLs directly).
+    img.addEventListener('click', async () => window.open(URL.createObjectURL(await (await fetch(s.image)).blob()), '_blank'));
+    nodes.push(img);
+    const actions = el('div', { className: 'reader-actions' });
+    const save = el('a', { className: 'btn primary', href: s.image, download: shotFileName(s), textContent: 'Download' });
+    const copy = el('button', { type: 'button', className: 'btn', textContent: 'Copy image' });
+    copy.addEventListener('click', async () => {
+      try {
+        // The clipboard takes PNG, so redraw the stored JPEG.
+        const bitmap = await createImageBitmap(await (await fetch(s.image)).blob());
+        const canvas = el('canvas', { width: bitmap.width, height: bitmap.height });
+        canvas.getContext('2d').drawImage(bitmap, 0, 0);
+        const png = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Copy not supported here';
+      }
+      setTimeout(() => (copy.textContent = 'Copy image'), 1500);
+    });
+    actions.append(save, copy);
+    if (/^https?:/.test(s.url)) actions.append(el('a', { className: 'btn', href: s.url, target: '_blank', rel: 'noopener', textContent: 'Open page ↗' }));
+    const remove = el('button', { type: 'button', className: 'btn danger', textContent: 'Delete' });
+    remove.addEventListener('click', async () => {
+      await deleteSnippets([s.id]);
+      selectedId = '';
+    });
+    actions.append(remove);
     nodes.push(actions);
     reader.replaceChildren(...nodes);
   }
@@ -294,7 +356,9 @@
   function render() {
     const query = $('search').value.trim().toLowerCase();
     const visible = snippets.filter((s) => matches(s, query));
+    const shots = snippets.filter((s) => kindOf(s) === 'screenshot').length;
     $('count').textContent = snippets.length ? `(${snippets.length})` : '';
+    $('shotCount').textContent = shots ? `(${shots})` : '';
     for (const b of document.querySelectorAll('[data-group]')) b.setAttribute('aria-pressed', String(b.dataset.group === prefs.group));
     for (const b of document.querySelectorAll('[data-kind]')) b.setAttribute('aria-pressed', String(b.dataset.kind === prefs.kind));
     renderFilters();
@@ -302,9 +366,20 @@
     renderReader();
   }
 
+  // snippets.html#<id> opens that snippet (the panel links new screenshots this way).
+  function openFromHash() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const s = id && snippets.find((x) => x.id === id);
+    if (!s) return;
+    selectedId = id;
+    prefs.kind = kindOf(s) === 'screenshot' ? 'screenshot' : 'all';
+    history.replaceState(null, '', location.pathname);
+  }
+
   async function load() {
     snippets = (await listSnippets()).map((s) => ({ ...s, tags: Array.isArray(s.tags) ? s.tags : [] }));
-    if (!selectedId && snippets.length && window.innerWidth > 860) selectedId = snippets[0].id;
+    openFromHash();
+    if (!selectedId && snippets.length && window.innerWidth > 860) selectedId = (snippets.find((s) => matches(s, '')) || snippets[0]).id;
     if (selectedId && !snippets.some((s) => s.id === selectedId)) selectedId = '';
     render();
   }
@@ -327,14 +402,22 @@
     b.addEventListener('click', () => {
       prefs.kind = b.dataset.kind;
       savePrefs();
+      const first = snippets.find((s) => matches(s, ''));
+      if (window.innerWidth > 860) selectedId = first ? first.id : '';
       render();
     });
   }
   $('search').addEventListener('input', render);
 
+  window.addEventListener('hashchange', () => {
+    openFromHash();
+    render();
+  });
+
   $('exportJson').addEventListener('click', () => download(`soroagent-snippets-${stamp()}.json`, 'application/json', JSON.stringify(snippets, null, 2)));
   $('exportMd').addEventListener('click', () => {
     const md = snippets
+      .filter((s) => kindOf(s) !== 'screenshot')
       .map((s) => {
         const tags = s.tags.length ? `\n${s.tags.map((t) => `#${t}`).join(' ')}` : '';
         const body = kindOf(s) === 'summary' || kindOf(s) === 'research' ? stripThinking(s.text) : s.text.split('\n').map((l) => `> ${l}`).join('\n');

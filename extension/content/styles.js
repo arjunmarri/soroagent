@@ -147,6 +147,9 @@ header {
 .chip svg { width: 15px; height: 15px; color: var(--accent); }
 .chip:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); }
 .chip.active { background: var(--accent-soft); border-color: var(--accent); }
+.shutter { position: fixed; inset: 0; z-index: 2147483647; background: #fff; pointer-events: none; animation: shutter .45s ease-out forwards; }
+@keyframes shutter { from { opacity: .55; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .shutter { display: none; } }
 
 .thread { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .empty { margin: auto 0; color: var(--fg-muted); font-size: 13px; text-align: center; padding: 0 12px; }

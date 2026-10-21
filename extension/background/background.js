@@ -260,7 +260,25 @@
       await announceKeysChanged();
       return { ok: true, keys: await secrets.describe() };
     },
-    'open:snippets': () => ext.tabs.create({ url: ext.runtime.getURL('pages/snippets.html') }),
+    // `id` opens the snippets page on that snippet.
+    'open:snippets': (msg) => ext.tabs.create({ url: ext.runtime.getURL(`pages/snippets.html${msg && msg.id ? `#${encodeURIComponent(msg.id)}` : ''}`) }),
+    // Screenshot of the visible part of the sender's tab, saved as a snippet. The page hides
+    // SoroAgent's own button and panel before asking.
+    'screenshot:capture': async (msg, sender) => {
+      if (!sender.tab || fromExtensionPage(sender)) throw new Error('Screenshots are taken from a web page.');
+      const image = await ext.tabs.captureVisibleTab(sender.tab.windowId, { format: 'jpeg', quality: 90 });
+      const snippet = await globalThis.SoroAgent.addSnippet({
+        kind: 'screenshot',
+        source: 'screenshot',
+        title: String(msg.title || sender.tab.title || 'Screenshot').slice(0, 200),
+        pageTitle: String(msg.title || sender.tab.title || ''),
+        url: sender.tab.url || '',
+        image,
+        width: Number(msg.width) || 0,
+        height: Number(msg.height) || 0,
+      });
+      return { ok: true, id: snippet.id };
+    },
     'open:options': () => ext.runtime.openOptionsPage(),
     // Pages report the browser's light/dark theme (the worker itself can't see it).
     theme: (msg) => setThemeIcon(Boolean(msg.dark)),
@@ -312,12 +330,13 @@
   const MENU_ITEMS = [
     { id: 'soroagent-save-selection', title: 'Save selection to SoroAgent', contexts: ['selection'], action: 'save' },
     { id: 'soroagent-summarize', title: 'Summarize this page', contexts: ['page'], action: 'summarize' },
+    { id: 'soroagent-screenshot', title: 'Take a screenshot', contexts: ['page', 'image', 'video'], action: 'screenshot' },
   ];
 
   // Right-click on the toolbar owl.
   const ACTION_MENU_ITEMS = [
     { id: 'soroagent-open-history', title: 'Summary history', open: () => handlers['open:history']() },
-    { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']() },
+    { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']({}) },
     { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },
   ];
 

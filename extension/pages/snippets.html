@@ -42,6 +42,18 @@
     .kind.summary { background: color-mix(in srgb, #34D399 18%, transparent); color: #0f9f6e; }
     .kind.research { background: var(--accent-soft); color: var(--accent); }
     .has-research { color: var(--accent); }
+    .kind.screenshot { background: color-mix(in srgb, #60A5FA 20%, transparent); color: #2563eb; }
+
+    /* Screenshots: a gallery of thumbnails */
+    .list.gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .list.gallery .group-head { grid-column: 1 / -1; }
+    .shot { display: grid; gap: 6px; padding: 6px; border-radius: 12px; cursor: pointer; text-align: left; background: var(--surface); border: 1px solid var(--border); color: var(--fg); font: inherit; }
+    .shot:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+    .shot[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .shot img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; border-radius: 8px; background: var(--surface-soft); display: block; }
+    .shot .card-title { font-size: 12.5px; -webkit-line-clamp: 1; padding: 0 2px; }
+    .shot .meta { font-size: 11px; padding: 0 2px 2px; }
+    .shot-full { display: block; max-width: 100%; height: auto; margin-top: 18px; border-radius: 10px; border: 1px solid var(--border); cursor: zoom-in; }
 
     /* Reading view */
     .reader { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 34px 34px; }
@@ -70,6 +82,7 @@
 
     @media (max-width: 860px) {
       .layout { grid-template-columns: 1fr; }
+      .list.gallery { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
       .reader { display: none; position: fixed; inset: 0; z-index: 10; max-height: none; border-radius: 0; padding: 18px 18px 40px; }
       .reader.open { display: block; }
       .back { display: inline-flex; margin-bottom: 8px; }
@@ -95,6 +108,9 @@
       <button type="button" data-kind="summary" aria-pressed="false">Summaries</button>
       <button type="button" data-kind="selection" aria-pressed="false">Selections</button>
       <button type="button" data-kind="research" aria-pressed="false">Research</button>
+    </div>
+    <div class="segmented" role="group" aria-label="Screenshots">
+      <button type="button" data-kind="screenshot" aria-pressed="false">📷 Screenshots <span id="shotCount"></span></button>
     </div>
     <details class="more">
       <summary class="btn small">More ▾</summary>
