@@ -6,7 +6,7 @@
   const $ = (id) => document.getElementById(id);
   const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl'];
   const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit'];
-  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime'];
+  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup'];
 
   let saved = { ...DEFAULT_SETTINGS }; // last saved settings, for fields this page doesn't show
   let hiddenSites = [];
@@ -367,22 +367,93 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     $('backupStatus').textContent = `Backed up ${backup.snippets.length} snippets and ${backup.summaries.length} summaries.`;
   });
+  // Restores a backup's text. Never overwrites what's already here.
+  async function restoreText(text, { includeSettings }) {
+    const backup = JSON.parse(text);
+    const { updates, counts } = S.planRestore(backup, await ext.storage.local.get(null), { includeSettings });
+    await ext.storage.local.set(updates);
+    await S.migrate(ext.storage.local);
+    if (counts.settings) fillForm(await S.getSettings());
+    const parts = [`${counts.snippets} snippet${counts.snippets === 1 ? '' : 's'}`, `${counts.summaries} summar${counts.summaries === 1 ? 'y' : 'ies'}`];
+    if (counts.statsDays) parts.push(`${counts.statsDays} day${counts.statsDays === 1 ? '' : 's'} of stats`);
+    return `Restored ${parts.join(', ')}${counts.settings ? ' and your settings' : ''}. Anything you already had was kept.`;
+  }
+
   $('restore').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
     try {
-      const backup = JSON.parse(await file.text());
       const includeSettings = confirm('Also restore the settings from this backup? (Cancel keeps your current settings.)');
-      const { updates, counts } = S.planRestore(backup, await ext.storage.local.get(null), { includeSettings });
-      await ext.storage.local.set(updates);
-      await S.migrate(ext.storage.local);
-      $('backupStatus').textContent = `Restored ${counts.snippets} snippets and ${counts.summaries} summaries${counts.settings ? ' and settings' : ''}. Items you already had were kept.`;
-      if (counts.settings) fillForm(await S.getSettings());
+      $('backupStatus').textContent = await restoreText(await file.text(), { includeSettings });
     } catch (err) {
       $('backupStatus').textContent = `Couldn't restore: ${err.message}`;
     }
   });
+
+  // Automatic backup status.
+  const when = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  async function showBackupState() {
+    const res = await ext.runtime.sendMessage({ type: 'backup:status' });
+    const state = res && res.state;
+    $('backupShow').hidden = !(state && state.id);
+    if (!state || !state.at) $('autoBackupStatus').textContent = state && state.error ? `Automatic backup failed: ${state.error}` : 'No automatic backup yet.';
+    else $('autoBackupStatus').textContent = `Last saved ${when(state.at)}: ${state.snippets} snippets, ${state.summaries} summaries${state.error ? ` (the latest attempt failed: ${state.error})` : ''}.`;
+    return res;
+  }
+  $('backupNow').addEventListener('click', async () => {
+    $('autoBackupStatus').textContent = 'Saving…';
+    const res = await ext.runtime.sendMessage({ type: 'backup:now' });
+    if (!res || res.ok === false) $('autoBackupStatus').textContent = `Couldn't save the backup: ${(res && res.error) || 'unknown error'}`;
+    else showBackupState();
+  });
+  $('backupShow').addEventListener('click', () => ext.runtime.sendMessage({ type: 'backup:show' }));
+
+  // Fresh install with a backup from before: offer to restore it.
+  async function restoreFromOffer(offer) {
+    // Chrome can read the file directly when "Allow access to file URLs" is on for soroagent.
+    try {
+      const res = await fetch(S.fileUrl(offer.path));
+      if (res.ok) return await res.text();
+    } catch {
+      // no file access; ask the user to pick it
+    }
+    if (window.showOpenFilePicker) {
+      const [handle] = await window.showOpenFilePicker({ startIn: 'downloads', types: [{ description: 'soroagent backup', accept: { 'application/json': ['.json'] } }] });
+      return (await handle.getFile()).text();
+    }
+    return new Promise((resolve, reject) => {
+      const input = Object.assign(document.createElement('input'), { type: 'file', accept: 'application/json,.json' });
+      input.addEventListener('change', () => (input.files[0] ? input.files[0].text().then(resolve, reject) : reject(new Error('No file chosen.'))));
+      input.click();
+    });
+  }
+  async function showRestoreOffer(offer) {
+    if (!offer) return;
+    $('restoreOffer').hidden = false;
+    const name = offer.path.split(/[\\/]/).slice(-2).join('/');
+    $('restoreOfferText').textContent = `A backup from ${when(offer.at)} is in your Downloads folder (${name}). Restore your snippets, wish list, history, stats and settings in one click.`;
+    $('restoreOfferGo').onclick = async () => {
+      $('restoreOfferHint').hidden = false;
+      $('restoreOfferHint').textContent = 'Restoring… If a file picker opens, choose soroagent-backup.json in Downloads/soroagent.';
+      try {
+        const message = await restoreText(await restoreFromOffer(offer), { includeSettings: true });
+        await ext.storage.local.remove('restoreOffer');
+        $('restoreOffer').querySelector('strong').textContent = 'All set. Your data is back.';
+        $('restoreOfferText').textContent = message;
+        $('restoreOfferHint').hidden = true;
+        $('restoreOfferGo').hidden = true;
+        $('restoreOfferDismiss').textContent = 'Close';
+        if (Object.keys(pendingKeys).length === 0) setTimeout(testConnection, 300);
+      } catch (err) {
+        $('restoreOfferHint').textContent = err.name === 'AbortError' ? 'No file chosen. You can restore any time from Backup & restore below.' : `Couldn't restore: ${err.message}`;
+      }
+    };
+    $('restoreOfferDismiss').onclick = async () => {
+      await ext.storage.local.remove('restoreOffer');
+      $('restoreOffer').hidden = true;
+    };
+  }
 
   $('test').addEventListener('click', testConnection);
 
@@ -410,5 +481,6 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     const keys = savedKeys;
     fillForm(settings);
     if (settings.source !== 'cloud' || keys[settings.cloudProvider]) testConnection();
+    showBackupState().then((res) => showRestoreOffer(res && res.offer)).catch(() => {});
   });
 })();

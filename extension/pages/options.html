@@ -42,6 +42,10 @@
     .rec .btn { margin-left: auto; }
     .savebar { position: sticky; bottom: 0; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 0; background: linear-gradient(transparent, var(--bg) 30%); }
     details summary { cursor: pointer; font-weight: 550; margin: 8px 0; }
+    .welcome-back { display: grid; gap: 10px; padding: 16px 18px; margin: 0 0 18px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); background: var(--accent-soft); }
+    .welcome-back strong { display: block; font-size: 15px; margin-bottom: 2px; }
+    .welcome-back span { color: var(--fg-muted); font-size: 13px; }
+    .welcome-back .row { gap: 8px; }
     textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--fg); font: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; min-height: 140px; }
     textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
     .badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--spark-soft); color: var(--spark-fg); font-size: 11px; font-weight: 650; }
@@ -52,6 +56,17 @@
 </head>
 <body>
 <main>
+  <div class="welcome-back" id="restoreOffer" hidden role="region" aria-label="Restore your data">
+    <div>
+      <strong>Welcome back! Your soroagent data is still here.</strong>
+      <span id="restoreOfferText"></span>
+    </div>
+    <div class="row">
+      <button class="btn primary" type="button" id="restoreOfferGo">Restore my data</button>
+      <button class="btn small" type="button" id="restoreOfferDismiss">Start fresh</button>
+    </div>
+    <small id="restoreOfferHint" class="muted" hidden></small>
+  </div>
   <header>
     <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Settings</span></div>
     <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="snippets.html">Saved snippets</a><a class="btn small" href="stats.html">Stats</a></div>
@@ -220,7 +235,15 @@
 
     <section>
       <h2>Backup &amp; restore</h2>
-      <p>Your snippets, summary history and settings stay on this device and carry over to every new soroagent version automatically. Use a backup to move them to another browser or computer, or from an older copy of soroagent. API keys are never included.</p>
+      <p>Everything soroagent keeps (snippets, read-later pages, wish list, screenshots, summary history, stats and settings) stays on this computer and carries over to every new version automatically. API keys are never included in backups.</p>
+      <label class="check"><input type="checkbox" id="autoBackup">
+        <span>Back up automatically to my Downloads folder<small>soroagent keeps <code>Downloads/soroagent/soroagent-backup.json</code> up to date (a few minutes after changes, at most every 30 minutes). If you ever reinstall soroagent, it finds this file and offers to restore it.</small></span>
+      </label>
+      <div class="row" style="margin-bottom:12px">
+        <span class="muted" id="autoBackupStatus" role="status">No automatic backup yet.</span>
+        <button class="btn small" type="button" id="backupNow">Back up now</button>
+        <button class="btn small" type="button" id="backupShow" hidden>Show file</button>
+      </div>
       <div class="row">
         <button class="btn" type="button" id="backup">Download backup</button>
         <label class="btn">Restore from backup…<input type="file" id="restore" accept="application/json,.json" hidden></label>
@@ -260,7 +283,7 @@
     </div>
   </form>
 </main>
-<footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a></footer>
+<footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a> · <a class="feedback-link" href="https://soroagent.com/feedback" target="_blank" rel="noopener">Share feedback</a></footer>
 <script src="../shared/config.js"></script>
 <script src="../shared/markdown.js"></script>
 <script src="../shared/prompts.js"></script>

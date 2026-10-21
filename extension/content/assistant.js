@@ -26,6 +26,7 @@
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
     clean: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5.5 0 9 5 10 7a17 17 0 0 1-3 3.8M6.3 6.3C3.9 7.9 2.5 10.4 2 12c1 2 4.5 7 10 7 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
     history: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
+    chat: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'),
     home: svg('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'),
     heart: svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
     moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
@@ -88,6 +89,7 @@
           <button type="button" role="menuitem" data-cmd="clear">Clear conversation</button>
           <button type="button" role="menuitem" data-cmd="reset-position" hidden>Reset button position</button>
           <button type="button" role="menuitem" data-cmd="hide-site">Hide button on this site</button>
+          <button type="button" role="menuitem" data-cmd="feedback">Send feedback</button>
           <button type="button" role="menuitem" data-cmd="settings">Settings</button>
         </div>
       </header>
@@ -121,7 +123,7 @@
         <textarea rows="1" placeholder="Ask about this page…" aria-label="Ask about this page"></textarea>
         <button class="send" type="submit" aria-label="Send">${ICONS.send}</button>
       </form>
-      <footer class="foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a></footer>
+      <footer class="foot"><a class="feedback" target="_blank" rel="noopener">${ICONS.chat}<span>Share feedback</span></a><span class="foot-note">What could be better?</span></footer>
     </section>`);
   shadow.append(...ui.childNodes);
   document.documentElement.append(host);
@@ -1444,6 +1446,7 @@
     }
   });
   shadow.querySelector('.home-btn').addEventListener('click', showHome);
+  shadow.querySelector('.foot .feedback').href = S.feedbackUrl('panel');
 
   // Clicking a chip would otherwise clear the user's text selection on the page.
   els.actions.addEventListener('mousedown', (e) => e.preventDefault());
@@ -1487,6 +1490,7 @@
     if (cmd === 'snippets') sendMessage({ type: 'open:snippets' });
     else if (cmd === 'history') sendMessage({ type: 'open:history' });
     else if (cmd === 'stats') sendMessage({ type: 'open:stats' });
+    else if (cmd === 'feedback') window.open(S.feedbackUrl('menu'), '_blank', 'noopener');
     else if (cmd === 'settings') sendMessage({ type: 'open:options' });
     else if (cmd === 'clear') {
       state.history = [];

@@ -43,7 +43,7 @@ On **X** and **Reddit**, soroagent reads only what's already on screen: themes, 
 - **Screenshots** of what you see (without soroagent's own button) in their own gallery: view, download, copy, delete.
 - **Buy later.** On shop product pages (Amazon, Shopify stores and most shops with an *Add to cart* button), soroagent spots the product and offers **Add to wish list** right away, plus *Is this a good deal?*. Name, price, picture and link go to your **Wish list**.
 - **Summary history** keeps every summary run, searchable and filterable, with status.
-- **Export and back up** snippets as Markdown or JSON, and everything (except API keys) as a backup file. Your data carries over to every update automatically.
+- **Never lose it.** Everything stays on your computer and carries over to every update. soroagent also keeps a backup file in `Downloads/soroagent/` up to date automatically, and if you ever reinstall, it finds that file and restores everything in one click. You can also export snippets as Markdown or JSON.
 
 ### Go deeper
 **Research** turns a summary into a starting point. First soroagent asks what to focus on, offering specific topics your model picks out of the summary (or type your own). Then it searches the web (DuckDuckGo, Brave Search or Bing, or your own SearXNG), reads the top sources and writes a brief with numbered citations, saved alongside the snippet. Only the search query leaves your machine; the page you were reading doesn't.
@@ -72,12 +72,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.15.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.16.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.15.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.15.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.15.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.15.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.16.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.16.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.16.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.16.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -112,8 +112,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.15.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.15.0.zip)
-- Firefox: [soroagent-firefox-2.15.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.15.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.16.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.16.0.zip)
+- Firefox: [soroagent-firefox-2.16.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.16.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -129,7 +129,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.15.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.16.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -140,11 +140,12 @@ On first install the settings page opens and tests the connection to `http://127
 | Any page | Click the owl button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). |
 | Keyboard | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens or closes the assistant (Option on a Mac). You can change it at `chrome://extensions/shortcuts`. |
 | Right-click menu | *TL;DR of this page*, *Take a screenshot* |
-| Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets**, **Browsing stats** and **Settings**. |
+| Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets**, **Browsing stats**, **Send feedback** and **Settings**. |
+| Feedback | **Share feedback** at the bottom of the panel (or in its ⋯ menu) opens a quick feedback page on soroagent.com. Only the version and browser are passed along. |
 
 **Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, research), or search everything. **Read later**, **Wish list** and **Screenshots** have sections of their own. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
 
-**Your data carries over to every update.** Snippets, summary history and settings live in the browser's storage for soroagent. The Chrome build has a fixed extension ID (`jomghmmgdlajfonjihmagbhomimadpcg`), so a newer version loaded from any folder keeps the same storage, and stored data is upgraded automatically when the format changes. To move to another browser or computer, or from a copy older than v2.8 (which had a different ID), use **Settings → Backup & restore**. API keys are never included in backups.
+**Your data carries over to every update.** Snippets, summary history and settings live in the browser's storage for soroagent. The Chrome build has a fixed extension ID (`jomghmmgdlajfonjihmagbhomimadpcg`), so a newer version loaded from any folder keeps the same storage, and stored data is upgraded automatically when the format changes. soroagent also saves an automatic backup to `Downloads/soroagent/soroagent-backup.json` (a few minutes after changes, at most every 30 minutes; turn it off in **Settings → Backup & restore**). After a fresh install, it looks for that file in the browser's download history and the welcome page offers **Restore my data**: in Chrome it reads the file directly when *Allow access to file URLs* is on for soroagent (on `chrome://extensions`), otherwise a file picker opens in Downloads. Restoring never overwrites anything you already have. To move to another browser or computer, copy the file over and use **Restore from backup**. API keys are never included in backups.
 
 **Playing with the owl.** Its eyes follow your mouse, and it blinks and looks around while it works. Pick it up by dragging: it flaps its wings while you carry it, and when you let go it flies across the page and perches on the opposite side, remembered for that site. Turn on your system's *reduce motion* setting and it moves without animation.
 

@@ -304,10 +304,11 @@ header {
 .send:hover:not(:disabled) { background: var(--accent-strong); }
 .send.stop { background: var(--spark); color: #1a1205; }
 
-.foot { padding: 2px 12px 8px; text-align: center; font-size: 11px; color: var(--fg-muted); letter-spacing: 0.01em; }
-.foot .spark { color: var(--spark); font-weight: 700; margin-right: 4px; }
-.foot a { color: inherit; text-decoration: none; }
-.foot a:hover { color: var(--accent); text-decoration: underline; }
+.foot { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px 8px; font-size: 11.5px; color: var(--fg-muted); }
+.foot .feedback { display: inline-flex; align-items: center; gap: 5px; color: var(--fg-muted); text-decoration: none; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.foot .feedback svg { width: 13px; height: 13px; color: var(--spark); }
+.foot .feedback:hover { color: var(--accent); background: var(--accent-soft); }
+.foot-note { opacity: 0.75; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: 0.35; } }

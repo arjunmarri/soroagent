@@ -30,6 +30,7 @@
     searxUrl: '', // e.g. http://127.0.0.1:8888 for a self-hosted SearXNG
     cleanSites: [], // sites where "Hide ads" is applied automatically
     customPrompts: {}, // system prompts written in settings: { default?: string, x?: string, … }
+    autoBackup: true, // save a backup file to Downloads/soroagent/ automatically
     trackTime: true, // count time on pages for the Stats page (stored only in this browser)
     panelSize: 0, // 0 (default) … 3 (largest), changed with the panel's ++ / -- buttons
     darkSites: {}, // sites shown in dark mode: { [hostname]: { brightness, contrast, sepia } }
@@ -204,10 +205,28 @@
     const report = () => ext.runtime.sendMessage({ type: 'theme', dark: query.matches }).catch(() => {});
     query.addEventListener('change', report);
     report();
+    // Feedback links in page footers carry the version, like the panel's.
+    const page = root.location.pathname.split('/').pop().replace(/\.html$/, '');
+    for (const link of root.document.querySelectorAll('a.feedback-link')) link.href = feedbackUrl(page);
+  }
+
+  // Feedback page on soroagent.com. Only the version, browser and where it was opened from are
+  // passed along; nothing about the user or the page they're on.
+  function feedbackUrl(from) {
+    const version = ext && ext.runtime && ext.runtime.getManifest ? ext.runtime.getManifest().version : '';
+    const browser = /Firefox\//.test((root.navigator && root.navigator.userAgent) || '') ? 'firefox' : 'chrome';
+    const params = new URLSearchParams({ v: version, browser, from: String(from || 'extension') });
+    return `${feedbackBase()}?${params}`;
+  }
+  // A function, not a const: page footers use feedbackUrl() before this point in the file runs.
+  function feedbackBase() {
+    return 'https://soroagent.com/feedback';
   }
 
   Object.assign(soroagent, {
     ext,
+    FEEDBACK_URL: feedbackBase(),
+    feedbackUrl,
     DEFAULT_SETTINGS,
     PROVIDER_PRESETS,
     CLOUD_PROVIDERS,

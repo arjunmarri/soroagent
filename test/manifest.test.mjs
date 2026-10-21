@@ -61,3 +61,22 @@ test('pages that build prompts load every prompt file', () => {
     for (const file of files) assert.ok(html.includes(`../prompts/${file}`), `${page}.html loads prompts/${file}`);
   }
 });
+
+test('the shared settings script loads cleanly on an extension page', async () => {
+  // Regression: a const used before its definition broke every soroagent page.
+  const { runInNewContext } = await import('node:vm');
+  const links = [{ href: '' }];
+  const fakeChrome = { runtime: { getManifest: () => ({ version: '9.9.9' }), sendMessage: () => Promise.resolve() }, storage: { local: {} } };
+  const context = {
+    chrome: fakeChrome,
+    navigator: { userAgent: 'Chrome' },
+    location: { protocol: 'chrome-extension:', pathname: '/pages/stats.html' },
+    document: { querySelectorAll: () => links },
+    matchMedia: () => ({ matches: false, addEventListener() {} }),
+    URLSearchParams,
+  };
+  context.globalThis = context;
+  runInNewContext(readFileSync(join(ext, 'shared/config.js'), 'utf8'), context);
+  assert.ok(context.soroagent && context.soroagent.ext, 'config.js finished and exported ext');
+  assert.match(links[0].href, /^https:\/\/soroagent\.com\/feedback\?v=9\.9\.9&browser=chrome&from=stats$/);
+});

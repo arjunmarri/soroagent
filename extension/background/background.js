@@ -293,6 +293,26 @@
     'open:options': () => ext.runtime.openOptionsPage(),
     // Pages report the browser's light/dark theme (the worker itself can't see it).
     theme: (msg) => setThemeIcon(Boolean(msg.dark)),
+    // Automatic backup file (see autobackup.js).
+    'backup:status': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, state: (await ext.storage.local.get('backupState')).backupState || null, offer: (await ext.storage.local.get('restoreOffer')).restoreOffer || null };
+    },
+    'backup:now': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, state: await S.backupNow() };
+    },
+    'backup:find': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, file: await S.findBackupFile() };
+    },
+    'backup:show': async (msg, sender) => {
+      requireExtensionPage(sender);
+      const state = (await ext.storage.local.get('backupState')).backupState;
+      if (state && state.id) ext.downloads.show(state.id);
+      else ext.downloads.showDefaultFolder();
+      return { ok: true };
+    },
     'open:stats': () => ext.tabs.create({ url: ext.runtime.getURL('pages/stats.html') }),
     // Time on a page, from content/timetrack.js. Writes are queued so reports never overwrite each other.
     'stats:add': (msg, sender) => {
@@ -365,6 +385,7 @@
     { id: 'soroagent-open-history', title: 'Summary history', open: () => handlers['open:history']() },
     { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']({}) },
     { id: 'soroagent-open-stats', title: 'Browsing stats', open: () => handlers['open:stats']() },
+    { id: 'soroagent-feedback', title: 'Send feedback', open: () => ext.tabs.create({ url: S.feedbackUrl('toolbar') }) },
     { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },
   ];
 
@@ -408,9 +429,18 @@
   // Upgrade stored data in place whenever a new version is installed (and on first start).
   globalThis.soroagent.migrate(ext.storage.local).catch((err) => console.warn('[soroagent] Storage upgrade failed:', err));
 
-  ext.runtime.onInstalled.addListener((details) => {
+  ext.runtime.onInstalled.addListener(async (details) => {
     createMenus();
-    if (details.reason === 'install') ext.runtime.openOptionsPage();
+    if (details.reason !== 'install') return;
+    // A fresh install: if an automatic backup from an earlier install is still in Downloads,
+    // the welcome (settings) page offers to restore it.
+    try {
+      const file = await S.findBackupFile();
+      if (file) await ext.storage.local.set({ restoreOffer: file });
+    } catch (err) {
+      console.warn('[soroagent] Could not look for an earlier backup:', err);
+    }
+    ext.runtime.openOptionsPage();
   });
   ext.runtime.onStartup.addListener(createMenus);
 

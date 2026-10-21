@@ -45,7 +45,8 @@ function manifestFor(browser) {
     // Firefox picks the icon for the toolbar's theme itself ("light" = icon for dark themes).
     manifest.action.theme_icons = [16, 32].map((size) => ({ light: `icons/dark/icon-${size}.png`, dark: `icons/icon-${size}.png`, size }));
     manifest.permissions = manifest.permissions
-      .filter((p) => p !== 'declarativeNetRequestWithHostAccess')
+      // Chrome-only: DNR Origin rewrite, the offscreen backup helper, and quiet downloads.
+      .filter((p) => !['declarativeNetRequestWithHostAccess', 'offscreen', 'downloads.ui'].includes(p))
       .concat(['webRequest', 'webRequestBlocking']);
   }
   return manifest;
