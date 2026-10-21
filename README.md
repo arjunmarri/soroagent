@@ -24,10 +24,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
+Current version: **v2.5.1**. The version is in each file name, so you can tell which build you have.
+
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.5.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.5.1.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.5.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.5.1.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -62,8 +64,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome.zip)
-- Firefox: [soroagent-firefox.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.5.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.5.1.zip)
+- Firefox: [soroagent-firefox-2.5.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.5.1.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -79,7 +81,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.5.1.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -157,7 +159,8 @@ test/                  node:test unit tests (LLM client, prompts and parsers, Ma
 npm test          # unit tests
 npm run build     # dist/chrome and dist/firefox
 npm run package   # build plus zips
-npm run downloads # refresh the committed zips in downloads/
+npm run release -- patch   # bump the version (patch | minor | major) and publish versioned zips + README links
+npm run downloads # rebuild downloads/ for the current version without bumping
 npm run icons     # regenerate the PNG icons
 npm run try-prompt -- --site x --action summarize   # run a prompt against your local model
 ```

@@ -3,8 +3,9 @@
 //   node scripts/build.mjs            -> dist/chrome and dist/firefox
 //   node scripts/build.mjs chrome     -> dist/chrome only
 //   node scripts/build.mjs --zip      -> also dist/soroagent-<browser>-<version>.zip
-//   node scripts/build.mjs --downloads -> also downloads/soroagent-<browser>.zip (committed, stable links)
-import { copyFileSync, cpSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+//   node scripts/build.mjs --downloads -> also downloads/soroagent-<browser>-<version>.zip (committed) and
+//                                        updates the README's download links to that version
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync } from 'node:zlib';
@@ -127,10 +128,32 @@ for (const browser of targets.length ? targets : BROWSERS) {
     writeZip(zipFile, out);
     console.log(`Packed ${relative(ROOT, zipFile)}`);
     if (downloads) {
-      mkdirSync(join(ROOT, 'downloads'), { recursive: true });
-      const published = join(ROOT, 'downloads', `soroagent-${browser}.zip`);
+      const dir = join(ROOT, 'downloads');
+      mkdirSync(dir, { recursive: true });
+      // Keep only the current version in downloads/; earlier versions stay in git history.
+      for (const old of readdirSync(dir)) {
+        if (new RegExp(`^soroagent-${browser}(-[\\d.]+)?\\.zip$`).test(old) && old !== `soroagent-${browser}-${base.version}.zip`) {
+          rmSync(join(dir, old));
+        }
+      }
+      const published = join(dir, `soroagent-${browser}-${base.version}.zip`);
       copyFileSync(zipFile, published);
       console.log(`Copied to ${relative(ROOT, published)}`);
+    }
+  }
+}
+
+// Point the README's download links and version line at the version just packaged.
+if (downloads) {
+  const readme = join(ROOT, 'README.md');
+  if (existsSync(readme)) {
+    const before = readFileSync(readme, 'utf8');
+    const after = before
+      .replace(/soroagent-(chrome|firefox)(?:-\d+\.\d+\.\d+)?\.zip/g, `soroagent-$1-${base.version}.zip`)
+      .replace(/Current version: \*\*v[\d.]+\*\*/g, `Current version: **v${base.version}**`);
+    if (after !== before) {
+      writeFileSync(readme, after);
+      console.log(`Updated README download links to v${base.version}`);
     }
   }
 }
