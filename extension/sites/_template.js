@@ -19,15 +19,8 @@
       context: 'This is an article from Example News, a technology news site.',
     }),
 
-    // Optional: override any action's prompts. Unset fields fall back to shared/prompts.js.
-    // Actions: summarize, notes, ask, save, aiCheck, aiCheckItems.
-    prompts: {
-      summarize: {
-        user:
-          '{{context}}\n\n{{page}}\n\nSummarize this article for a busy engineer:\n' +
-          '**TL;DR:** one sentence.\n**What changed**\n- bullets\n**Why it matters**\n- bullets',
-      },
-    },
+    // Prompts for this site go in extension/prompts/<id>.js (copy prompts/_template.js).
+    // See extension/prompts/README.md.
 
     // Optional: toggles shown in the panel on this site, saved per site.
     // options: [{ id: 'hideSponsored', label: 'Hide sponsored', title: 'Hide sponsored stories', default: true }],

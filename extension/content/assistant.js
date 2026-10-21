@@ -176,6 +176,8 @@
   const siteOptions = () => S.siteOptionValues(state.site, state.settings);
   const pageInfo = () => (state.site.pageInfo ? state.site.pageInfo(location) : { type: 'page', label: '', context: '' });
   const items = () => state.site.items || null;
+  // Prompt texts: prompts/default.js, then prompts/<site id>.js, then any inline profile prompts.
+  const sitePrompts = () => S.promptsFor(state.site.id, state.site.prompts);
   const nounOne = () => ((items() && items().noun) || 'items').replace(/s$/, '');
 
   // FNV-1a: a fast fingerprint to tell whether content changed.
@@ -516,7 +518,7 @@
       if (cached && !fresh) return showCachedSummary('Summarize this page', cached, () => summarize({ fresh: true }));
       addUserMessage('Summarize this page');
       const vars = S.pageVars(page, { context: pageInfo().context || '' });
-      const text = await streamReply(S.buildMessages('summarize', vars, state.site.prompts), 'Summarize this page.', signal);
+      const text = await streamReply(S.buildMessages('summarize', vars, sitePrompts()), 'Summarize this page.', signal);
       state.summaries.set(key, { text, at: Date.now() });
     });
   }
@@ -538,7 +540,7 @@
   // in parts (notes per part), then the notes are merged into one summary.
   async function summarizeItems(list, { start, context, signal, label }) {
     const site = items();
-    const prompts = state.site.prompts;
+    const prompts = sitePrompts();
     const budget = maxChars();
     const groups = [];
     let group = [];
@@ -708,7 +710,7 @@
       }
       addUserMessage(question);
       const vars = S.pageVars(state.pageContext.page, { context: pageInfo().context || '', question });
-      const [system] = S.buildMessages('ask', vars, state.site.prompts);
+      const [system] = S.buildMessages('ask', vars, sitePrompts());
       await streamReply([system, ...state.history, { role: 'user', content: question }], question, signal);
     });
   }
@@ -747,7 +749,7 @@
       let warning = '';
       try {
         const vars = S.pageVars({ title: page.title, url, text: text.slice(0, 6000) }, { context: pageInfo().context || '' });
-        const reply = await runChat({ messages: S.buildMessages('save', vars, state.site.prompts), json: true, signal });
+        const reply = await runChat({ messages: S.buildMessages('save', vars, sitePrompts()), json: true, signal });
         meta = S.parseSnippetMeta(reply, page.title);
       } catch (err) {
         if (err.name === 'AbortError') {
@@ -800,7 +802,7 @@
       let reply;
       try {
         const vars = S.pageVars(page, { context: pageInfo().context || '' });
-        reply = await runChat({ messages: S.buildMessages('aiCheck', vars, state.site.prompts), json: true, signal });
+        reply = await runChat({ messages: S.buildMessages('aiCheck', vars, sitePrompts()), json: true, signal });
       } finally {
         progress.node.remove();
       }
@@ -872,7 +874,7 @@
         for (let i = 0; i < fresh.length; i += 10) {
           const batch = fresh.slice(i, i + 10);
           const vars = S.pageVars({ title: document.title, url: location.href, text: site.format(batch, { start: 1 }) }, { context: pageInfo().context || '', count: batch.length });
-          const messages = S.buildMessages('aiCheckItems', vars, state.site.prompts);
+          const messages = S.buildMessages('aiCheckItems', vars, sitePrompts());
           const ids = batch.map((_, n) => n + 1);
           let scores = S.parseAiScores(await runChat({ messages, json: true, signal }), ids);
           // Small models sometimes return unreadable JSON: retry the batch once.

@@ -1,0 +1,35 @@
+[1] @dana (Dana Ko, verified) · 2026-10-20 · 1.2K likes · 140 reposts · 31 replies
+Switched our support bot to a local 8B model on a Mac mini. Latency is ~600ms and we stopped paying per token.
+
+[2] @growthguru · 2026-10-20 · 45 likes · 12 reposts
+🚀 Local LLMs are changing EVERYTHING. The people who adapt will win. The ones who don't will be left behind. Agree? ♻️
+
+[3] @sam_dev · 2026-10-19 · 210 likes · 8 reposts · 44 replies
+ollama + qwen2.5 14b handles our internal docs QA fine, but it chokes on tables. anyone fixed that?
+
+[4] @mlops_lee (Lee Park, verified) · 2026-10-19 · 3.4K likes · 600 reposts · 120 replies
+We benchmarked 6 local models for JSON extraction. Gemma did best; two models ignored the schema 30% of the time. Full write-up in the replies.
+
+[5] @thoughtleader · 2026-10-18 · 12 likes
+Here's why local AI is the future 🧵👇
+
+1. Privacy
+2. Speed
+3. Freedom
+
+Follow for more insights!
+
+[6] @nina (Nina R.) · 2026-10-18 · 88 likes · 4 replies
+hot take: most "local llm" setups fail because people skip the context window. num_ctx 8192 fixed half our bugs lol
+
+[7] @acmecloud · 2026-10-18 · AD
+Try AcmeCloud GPUs — 50% off your first month!
+
+[8] @replyguy · 2026-10-17 · 2 likes
+Great insight! This is so true. Local LLMs are truly a game-changer for the future of innovation. 🙌
+
+[9] @oldlaptop · 2026-10-17 · 340 likes · 22 replies
+ran llama3.2 3b on my 2019 laptop for summarizing PRs. slow-ish but it works and nothing leaves the machine
+
+[10] @priv_sec (Priya S., verified) · 2026-10-16 · 2.1K likes · 410 reposts · 95 replies
+Reminder: "local" isn't automatically private. Check what your desktop app sends home — one popular UI phoned telemetry with prompt lengths until last week.

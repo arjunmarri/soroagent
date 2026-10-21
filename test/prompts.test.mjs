@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { load } from './helpers.mjs';
+import { load, promptFiles } from './helpers.mjs';
 
-const S = await load('shared/markdown.js', 'shared/prompts.js');
+const S = await load('shared/markdown.js', 'shared/prompts.js', ...promptFiles);
 
 test('parseJsonLoose handles fences, chatter and think blocks', () => {
   assert.deepEqual(S.parseJsonLoose('{"a":1}'), { a: 1 });
@@ -42,22 +42,26 @@ test('parseSnippetMeta cleans fields and falls back to the page title', () => {
   assert.equal(S.parseSnippetMeta('oops', 'Page title').title, 'Page title');
 });
 
-test('buildMessages renders placeholders and lets sites override per action', () => {
+test('buildMessages renders placeholders and layers default < site file < inline', () => {
   const vars = S.pageVars({ title: 'T', url: 'https://x.test', text: 'Body', truncated: true }, { context: 'CTX', count: 3 });
   const [system, user] = S.buildMessages('summarize', vars);
-  assert.match(system.content, /You are SoroAgent/);
+  assert.match(system.content, /^You are SoroAgent/);
   assert.match(user.content, /<page>\nBody\n<\/page>\n\[Content was truncated/);
 
-  const site = { summarize: { user: '{{context}} | {{count}} | {{content}} | {{missing}}' } };
-  const [siteSystem, siteUser] = S.buildMessages('summarize', vars, site);
+  const inline = { summarize: { user: '{{context}} | {{count}} | {{content}} | {{missing}}' } };
+  const [siteSystem, siteUser] = S.buildMessages('summarize', vars, inline);
   assert.equal(siteSystem.content, system.content, 'system falls back to the default');
   assert.equal(siteUser.content, 'CTX | 3 | Body |');
+
+  // prompts/x.js overrides the system prompt but keeps the default JSON user prompt for aiCheckItems.
+  const x = S.promptsFor('x');
+  assert.match(x.aiCheckItems.system, /thread-bait hooks/);
+  assert.equal(x.aiCheckItems.user, S.promptsFor('default').aiCheckItems.user);
+  assert.equal(S.promptsFor('x', { save: { user: 'inline' } }).save.user, 'inline');
+  assert.equal(S.promptsFor('no-such-site').summarize.user, S.promptsFor('default').summarize.user);
 
   const ask = S.buildMessages('ask', { ...vars, question: 'Why?' });
   assert.equal(ask[1].content, 'Why?');
   assert.throws(() => S.buildMessages('nope', vars), /Unknown prompt action/);
-});
-
-test('every default prompt that asks for JSON says so in its system prompt', () => {
-  for (const action of ['save', 'aiCheck', 'aiCheckItems']) assert.match(S.DEFAULT_PROMPTS[action].system, /JSON/);
+  assert.throws(() => S.definePrompts('bad', { summarise: {} }), /unknown action "summarise"/);
 });

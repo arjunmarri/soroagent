@@ -21,3 +21,10 @@ export function fakeFetch(routes) {
   };
   return { fetch, calls };
 }
+
+// Prompt files in extension/prompts (excluding _template.js), as load() paths.
+import { readdirSync } from 'node:fs';
+export const promptFiles = readdirSync(new URL('../extension/prompts/', import.meta.url))
+  .filter((f) => f.endsWith('.js') && !f.startsWith('_'))
+  .sort()
+  .map((f) => `prompts/${f}`);

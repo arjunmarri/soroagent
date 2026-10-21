@@ -36,6 +36,7 @@
         "shared/config.js",
         "shared/markdown.js",
         "shared/prompts.js",
+        "prompts/*.js",
         "shared/snippets.js",
         "sites/registry.js",
         "sites/*.js",

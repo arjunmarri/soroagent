@@ -1,0 +1,93 @@
+// Prompts for X (formerly Twitter). Applies wherever the X site profile (sites/x.js) matches.
+// Anything left out here falls back to prompts/default.js.
+// Fine-tuning guide: extension/prompts/README.md. Try a change:
+//   npm run try-prompt -- --site x --action summarize --input extension/prompts/samples/x-posts.txt
+(function (root) {
+  'use strict';
+
+  // How posts are presented to the model ({{content}} is a numbered list built by sites/x.js).
+  const POSTS = `Posts are numbered [n] and show the author handle, whether the account is verified, the date and engagement. Engagement shows reach, not truth. Cite accounts as @handle.`;
+
+  root.SoroAgent.definePrompts('x', {
+    // Summarize: search results, timelines and profiles (100 posts at a time) or a thread. Reply: Markdown.
+    summarize: {
+      system: `{{persona}}
+You analyze posts from X (formerly Twitter). ${POSTS}`,
+      user: `{{context}}
+
+<posts count="{{count}}">
+{{content}}
+</posts>
+
+Summarize these {{count}} posts.
+Format:
+**TL;DR:** one or two sentences on what people are saying.
+
+**Main themes**
+- 3 to 6 bullets; name representative accounts as @handle.
+
+**Notable posts**
+- 2 to 4 posts worth reading: @handle — short paraphrase (why it stands out).
+
+**Sentiment:** one line (for example: mostly positive, divided, critical).
+
+Only use what is in the posts. Say so if many posts are ads, repetitive or low-effort.`,
+    },
+
+    // Notes on one part of a large batch; merged by `summarize`. Reply: Markdown.
+    notes: {
+      system: `{{persona}}
+You take notes on posts from X. ${POSTS}`,
+      user: `{{context}}
+
+<posts>
+{{content}}
+</posts>
+
+Write compact notes (max 12 bullets): main themes, notable posts (keep @handles), numbers, and sentiment. These notes will be merged with notes on other posts into one summary.`,
+    },
+
+    // Questions about the posts on screen (or the last summarized batch).
+    ask: {
+      system: `{{persona}}
+Answer questions about these posts from X. ${POSTS} If the posts don't contain the answer, say so.
+
+{{context}}
+
+<posts>
+{{content}}
+</posts>`,
+    },
+
+    // Save: a single post. Reply: JSON (keep this shape).
+    save: {
+      user: `A post from X.
+URL: {{url}}
+
+<post>
+{{content}}
+</post>
+
+Return JSON: {"title": "short title naming the author and the topic, max 80 chars", "summary": "1-2 sentences with the key information", "tags": ["1 to 4 short lowercase topic tags"]}`,
+    },
+
+    // AI Slop check, one score per post. The user prompt (JSON shape) comes from default.js.
+    aiCheckItems: {
+      system: `You review posts from X and estimate whether each was written by AI or by a person. Judge style, not opinion.
+
+AI signals on X:
+- thread-bait hooks ("Here's why 🧵", "7 lessons I learned")
+- LinkedIn-style one-line paragraphs and emoji bullets
+- generic motivational or hype lines
+- engagement farming ("Agree? Repost ♻️")
+- generic reply-guy praise ("Great insight!", "This is so true")
+
+Human signals:
+- specific details and a personal voice
+- slang, typos and jokes
+- replies that engage with a specific point
+
+Short posts are hard to judge: keep them near 50 unless the signals are clear. Reply with JSON only.`,
+    },
+  });
+})(globalThis);

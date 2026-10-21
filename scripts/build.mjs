@@ -113,10 +113,11 @@ for (const browser of targets.length ? targets : BROWSERS) {
   const out = join(DIST, browser);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
-  // Ship only what the extension needs: no docs, no "_template" files, and our generated manifest.
+  // Ship only what the extension needs: no docs, samples or "_template" files, and our generated manifest.
   cpSync(SRC, out, {
     recursive: true,
-    filter: (src) => src !== join(SRC, 'manifest.json') && !/(^|[\\/])_[^\\/]*$/.test(src) && !src.endsWith('.md'),
+    filter: (src) =>
+      src !== join(SRC, 'manifest.json') && !/(^|[\\/])_[^\\/]*$/.test(src) && !src.endsWith('.md') && !/[\\/]samples([\\/]|$)/.test(src),
   });
   writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifestFor(browser), null, 2) + '\n');
   console.log(`Built ${relative(ROOT, out)}`);

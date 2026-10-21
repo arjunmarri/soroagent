@@ -41,6 +41,8 @@ test('content scripts load the site registry before the site profiles and the as
   const registry = js.indexOf('sites/registry.js');
   const x = js.indexOf('sites/x.js');
   assert.ok(registry >= 0 && x > registry, 'registry before profiles');
+  assert.ok(js.indexOf('shared/prompts.js') < js.indexOf('prompts/default.js'), 'prompt engine before prompt files');
+  assert.ok(js.includes('prompts/x.js'), 'site prompt files are loaded');
   assert.ok(!js.some((f) => f.includes('_template')), 'templates are not loaded');
   assert.equal(js.at(-1), 'content/assistant.js');
 });

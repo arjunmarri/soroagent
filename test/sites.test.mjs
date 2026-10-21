@@ -2,10 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { load, root } from './helpers.mjs';
+import { load, root, promptFiles } from './helpers.mjs';
 
 const siteFiles = readdirSync(join(root, 'extension/sites')).filter((f) => f.endsWith('.js') && !f.startsWith('_') && f !== 'registry.js');
-const S = await load('shared/markdown.js', 'shared/prompts.js', 'sites/registry.js', ...siteFiles.map((f) => `sites/${f}`));
+const S = await load('shared/markdown.js', 'shared/prompts.js', ...promptFiles, 'sites/registry.js', ...siteFiles.map((f) => `sites/${f}`));
 const loc = (url) => new URL(url);
 
 test('every site profile registers with valid prompts and options', () => {
@@ -13,11 +13,10 @@ test('every site profile registers with valid prompts and options', () => {
   assert.ok(ids.includes('x'));
   assert.equal(new Set(ids).size, ids.length);
   for (const profile of S.siteProfiles) {
-    for (const [action, template] of Object.entries(profile.prompts || {})) {
-      assert.ok(S.DEFAULT_PROMPTS[action], `${profile.id}: unknown prompt action "${action}"`);
-      for (const key of Object.keys(template)) assert.ok(['system', 'user'].includes(key), `${profile.id}.${action}.${key}`);
-      // Renders without throwing.
-      S.buildMessages(action, S.pageVars({ title: 't', url: 'u', text: 'c' }), profile.prompts);
+    const prompts = S.promptsFor(profile.id, profile.prompts);
+    for (const action of S.PROMPT_ACTIONS) {
+      // Every action renders for every site without throwing.
+      assert.ok(S.buildMessages(action, S.pageVars({ title: 't', url: 'u', text: 'c' }), prompts).length > 0, `${profile.id}.${action}`);
     }
     for (const option of profile.options || []) assert.ok(option.id && option.label, `${profile.id}: option needs id and label`);
   }

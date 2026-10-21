@@ -2,7 +2,7 @@
 
 SoroAgent works on any page, but a **site profile** makes it smarter on a specific website. A profile can:
 
-- use **specialized prompts** for each action (summarize, ask, save, AI Slop check);
+- use **specialized prompts** for each action (summarize, ask, save, AI Slop check). The prompt texts live in [`../prompts/`](../prompts), one file per site, so they're easy to fine-tune;
 - read the page as **items** (posts, comments, results) rather than plain text;
 - **gather more content by scrolling** (for example, 100 posts from a search page);
 - add **toggles** to the panel (for example, "Verified only" on X).
@@ -13,7 +13,7 @@ SoroAgent works on any page, but a **site profile** makes it smarter on a specif
 
 1. Copy `_template.js` to `extension/sites/<your-site>.js`. Files whose names start with `_` are skipped.
 2. Set `id`, `name` and `matches(location)`.
-3. Override only the prompts you need.
+3. Add the site's prompts in [`../prompts/<id>.js`](../prompts) (copy `prompts/_template.js`). See the [prompts guide](../prompts/README.md).
 4. Run `npm run build` and reload the extension. The build adds every `sites/*.js` file to the content scripts automatically, so you don't need to edit the manifest.
 5. Run `npm test`. The tests check that every profile registers correctly.
 
@@ -25,34 +25,14 @@ SoroAgent works on any page, but a **site profile** makes it smarter on a specif
 | `name` | | Shown in the panel. |
 | `matches(location)` | yes | Return `true` for pages this profile handles. Receives `window.location`. |
 | `pageInfo(location)` | | Returns `{ type, label, context, … }`. `label` appears in the panel; `context` fills `{{context}}` in prompts. |
-| `prompts` | | `{ <action>: { system?, user? } }`. Any field you leave out uses the default from [`shared/prompts.js`](../shared/prompts.js). |
+| `prompts` | | Rarely needed. Put prompts in [`../prompts/<id>.js`](../prompts) instead. Inline prompts here override that file. |
 | `options` | | `[{ id, label, title, default }]` — toggles shown in the panel on this site. |
 | `applyOptions(values)` | | Called with `{ optionId: boolean }` when the page loads and whenever a toggle changes. |
 | `items` | | Treat the page as a list of items. See below. |
 
-### Actions and placeholders
+### Prompts
 
-| Action | Used for | Default reply format |
-|---|---|---|
-| `summarize` | **Summarize** | Markdown |
-| `notes` | Summarizing long content in parts; the notes are merged by `summarize` | Markdown |
-| `ask` | Questions typed in the panel (`system` is used; the question is `{{question}}`) | Markdown |
-| `save` | Titles, summaries and tags for **Save** | JSON `{ title, summary, tags }` |
-| `aiCheck` | **AI Slop check** on a whole page | JSON `{ ai_probability, confidence, signals }` |
-| `aiCheckItems` | **AI Slop check** per item, on sites with `items` | JSON `{ scores: { "<n>": { ai, why } } }` |
-
-If you change a JSON prompt, keep the same reply shape so SoroAgent can read it.
-
-| Placeholder | Value |
-|---|---|
-| `{{persona}}` | The default assistant persona |
-| `{{title}}`, `{{url}}` | Page title and URL |
-| `{{content}}` | The text being worked on: page text, formatted items or the selection |
-| `{{page}}` | Title, URL and content wrapped in `<page>` tags |
-| `{{count}}` | Number of items in `{{content}}` |
-| `{{context}}` | `pageInfo().context` (plus batch details when gathering more) |
-| `{{note}}` | A truncation note, or empty |
-| `{{question}}` | The user's question (`ask` only) |
+Actions, placeholders, reply formats and the fine-tuning workflow are documented in the [prompts guide](../prompts/README.md).
 
 ### Items
 

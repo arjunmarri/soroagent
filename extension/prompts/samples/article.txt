@@ -1,0 +1,16 @@
+# How SQLite handles concurrent writes
+
+In today's fast-paced digital landscape, databases are more important than ever. It's important to note that choosing the right database can truly be a game-changer for your journey, unlocking the power of data in ways you never imagined.
+
+SQLite allows only one writer at a time. In the default rollback-journal mode, a writer takes a RESERVED lock, then upgrades to EXCLUSIVE when it commits, which blocks readers for the duration of the commit.
+
+With WAL mode (PRAGMA journal_mode=WAL), readers no longer block writers and writers no longer block readers. Writes append to the -wal file and a checkpoint later copies pages back into the main database file.
+
+When two connections try to write, the second gets SQLITE_BUSY. Setting PRAGMA busy_timeout=5000 makes SQLite retry for up to 5 seconds before returning the error, which removes most spurious failures in web apps.
+
+In conclusion, SQLite is a powerful tool that can help you achieve your goals. Whether you are a beginner or an expert, embracing the right mindset will empower you to unlock new possibilities. What do you think? Let me know in the comments below! 👇
+
+## Benchmarks
+
+- Rollback journal: ~1,200 inserts/s with fsync on an NVMe SSD.
+- WAL with synchronous=NORMAL: ~18,000 inserts/s on the same disk.

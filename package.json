@@ -14,6 +14,7 @@
     "package": "node scripts/build.mjs --zip",
     "downloads": "node scripts/build.mjs --downloads",
     "icons": "node scripts/make-icons.mjs",
+    "try-prompt": "node scripts/try-prompt.mjs",
     "test": "node --test \"test/*.test.mjs\""
   }
 }

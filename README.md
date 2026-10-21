@@ -96,9 +96,25 @@ The panel's **⋯** menu can hide the button on the current site or reset a drag
 
 **Picking a local model.** When you connect a local server, SoroAgent ranks your installed models for its tasks by family, size and speed. Mixture-of-experts models such as `qwen3:30b-a3b` give large-model quality at small-model speed. It suggests the best fit (plus a lighter option and a higher-quality one) in settings and in the panel. If nothing installed fits well, it suggests a model to download.
 
+## Site-specific prompts
+
+Every prompt SoroAgent uses is plain text in [`extension/prompts/`](extension/prompts), so you can fine-tune it without touching the extension code:
+
+- [`default.js`](extension/prompts/default.js): prompts for every site (Summarize, Ask, Save, AI Slop check).
+- [`x.js`](extension/prompts/x.js): prompts for X, overriding only what differs.
+- `<site>.js`: add your own. A site file only needs the parts it changes.
+
+Try a prompt against your local model before reloading the extension:
+
+```bash
+npm run try-prompt -- --site x --action summarize --show-prompt
+```
+
+The **[prompts guide](extension/prompts/README.md)** covers the fine-tuning loop, every action and its reply format, all `{{placeholders}}`, and tips for writing prompts that also work on small models.
+
 ## Site profiles
 
-Profiles in [`extension/sites/`](extension/sites) give SoroAgent site-specific behaviour and prompts for each action. [`x.js`](extension/sites/x.js) is the full X example; [`_template.js`](extension/sites/_template.js) is a starting point. To add your own site, copy the template, set `matches()` and override the prompts you need, then run `npm run build`. New files are picked up automatically. [`extension/sites/README.md`](extension/sites/README.md) documents every field and placeholder.
+Profiles in [`extension/sites/`](extension/sites) give SoroAgent site-specific behaviour: page detection, reading posts instead of page text, scrolling to gather more, and panel toggles. Their prompts live in [`extension/prompts/`](extension/prompts). [`x.js`](extension/sites/x.js) is the full X example; [`_template.js`](extension/sites/_template.js) is a starting point. To add your own site, copy the template, set `matches()` and override the prompts you need, then run `npm run build`. New files are picked up automatically. [`extension/sites/README.md`](extension/sites/README.md) documents every field and placeholder.
 
 ## How it works
 
@@ -125,6 +141,7 @@ extension/
   manifest.json        base manifest; the build writes per-browser variants
   background/          sw.js (Chrome entry) · background.js (routing, menus, Origin rewrite) · llm.js (Ollama, OpenAI-compatible and Anthropic client) · recommend.js (local model ranking) · secrets.js (encrypted API keys)
   content/             assistant.js (panel and tasks) · launcher.js (button placement, dragging) · extract.js (readable text) · styles.js
+  prompts/             prompt texts: default.js, x.js, _template.js, samples/ and the fine-tuning guide
   sites/               site profiles: registry.js, x.js, _template.js and a README for contributors
   shared/              config.js (settings) · prompts.js · markdown.js (safe renderer) · snippets.js
   pages/               popup, options and snippets pages
@@ -139,6 +156,7 @@ npm run build     # dist/chrome and dist/firefox
 npm run package   # build plus zips
 npm run downloads # refresh the committed zips in downloads/
 npm run icons     # regenerate the PNG icons
+npm run try-prompt -- --site x --action summarize   # run a prompt against your local model
 ```
 
 After editing, run `npm run build` and click **Reload** on the extension card (or reload the temporary add-on in Firefox).

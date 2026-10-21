@@ -1,5 +1,5 @@
 // Site profile for X (formerly Twitter): reads posts instead of page text, gathers search results
-// by scrolling, adds "Verified only" / "Hide ads" filters, and uses X-specific prompts.
+// by scrolling, and adds "Verified only" / "Hide ads" filters. Its prompts are in prompts/x.js.
 // A worked example for extension/sites/README.md.
 (function (root) {
   'use strict';
@@ -238,55 +238,6 @@
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Prompts: override the defaults in shared/prompts.js for X.
-  // ---------------------------------------------------------------------------
-
-  const POSTS_INTRO =
-    'Posts are numbered [n] and show the author handle, whether the account is verified, the date and engagement. ' +
-    'Engagement shows reach, not truth. Cite accounts as @handle.';
-
-  const prompts = {
-    summarize: {
-      system: `{{persona}}\nYou analyze posts from X (formerly Twitter). ${POSTS_INTRO}`,
-      user:
-        '{{context}}\n\n<posts count="{{count}}">\n{{content}}\n</posts>\n\n' +
-        'Summarize these {{count}} posts.\nFormat:\n' +
-        '**TL;DR:** one or two sentences on what people are saying.\n\n' +
-        '**Main themes**\n- 3 to 6 bullets; name representative accounts as @handle.\n\n' +
-        '**Notable posts**\n- 2 to 4 posts worth reading: @handle — short paraphrase (why it stands out).\n\n' +
-        '**Sentiment:** one line (for example: mostly positive, divided, critical).\n\n' +
-        'Only use what is in the posts. Say so if many posts are ads, repetitive or low-effort.',
-    },
-    notes: {
-      system: `{{persona}}\nYou take notes on posts from X. ${POSTS_INTRO}`,
-      user:
-        '{{context}}\n\n<posts>\n{{content}}\n</posts>\n\n' +
-        'Write compact notes (max 12 bullets): main themes, notable posts (keep @handles), numbers, and sentiment. ' +
-        'These notes will be merged with notes on other posts into one summary.',
-    },
-    ask: {
-      system:
-        `{{persona}}\nAnswer questions about these posts from X. ${POSTS_INTRO} ` +
-        "If the posts don't contain the answer, say so.\n\n{{context}}\n\n<posts>\n{{content}}\n</posts>",
-    },
-    save: {
-      user:
-        'A post from X.\nURL: {{url}}\n\n<post>\n{{content}}\n</post>\n\n' +
-        'Return JSON: {"title": "short title naming the author and the topic, max 80 chars", ' +
-        '"summary": "1-2 sentences with the key information", "tags": ["1 to 4 short lowercase topic tags"]}',
-    },
-    aiCheckItems: {
-      system:
-        'You review posts from X and estimate whether each was written by AI or by a person. Judge style, not opinion. ' +
-        'AI signals on X: thread-bait hooks ("Here\'s why 🧵", "7 lessons I learned"), LinkedIn-style one-line paragraphs, ' +
-        'emoji bullets, generic motivational or hype lines, engagement farming ("Agree? Repost ♻️"), and generic reply-guy ' +
-        'praise ("Great insight!", "This is so true"). Human signals: specific details, personal voice, slang, typos, ' +
-        'jokes and replies that engage with a specific point. Short posts are hard to judge: keep them near 50 unless ' +
-        'the signals are clear. Reply with JSON only.',
-    },
-  };
-
   SoroAgent.registerSite({
     id: 'x',
     name: 'X',
@@ -296,7 +247,6 @@
       { id: 'hidePromoted', label: 'Hide ads', title: 'Hide promoted posts', default: false },
     ],
     pageInfo,
-    prompts,
     applyOptions,
     items: {
       noun: 'posts',
