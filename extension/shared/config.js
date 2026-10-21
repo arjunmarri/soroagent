@@ -191,6 +191,14 @@
     return next;
   }
 
+  // Extension pages report the browser theme so the toolbar icon can match it.
+  if (root.document && root.location && /^(chrome|moz)-extension:$/.test(root.location.protocol) && root.matchMedia) {
+    const query = root.matchMedia('(prefers-color-scheme: dark)');
+    const report = () => ext.runtime.sendMessage({ type: 'theme', dark: query.matches }).catch(() => {});
+    query.addEventListener('change', report);
+    report();
+  }
+
   Object.assign(SoroAgent, {
     ext,
     DEFAULT_SETTINGS,

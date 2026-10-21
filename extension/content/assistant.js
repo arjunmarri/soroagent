@@ -15,15 +15,10 @@
   const svg = (body, fill = 'none') =>
     `<svg viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
   // The SoroAgent owl: a monochrome outline — always there, quietly watching.
-  const OWL =
-    '<svg class="owl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M5.5 3.5 6.2 8.2Q4.8 10.5 5.2 13.5Q6 19.5 12 20.5Q18 19.5 18.8 13.5Q19.2 10.5 17.8 8.2L18.5 3.5 15 6.2Q12 5.2 9 6.2Z"/>' +
-    '<g class="eyes"><circle cx="9.2" cy="10.6" r="2.3"/><circle cx="14.8" cy="10.6" r="2.3"/>' +
-    '<g class="pupils" fill="currentColor" stroke="none"><circle cx="9.2" cy="10.6" r="0.95"/><circle cx="14.8" cy="10.6" r="0.95"/></g></g>' +
-    '<path d="M11.2 13.2 12 14.6 12.8 13.2"/><path class="wings" d="M7.6 13.6q.7 3 3.4 4.6M16.4 13.6q-.7 3-3.4 4.6"/>' +
-    // Spread wings, shown while the owl is carried or flying.
-    '<path class="wing wing-l" d="M5.6 11.6Q1.6 11.2 0.4 6.6Q2.4 8.8 3.6 8.9Q2.6 7.6 2.8 6.6Q4.6 9.6 6.1 9.4"/>' +
-    '<path class="wing wing-r" d="M18.4 11.6Q22.4 11.2 23.6 6.6Q21.6 8.8 20.4 8.9Q21.4 7.6 21.2 6.6Q19.4 9.6 17.9 9.4"/></svg>';
+  // The SoroAgent owl (extension/shared/brand.js). No baked-in background: the button's
+  // background follows the browser's light or dark theme.
+  const OWL = S.BRAND.owlSvg({ frame: 'circle', background: false });
+  const OWL_MARK = S.BRAND.owlSvg({ frame: 'tile', background: false, className: 'owl mark' });
   const ICONS = {
     close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
     more: svg('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
@@ -65,7 +60,7 @@
     <button class="launcher" type="button" hidden aria-label="Open SoroAgent" title="SoroAgent (Alt+Shift+K) · drag to move">${OWL}</button>
     <section class="panel" role="dialog" aria-label="SoroAgent" hidden>
       <header>
-        <div class="brand"><span class="brand-mark">${OWL}</span>SoroAgent</div>
+        <div class="brand"><span class="brand-mark">${OWL_MARK}</span>SoroAgent</div>
         <div class="status">
           <span class="dot" aria-hidden="true"></span>
           <span class="status-text">Not connected</span>
@@ -1123,6 +1118,16 @@
     const keys = ['source', 'baseUrl', 'provider', 'apiKey', 'cloudProvider', 'customBaseUrl'];
     if (keys.some((k) => before[k] !== state.settings[k]) && isOpen()) connect();
   });
+
+  // Keep the toolbar icon in step with the browser's light/dark theme.
+  const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const reportTheme = () => ext.runtime.sendMessage({ type: 'theme', dark: darkQuery.matches }).catch(() => {});
+  darkQuery.addEventListener('change', reportTheme);
+  // Also re-check when the tab comes back into view (the theme may have changed meanwhile).
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) reportTheme();
+  });
+  reportTheme();
 
   S.getSettings().then((settings) => {
     state.settings = settings;

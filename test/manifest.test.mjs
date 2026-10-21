@@ -16,6 +16,7 @@ test('every file the manifest references exists', () => {
     manifest.options_ui.page,
     ...Object.values(manifest.icons),
     ...Object.values(manifest.action.default_icon),
+    ...Object.values(manifest.icons).map((p) => p.replace('icons/', 'icons/dark/')),
   ];
   for (const file of files) assert.ok(existsSync(join(ext, file)), `missing ${file}`);
 });

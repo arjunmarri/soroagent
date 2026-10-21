@@ -21,6 +21,8 @@
   --warn: #d97706;
   --err: #dc2626;
   --shadow: 0 18px 50px rgba(15, 15, 30, 0.22), 0 2px 8px rgba(15, 15, 30, 0.08);
+  --owl-bg: #FFFFFF;
+  --owl-border: #E4E4E7;
   font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: var(--fg);
 }
@@ -36,6 +38,8 @@
     --accent-fg: #14142b;
     --accent-soft: #2a2950;
     --shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --owl-bg: #111113;
+    --owl-border: #2A2A2E;
   }
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -48,49 +52,39 @@ svg { width: 18px; height: 18px; flex: none; }
 
 .launcher {
   position: fixed; right: 16px; bottom: 20px; z-index: 2147483647;
-  width: 48px; height: 48px; border-radius: 50%; padding: 0;
+  width: 50px; height: 50px; border-radius: 50%; padding: 0; overflow: hidden;
   display: grid; place-items: center; touch-action: none;
-  color: #fff;
-  background: rgba(18, 18, 22, 0.52);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  backdrop-filter: blur(12px) saturate(1.4);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, top 0.25s ease, left 0.25s ease, right 0.25s ease;
+  /* Follows the browser theme: white in light mode, near-black in dark mode. */
+  background: var(--owl-bg); border: 1px solid var(--owl-border);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, top 0.25s ease, left 0.25s ease, right 0.25s ease;
 }
-.launcher:hover { transform: translateY(-2px); background: rgba(18, 18, 22, 0.68); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.launcher:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24), 0 1px 3px rgba(0, 0, 0, 0.1); }
 .launcher.dragging { transition: none; cursor: grabbing; transform: scale(1.06); }
 .launcher.busy::after {
-  content: ""; position: absolute; inset: -4px; border-radius: 50%;
-  border: 1.5px solid transparent; border-top-color: rgba(255, 255, 255, 0.85); animation: spin 0.9s linear infinite;
+  content: ""; position: absolute; inset: -1px; border-radius: 50%;
+  border: 2px solid transparent; border-top-color: #34D399; animation: spin 0.9s linear infinite;
 }
 
-/* The owl. Its pupils follow the mouse (--px/--py, set by launcher.js) or drift on their own,
-   it blinks now and then, looks around while working, perks up when the panel opens,
+/* The owl. Its eye glints follow the mouse (--px/--py in -1..1, set by launcher.js) or drift on
+   their own; it blinks now and then, looks around while working, perks up when the panel opens,
    flaps its wings while carried or flying, and hops when it lands. */
-.owl { width: 33px; height: 33px; overflow: visible; }
-.owl, .owl .eyes, .owl .pupils, .owl .wing { transform-box: fill-box; transform-origin: center; }
+.owl { width: 100%; height: 100%; display: block; overflow: visible; }
+.owl .bird, .owl .eyes, .owl .glint, .owl .wing { transform-box: fill-box; transform-origin: center; }
 .owl .eyes { animation: blink 7s infinite; }
-.owl .pupils { transform: translate(var(--px, 0px), var(--py, 0px)); animation: watch 11s ease-in-out infinite; transition: transform 0.18s ease-out; }
-.launcher.tracking .owl .pupils { animation: none; }
-.launcher:hover .owl .eyes { animation: none; transform: scale(1.06); transition: transform 0.2s ease; }
+.owl .glint { transform: translate(calc(var(--px, 0) * 4px), calc(var(--py, 0) * 4px)); animation: watch 11s ease-in-out infinite; transition: transform 0.18s ease-out; }
+.launcher.tracking .owl .glint { animation: none; }
+.launcher:hover .owl .eyes { animation: none; transform: scale(1.05); transition: transform 0.2s ease; }
 .launcher.open .owl { animation: perk 0.5s ease; }
-.launcher.open .owl .pupils { animation: none; transform: translate(var(--px, 0px), var(--py, 0px)) scale(1.35); }
-.launcher.busy .owl .pupils { animation: scan 1.4s ease-in-out infinite; }
-
-.owl .wing { display: none; }
-.owl .wing-l { transform-origin: 100% 80%; }
-.owl .wing-r { transform-origin: 0% 80%; }
-.launcher.carried .owl .wings, .launcher.flying .owl .wings { display: none; }
-.launcher.carried .owl .wing, .launcher.flying .owl .wing { display: inline; }
+.launcher.open .owl .glint { animation: none; transform: translate(calc(var(--px, 0) * 4px), calc(var(--py, 0) * 4px)) scale(1.3); }
+.launcher.busy .owl .glint { animation: scan 1.4s ease-in-out infinite; }
+.owl .wing-l { transform-origin: 85% 8%; }
+.owl .wing-r { transform-origin: 15% 8%; }
 .launcher.carried .owl .wing-l, .launcher.flying .owl .wing-l { animation: flap-l 0.2s ease-in-out infinite alternate; }
 .launcher.carried .owl .wing-r, .launcher.flying .owl .wing-r { animation: flap-r 0.2s ease-in-out infinite alternate; }
-.launcher.carried { cursor: grabbing; transform: scale(1.08); box-shadow: 0 16px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.launcher.carried { cursor: grabbing; transform: scale(1.08); box-shadow: 0 16px 30px rgba(0, 0, 0, 0.3); }
 .launcher.flying { transition: none !important; transform: rotate(var(--tilt, 0deg)) scale(1.04); }
 .launcher.landing { animation: land 0.42s ease-out; }
-
-.brand-mark .owl { width: 18px; height: 18px; }
-.brand-mark .owl .wings, .brand-mark .owl .wing { display: none; }
 
 .panel {
   position: fixed; right: 16px; bottom: 80px; z-index: 2147483647;
@@ -107,10 +101,10 @@ header {
 }
 .brand { display: flex; align-items: center; gap: 7px; font-weight: 650; letter-spacing: -0.01em; }
 .brand-mark {
-  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
-  background: #18181b; color: #fff;
+  width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; overflow: hidden;
+  background: var(--owl-bg); border: 1px solid var(--owl-border);
 }
-@media (prefers-color-scheme: dark) { .brand-mark { background: rgba(255, 255, 255, 0.12); } }
+.brand-mark .owl .eyes, .brand-mark .owl .glint { animation: none; }
 .status {
   margin-left: auto; min-width: 0; display: flex; align-items: center; gap: 6px;
   padding: 3px 4px 3px 9px; border-radius: 999px; background: var(--bg-soft);
@@ -230,10 +224,10 @@ header {
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: 0.35; } }
 @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
-@keyframes watch { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-0.5px); } 45% { transform: translateX(0.6px); } 70% { transform: translate(0.2px, 0.3px); } }
-@keyframes scan { 0%, 100% { transform: translateX(-0.9px); } 50% { transform: translateX(0.9px); } }
-@keyframes flap-l { from { transform: rotate(16deg); } to { transform: rotate(-26deg); } }
-@keyframes flap-r { from { transform: rotate(-16deg); } to { transform: rotate(26deg); } }
+@keyframes watch { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-2.5px); } 45% { transform: translateX(3px); } 70% { transform: translate(1px, 1.5px); } }
+@keyframes scan { 0%, 100% { transform: translateX(-4px); } 50% { transform: translateX(4px); } }
+@keyframes flap-l { from { transform: rotate(8deg); } to { transform: rotate(38deg); } }
+@keyframes flap-r { from { transform: rotate(-8deg); } to { transform: rotate(-38deg); } }
 @keyframes land { 0% { transform: translateY(-5px) scale(1.06, 0.94); } 45% { transform: translateY(1px) scale(0.94, 1.06); } 75% { transform: translateY(-1px) scale(1.02, 0.98); } 100% { transform: none; } }
 @keyframes perk { 0% { transform: rotate(0) scale(1); } 35% { transform: rotate(-9deg) scale(1.08); } 70% { transform: rotate(4deg) scale(1); } 100% { transform: rotate(0) scale(1); } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } }

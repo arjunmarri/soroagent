@@ -219,8 +219,8 @@
       const dy = pointer.clientY - (rect.top + rect.height / 2);
       const length = Math.hypot(dx, dy) || 1;
       const reach = Math.min(1, length / 240); // look further the further away the cursor is
-      launcher.style.setProperty('--px', `${((dx / length) * reach * 0.9).toFixed(2)}px`);
-      launcher.style.setProperty('--py', `${((dy / length) * reach * 0.75).toFixed(2)}px`);
+      launcher.style.setProperty('--px', ((dx / length) * reach).toFixed(2));
+      launcher.style.setProperty('--py', ((dy / length) * reach * 0.8).toFixed(2));
       launcher.classList.add('tracking');
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {

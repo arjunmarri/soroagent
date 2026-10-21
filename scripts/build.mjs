@@ -37,6 +37,8 @@ function manifestFor(browser) {
   } else {
     // Firefox runs background scripts as an event page and rewrites the Origin header with webRequest.
     manifest.background = { scripts: base.background.scripts };
+    // Firefox picks the icon for the toolbar's theme itself ("light" = icon for dark themes).
+    manifest.action.theme_icons = [16, 32].map((size) => ({ light: `icons/dark/icon-${size}.png`, dark: `icons/icon-${size}.png`, size }));
     manifest.permissions = manifest.permissions
       .filter((p) => p !== 'declarativeNetRequestWithHostAccess')
       .concat(['webRequest', 'webRequestBlocking']);

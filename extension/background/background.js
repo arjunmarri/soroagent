@@ -202,6 +202,24 @@
   });
 
   // ---------------------------------------------------------------------------
+  // Toolbar icon follows the browser theme: white tile in light mode, dark tile in dark mode.
+  // ---------------------------------------------------------------------------
+
+  const ICON_SIZES = [16, 32, 48, 128];
+  let iconTheme = null;
+  async function setThemeIcon(dark) {
+    if (iconTheme === dark) return { ok: true };
+    iconTheme = dark;
+    const path = Object.fromEntries(ICON_SIZES.map((size) => [size, `icons/${dark ? 'dark/' : ''}icon-${size}.png`]));
+    try {
+      await ext.action.setIcon({ path });
+    } catch {
+      // Older browsers: keep the manifest icon.
+    }
+    return { ok: true };
+  }
+
+  // ---------------------------------------------------------------------------
   // One-shot messages from content scripts and extension pages
   // ---------------------------------------------------------------------------
 
@@ -243,6 +261,8 @@
     },
     'open:snippets': () => ext.tabs.create({ url: ext.runtime.getURL('pages/snippets.html') }),
     'open:options': () => ext.runtime.openOptionsPage(),
+    // Pages report the browser's light/dark theme (the worker itself can't see it).
+    theme: (msg) => setThemeIcon(Boolean(msg.dark)),
     'open:history': () => ext.tabs.create({ url: ext.runtime.getURL('pages/history.html') }),
     'summary:find': async (msg) => ({ ok: true, record: await jobs.find(msg.url, msg.fingerprint) }),
     'summary:for-url': async (msg) => ({ ok: true, records: await jobs.forUrl(msg.url) }),
