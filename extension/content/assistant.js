@@ -81,6 +81,7 @@
         <div class="menu" role="menu" hidden>
           <button type="button" role="menuitem" data-cmd="history">Summary history</button>
           <button type="button" role="menuitem" data-cmd="snippets">Saved snippets</button>
+          <button type="button" role="menuitem" data-cmd="stats">Browsing stats</button>
           <button type="button" role="menuitem" data-cmd="clear">Clear conversation</button>
           <button type="button" role="menuitem" data-cmd="reset-position" hidden>Reset button position</button>
           <button type="button" role="menuitem" data-cmd="hide-site">Hide button on this site</button>
@@ -217,7 +218,14 @@
   const pageInfo = () => (state.site.pageInfo ? state.site.pageInfo(location) : { type: 'page', label: '', context: '' });
   const items = () => state.site.items || null;
   // Prompt texts: prompts/default.js, then prompts/<site id>.js and its page-type overrides.
-  const sitePrompts = () => S.promptsFor(state.site.id, state.site.prompts, pageInfo().type);
+  // Site profile prompts (X, Reddit), else a prompt set for this host (YouTube, GitHub…), with the
+  // system prompt from settings when the user wrote one.
+  const promptSetId = () => (state.site.id && state.site.id !== 'default' ? state.site.id : S.promptSetForHost(location.hostname));
+  const sitePrompts = () => {
+    const id = promptSetId();
+    const persona = S.customPersona(state.settings, id);
+    return S.promptsFor(id, { ...(state.site.prompts || {}), ...(persona ? { persona } : {}) }, pageInfo().type);
+  };
 
   // FNV-1a: a fast fingerprint to tell whether content changed.
   function fingerprint(text) {
@@ -402,7 +410,7 @@
     const render = () => {
       frame = 0;
       const visible = S.stripThinking(raw);
-      if (visible) setHtml(node, S.renderMarkdown(visible));
+      if (visible) setHtml(node, S.renderMarkdown(S.linkHandles(visible, location.hostname)));
       scrollToEnd(false);
     };
     return {
@@ -420,7 +428,7 @@
       finish(text) {
         if (frame) cancelAnimationFrame(frame);
         raw = text !== undefined ? text : raw;
-        setHtml(node, S.renderMarkdown(S.stripThinking(raw)) || '<p><em>(no response)</em></p>');
+        setHtml(node, S.renderMarkdown(S.linkHandles(S.stripThinking(raw), location.hostname)) || '<p><em>(no response)</em></p>');
         scrollToEnd(false);
       },
     };
@@ -1396,6 +1404,7 @@
     els.menu.hidden = true;
     if (cmd === 'snippets') sendMessage({ type: 'open:snippets' });
     else if (cmd === 'history') sendMessage({ type: 'open:history' });
+    else if (cmd === 'stats') sendMessage({ type: 'open:stats' });
     else if (cmd === 'settings') sendMessage({ type: 'open:options' });
     else if (cmd === 'clear') {
       state.history = [];

@@ -23,7 +23,7 @@
 
   function checkActions(id, prompts) {
     for (const key of Object.keys(prompts)) {
-      if (key === 'persona' || key === 'pages') continue;
+      if (['persona', 'pages', 'label', 'hosts'].includes(key)) continue;
       if (!ACTIONS.includes(key)) throw new Error(`Prompts "${id}": unknown action "${key}". Known: ${ACTIONS.join(', ')}.`);
     }
   }
@@ -46,7 +46,7 @@
     for (const set of sets) {
       if (!set) continue;
       for (const [key, value] of Object.entries(set)) {
-        if (key === 'pages') continue;
+        if (key === 'pages' || key === 'label' || key === 'hosts') continue;
         merged[key] = key === 'persona' ? value : { ...(merged[key] || {}), ...value };
       }
     }
@@ -61,6 +61,39 @@
     const set = siteId && siteId !== 'default' ? promptSets[siteId] : null;
     const forPage = set && set.pages && pageType ? set.pages[pageType] : null;
     return mergeSets(promptSets.default, set, forPage, inline);
+  }
+
+  /**
+   * The prompt set for a website without a site profile, by its `hosts` (e.g. youtube.com also
+   * matches www.youtube.com and m.youtube.com). Returns 'default' when none matches.
+   */
+  function promptSetForHost(hostname) {
+    const host = String(hostname || '').toLowerCase();
+    for (const [id, set] of Object.entries(promptSets)) {
+      if ((set.hosts || []).some((h) => host === h || host.endsWith(`.${h}`))) return id;
+    }
+    return 'default';
+  }
+
+  /** The built-in prompt sets, for the settings page: [{ id, label, hosts, persona }]. */
+  function listPromptSets() {
+    return Object.entries(promptSets).map(([id, set]) => ({
+      id,
+      label: set.label || (id === 'default' ? 'All websites' : id),
+      hosts: set.hosts || [],
+      persona: set.persona || promptSets.default.persona || '',
+    }));
+  }
+
+  /**
+   * The system prompt (persona) the user wrote in settings for a prompt set, or '' to use the
+   * built-in one. A custom default applies to sites that don't have their own persona.
+   */
+  function customPersona(settings, setId) {
+    const custom = (settings && settings.customPrompts) || {};
+    if (typeof custom[setId] === 'string' && custom[setId].trim()) return custom[setId].trim();
+    const ownPersona = setId !== 'default' && promptSets[setId] && promptSets[setId].persona;
+    return ownPersona ? '' : String(custom.default || '').trim();
   }
 
   function render(template, vars) {
@@ -170,6 +203,9 @@
     definePrompts,
     promptsFor,
     promptSet: (id) => promptSets[id] || null,
+    promptSetForHost,
+    listPromptSets,
+    customPersona,
     renderTemplate: render,
     pageVars,
     buildMessages,

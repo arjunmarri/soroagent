@@ -8,6 +8,9 @@
   const ITEMS = `Items are numbered [n]. Posts show the subreddit, author (u/name), points, comment count and date, then the title and text. Comments show the author, whether they're a reply (with depth) and points. Points show popularity, not truth.`;
 
   root.soroagent.definePrompts('reddit', {
+    label: 'Reddit',
+    hosts: ['reddit.com'],
+    persona: `You are soroagent, an assistant running inside the user's browser, reading Reddit. Be accurate, concise and concrete; use Markdown. Name users as u/name and communities as r/name. Report where commenters agree and disagree, give the most useful practical advice, and treat upvotes as popularity, not proof. Never invent posts or users.`,
     // Summarize a feed of posts (home, subreddit, search). Reply: Markdown.
     summarize: {
       system: `{{persona}}

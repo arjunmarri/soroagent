@@ -10,7 +10,8 @@
     return node;
   };
   // Model output is escaped by renderMarkdown; DOMParser keeps it inert.
-  const markdown = (text) => [...new DOMParser().parseFromString(`<body>${renderMarkdown(stripThinking(text || ''))}</body>`, 'text/html').body.childNodes];
+  // `url` links @handles (X) and u/ r/ names (Reddit) in summaries of those sites.
+  const markdown = (text, url) => [...new DOMParser().parseFromString(`<body>${renderMarkdown(S.linkHandles(stripThinking(text || ''), url))}</body>`, 'text/html').body.childNodes];
 
   const PREFS_KEY = 'soroagent.snippetsView';
   let snippets = [];
@@ -29,6 +30,13 @@
     } catch {
       // not saved; still applied
     }
+  };
+  let settings = {};
+  // The prompts for the site a snippet came from, with the system prompt from settings if any.
+  const promptsForUrl = (url) => {
+    const id = S.promptSetForHost(hostOf(url));
+    const persona = S.customPersona(settings, id);
+    return S.promptsFor(id, persona ? { persona } : null);
   };
   const research = new Map(); // snippet id -> { status, text, error, sources } while running
 
@@ -209,7 +217,7 @@
     }
 
     const body = el('div', { className: 'prose' });
-    if (kind === 'summary' || kind === 'research') body.append(...markdown(s.text));
+    if (kind === 'summary' || kind === 'research') body.append(...markdown(s.text, s.url));
     else {
       if (s.summary) body.append(el('p', { textContent: s.summary }));
       body.append(el('blockquote', { className: 'quote', textContent: s.text }));
@@ -222,10 +230,10 @@
     if (live && live.status === 'running') {
       nodes.push(el('div', { className: 'working', textContent: live.statusText || 'Researching on the web…' }));
       if (live.sources) nodes.push(sourcesList(live.sources));
-      if (live.text) nodes.push(el('div', { className: 'prose' }, markdown(live.text)));
+      if (live.text) nodes.push(el('div', { className: 'prose' }, markdown(live.text, s.url)));
     } else if (s.research && kind !== 'research') {
       nodes.push(el('div', { className: 'meta', textContent: `Searched “${s.research.query || ''}” · ${when(s.research.at, { dateStyle: 'medium', timeStyle: 'short' })}` }));
-      nodes.push(el('div', { className: 'prose' }, markdown(s.research.text)));
+      nodes.push(el('div', { className: 'prose' }, markdown(s.research.text, s.url)));
       nodes.push(el('div', { className: 'section-title', textContent: 'Sources' }), sourcesList(s.research.sources));
     } else if (kind === 'research' && s.research) {
       nodes.push(sourcesList(s.research.sources));
@@ -316,21 +324,6 @@
     reader.replaceChildren(...nodes);
   }
 
-  // One answer from the model (local or cloud, whichever is set up), for small JSON tasks.
-  function askModel(messages) {
-    return new Promise((resolve, reject) => {
-      const port = ext.runtime.connect({ name: 'llm' });
-      port.onMessage.addListener((msg) => {
-        if (msg.type === 'done') resolve(msg.text || '');
-        else if (msg.type === 'error') reject(new Error(msg.error || 'The model did not answer.'));
-        else return;
-        port.disconnect();
-      });
-      port.onDisconnect.addListener(() => reject(new Error('Lost the connection to the extension.')));
-      port.postMessage({ type: 'chat', messages, json: true });
-    });
-  }
-
   // Before researching, ask what to focus on: topics the model finds in the snippet, the whole
   // snippet, or the reader's own words.
   function pickTopic(s) {
@@ -338,7 +331,7 @@
     topicPicks.set(s.id, pick);
     renderReader();
     const vars = S.pageVars({ title: s.pageTitle || s.title, url: s.url, text: stripThinking(s.text || s.summary || '').slice(0, 4000) });
-    askModel(S.buildMessages('researchTopics', vars))
+    S.askModel(S.buildMessages('researchTopics', vars, promptsForUrl(s.url)), { json: true })
       .then((reply) => Object.assign(pick, { status: 'ready', topics: S.parseTopics(stripThinking(reply)) }))
       .catch((err) => Object.assign(pick, { status: 'error', error: err.message }))
       .finally(() => s.id === selectedId && renderReader());
@@ -417,11 +410,11 @@
         snippetId: s.id,
         fallbackQuery: s.title,
         query,
-        queryMessages: query ? null : S.buildMessages('researchQuery', vars),
+        queryMessages: query ? null : S.buildMessages('researchQuery', vars, promptsForUrl(s.url)),
         final: S.buildMessages('research', S.pageVars(
           { title: s.title, url: s.url, text: S.JOB_PLACEHOLDERS.sources },
           { context: stripThinking(s.text).slice(0, 3000), question: S.JOB_PLACEHOLDERS.query }
-        )),
+        ), promptsForUrl(s.url)),
       },
     });
   }
@@ -483,6 +476,7 @@
   }
 
   async function load() {
+    settings = await S.getSettings();
     snippets = (await listSnippets()).map((s) => ({ ...s, tags: Array.isArray(s.tags) ? s.tags : [] }));
     openFromHash();
     if (!selectedId && window.innerWidth > 860) selectedId = (snippets.find((s) => matches(s, '')) || { id: '' }).id;

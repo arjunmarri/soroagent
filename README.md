@@ -18,6 +18,9 @@ Click the owl 🦉 on any page to get started. soroagent's mascot is a mint owl 
 - **Screenshot** (camera button in the panel, or right-click → *Take a screenshot*) captures what you see, without soroagent's own button and panel, and keeps it in a separate **Screenshots** section of your snippets, where you can view, download, copy or delete it. Screenshots stay on your computer and are included in backups.
 - **Read later** (bookmark button in the panel) keeps the page in a **Read later** section of your snippets, with a short excerpt. Open it from there when you have time; it's marked as read when you do, or mark it yourself.
 - **History** (clock button in the panel) lists everything you saved from the exact page you're on (summaries, research, read-later pages and screenshots), newest first; click one to open it in your snippets.
+- **Stats** shows where your browsing time goes: total and daily average, time per day, and time per website and per page (click a website to see its pages). Time is counted only while a tab is in front and you're active, or media is playing. It's stored only in this browser for 90 days, and you can turn it off or clear it.
+- **Clickable accounts:** in summaries of X, every @handle links to that account; on Reddit, u/ and r/ names link to the user or community.
+- **Prompts in settings:** rewrite the system prompt for all websites or for a specific site, and click **Optimize with AI** to have your own model (local or cloud) improve it. Built-in prompts are tuned for X, Reddit, YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon, Stack Overflow and major news sites.
 - **++ / --** in the panel header make soroagent's panel bigger or smaller (four sizes); the size is remembered.
 
 **Feeds on X and Reddit**, detected automatically:
@@ -33,12 +36,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.13.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.14.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.13.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.13.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.13.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.13.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.14.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.14.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.14.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.14.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -73,8 +76,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.13.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.13.0.zip)
-- Firefox: [soroagent-firefox-2.13.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.13.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.14.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.14.0.zip)
+- Firefox: [soroagent-firefox-2.14.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.14.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -90,7 +93,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.13.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.14.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 

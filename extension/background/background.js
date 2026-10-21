@@ -236,6 +236,14 @@
   // Bumped whenever keys change, so open pages can reconnect without ever seeing a key.
   const announceKeysChanged = () => ext.storage.local.set({ keysVersion: Date.now() });
 
+  const S = globalThis.soroagent;
+  let statsQueue = Promise.resolve();
+  // Browsing time is kept for STATS_KEEP_DAYS days.
+  ext.storage.local.get(null).then((all) => {
+    const old = S.expiredStatsKeys(Object.keys(all));
+    if (old.length) return ext.storage.local.remove(old);
+  }).catch(() => {});
+
   const handlers = {
     // Only extension pages may test unsaved values: overrides can redirect a key to another URL.
     'llm:status': (msg, sender) => getStatus(fromExtensionPage(sender) ? msg.overrides || {} : {}),
@@ -285,6 +293,23 @@
     'open:options': () => ext.runtime.openOptionsPage(),
     // Pages report the browser's light/dark theme (the worker itself can't see it).
     theme: (msg) => setThemeIcon(Boolean(msg.dark)),
+    'open:stats': () => ext.tabs.create({ url: ext.runtime.getURL('pages/stats.html') }),
+    // Time on a page, from content/timetrack.js. Writes are queued so reports never overwrite each other.
+    'stats:add': (msg, sender) => {
+      if (!sender.tab || fromExtensionPage(sender) || !/^https?:/.test(String(msg.url || ''))) return { ok: true };
+      const key = `${S.STATS_PREFIX}${S.statsDayKey()}`;
+      statsQueue = statsQueue.then(async () => {
+        const day = (await ext.storage.local.get(key))[key];
+        await ext.storage.local.set({ [key]: S.addTime(day, msg) });
+      }).catch((err) => console.warn('[soroagent] Could not save browsing time:', err));
+      return { ok: true };
+    },
+    'stats:clear': async (msg, sender) => {
+      requireExtensionPage(sender);
+      const keys = Object.keys(await ext.storage.local.get(null)).filter((k) => k.startsWith(S.STATS_PREFIX));
+      await ext.storage.local.remove(keys);
+      return { ok: true, removed: keys.length };
+    },
     'open:history': () => ext.tabs.create({ url: ext.runtime.getURL('pages/history.html') }),
     'summary:find': async (msg) => ({ ok: true, record: await jobs.find(msg.url, msg.fingerprint) }),
     'summary:for-url': async (msg) => ({ ok: true, records: await jobs.forUrl(msg.url) }),
@@ -339,6 +364,7 @@
   const ACTION_MENU_ITEMS = [
     { id: 'soroagent-open-history', title: 'Summary history', open: () => handlers['open:history']() },
     { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']({}) },
+    { id: 'soroagent-open-stats', title: 'Browsing stats', open: () => handlers['open:stats']() },
     { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },
   ];
 

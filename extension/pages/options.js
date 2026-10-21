@@ -6,7 +6,7 @@
   const $ = (id) => document.getElementById(id);
   const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl'];
   const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit'];
-  const CHECK_FIELDS = ['allowThinking', 'showLauncher'];
+  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime'];
 
   let saved = { ...DEFAULT_SETTINGS }; // last saved settings, for fields this page doesn't show
   let hiddenSites = [];
@@ -28,8 +28,114 @@
     return currentModelKey() === 'local' ? modelChoice.local : modelChoice.cloud[currentModelKey()] || '';
   }
 
+  // ---------------------------------------------------------------------------
+  // Prompts: the system prompt per prompt set, edited here and optimized by the model.
+  // ---------------------------------------------------------------------------
+
+  const promptSets = S.listPromptSets().sort((a, b) => (a.id === 'default' ? -1 : b.id === 'default' ? 1 : a.label.localeCompare(b.label)));
+  let customPrompts = {};
+  let promptSiteId = 'default';
+  let undoText = null;
+  const builtInPrompt = (id) => (promptSets.find((p) => p.id === id) || promptSets[0]).persona;
+
+  // Keeps the text being edited in customPrompts (or drops it when it's the built-in one).
+  function keepPromptEdit() {
+    const text = $('promptText').value.trim();
+    if (!text || text === builtInPrompt(promptSiteId).trim()) delete customPrompts[promptSiteId];
+    else customPrompts[promptSiteId] = text;
+  }
+
+  function showPrompt(id) {
+    promptSiteId = id;
+    const set = promptSets.find((p) => p.id === id) || promptSets[0];
+    $('promptSite').value = set.id;
+    $('promptText').value = customPrompts[id] || builtInPrompt(id);
+    $('promptHosts').textContent = set.id === 'default' ? 'Used on every website without its own prompt below.' : `Used on ${set.hosts.join(', ')}.`;
+    $('promptBadge').hidden = !customPrompts[id];
+    $('undoPrompt').hidden = true;
+    undoText = null;
+    $('promptStatus').textContent = '';
+  }
+
+  function fillPrompts(settings) {
+    customPrompts = { ...(settings.customPrompts || {}) };
+    $('promptSite').replaceChildren(...promptSets.map((p) => Object.assign(document.createElement('option'), {
+      value: p.id,
+      textContent: p.id === 'default' ? 'All websites (default)' : `${p.label} · ${p.hosts.slice(0, 2).join(', ')}${p.hosts.length > 2 ? '…' : ''}`,
+    })));
+    showPrompt(promptSiteId);
+  }
+
+  $('promptSite').addEventListener('change', () => {
+    keepPromptEdit();
+    showPrompt($('promptSite').value);
+  });
+  $('promptText').addEventListener('input', () => {
+    keepPromptEdit();
+    $('promptBadge').hidden = !customPrompts[promptSiteId];
+  });
+  $('resetPrompt').addEventListener('click', () => {
+    undoText = $('promptText').value;
+    delete customPrompts[promptSiteId];
+    $('promptText').value = builtInPrompt(promptSiteId);
+    $('promptBadge').hidden = true;
+    $('undoPrompt').hidden = false;
+    $('promptStatus').textContent = 'Back to the built-in prompt. Save to keep it.';
+  });
+  $('undoPrompt').addEventListener('click', () => {
+    if (undoText === null) return;
+    $('promptText').value = undoText;
+    keepPromptEdit();
+    $('promptBadge').hidden = !customPrompts[promptSiteId];
+    $('undoPrompt').hidden = true;
+    $('promptStatus').textContent = '';
+  });
+
+  $('optimizePrompt').addEventListener('click', async () => {
+    const set = promptSets.find((p) => p.id === promptSiteId);
+    const current = $('promptText').value.trim() || builtInPrompt(promptSiteId);
+    const button = $('optimizePrompt');
+    button.disabled = true;
+    $('promptStatus').className = 'muted working';
+    $('promptStatus').textContent = 'Your model is rewriting the prompt…';
+    try {
+      const reply = await S.askModel([
+        {
+          role: 'system',
+          content: 'You are an expert prompt engineer. You improve system prompts for soroagent, a browser assistant that summarizes web pages and answers questions about them. Reply with the improved system prompt only: plain text, no preamble, no quotes, no headings.',
+        },
+        {
+          role: 'user',
+          content: `Website: ${set.id === 'default' ? 'any website' : `${set.label} (${set.hosts.join(', ')})`}
+
+Current system prompt:
+<prompt>
+${current}
+</prompt>
+
+Rewrite it to get better results on this website. Keep the intent and every rule it states. Make it specific to how content on this site works, and clear about accuracy, what to prioritize, tone and format (Markdown). Keep it under 120 words, in the second person, starting with "You are soroagent".`,
+        },
+      ]);
+      const improved = S.stripThinking(reply).replace(/^```\w*\n?|```$/g, '').replace(/^<prompt>|<\/prompt>$/g, '').replace(/^["“]|["”]$/g, '').trim();
+      if (!improved) throw new Error('The model returned an empty prompt.');
+      undoText = $('promptText').value;
+      $('promptText').value = improved;
+      keepPromptEdit();
+      $('promptBadge').hidden = !customPrompts[promptSiteId];
+      $('undoPrompt').hidden = false;
+      $('promptStatus').className = 'muted';
+      $('promptStatus').textContent = 'Optimized. Review it, then Save.';
+    } catch (err) {
+      $('promptStatus').className = 'muted';
+      $('promptStatus').textContent = `Couldn't optimize: ${err.message}${err.hint ? ` ${err.hint}` : ''}`;
+    } finally {
+      button.disabled = false;
+    }
+  });
+
   function readForm() {
     rememberModel();
+    keepPromptEdit();
     const values = { ...saved, source: source(), hiddenSites, model: modelChoice.local, cloudModels: { ...modelChoice.cloud } };
     for (const id of TEXT_FIELDS) values[id] = $(id).value.trim();
     for (const id of NUMBER_FIELDS) {
@@ -38,6 +144,7 @@
     }
     for (const id of CHECK_FIELDS) values[id] = $(id).checked;
     values.baseUrl = values.baseUrl || DEFAULT_SETTINGS.baseUrl;
+    values.customPrompts = { ...customPrompts };
     return values;
   }
 
@@ -50,6 +157,7 @@
     hiddenSites = [...(settings.hiddenSites || [])];
     renderSites();
     renderPlacements();
+    fillPrompts(settings);
     showSource();
   }
 

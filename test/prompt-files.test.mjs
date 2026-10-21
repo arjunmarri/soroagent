@@ -42,7 +42,30 @@ for (const [id, page] of variants) {
   });
 }
 
-test('every site prompt file belongs to a site profile', () => {
+test('every site prompt file belongs to a site profile or names the websites it covers', () => {
   const siteIds = S.siteProfiles.map((p) => p.id);
-  for (const id of setIds.filter((i) => i !== 'default')) assert.ok(siteIds.includes(id), `prompts/${id}.js has no site profile with id "${id}"`);
+  for (const id of setIds.filter((i) => i !== 'default')) {
+    const set = S.promptSet(id);
+    assert.ok(siteIds.includes(id) || (set.hosts || []).length, `prompts/${id}.js has no site profile with id "${id}" and no hosts`);
+    assert.ok(set.label, `prompts/${id}.js has a label for the settings page`);
+  }
+});
+
+test('websites pick their prompt set by host, subdomains included', () => {
+  assert.equal(S.promptSetForHost('www.youtube.com'), 'youtube');
+  assert.equal(S.promptSetForHost('en.wikipedia.org'), 'wikipedia');
+  assert.equal(S.promptSetForHost('news.ycombinator.com'), 'hackernews');
+  assert.equal(S.promptSetForHost('x.com'), 'x');
+  assert.equal(S.promptSetForHost('notyoutube.com'), 'default');
+  assert.equal(S.promptSetForHost('example.org'), 'default');
+});
+
+test('system prompts written in settings replace the built-in persona', () => {
+  const settings = { customPrompts: { default: 'Custom default.', x: 'Custom X.' } };
+  assert.equal(S.customPersona(settings, 'x'), 'Custom X.');
+  assert.equal(S.customPersona(settings, 'default'), 'Custom default.');
+  assert.equal(S.customPersona(settings, 'youtube'), '', 'sites with their own persona keep it');
+  assert.equal(S.customPersona({}, 'x'), '');
+  const messages = S.buildMessages('summarize', S.pageVars({ title: 't', url: 'u', text: 'c' }), S.promptsFor('youtube', { persona: 'Mine.' }));
+  assert.equal(messages[0].content, 'Mine.');
 });

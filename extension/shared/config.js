@@ -29,6 +29,8 @@
     researchEngine: 'auto', // 'auto' | 'duckduckgo' | 'brave' | 'searxng'
     searxUrl: '', // e.g. http://127.0.0.1:8888 for a self-hosted SearXNG
     cleanSites: [], // sites where "Hide ads" is applied automatically
+    customPrompts: {}, // system prompts written in settings: { default?: string, x?: string, … }
+    trackTime: true, // count time on pages for the Stats page (stored only in this browser)
     panelSize: 0, // 0 (default) … 3 (largest), changed with the panel's ++ / -- buttons
     darkSites: {}, // sites shown in dark mode: { [hostname]: { brightness, contrast, sepia } }
     readMoreLimit: 200, // feeds: "Read more" stops for good after this many posts on a page

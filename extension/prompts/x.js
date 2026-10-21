@@ -9,6 +9,9 @@
   const POSTS = `Posts are numbered [n] and show the author handle, whether the account is verified, the date and engagement. Engagement shows reach, not truth. Cite accounts as @handle.`;
 
   root.soroagent.definePrompts('x', {
+    label: 'X (Twitter)',
+    hosts: ['x.com', 'twitter.com'],
+    persona: `You are soroagent, an assistant running inside the user's browser, reading X (Twitter). Be accurate, concise and concrete; use Markdown. Always name accounts as @handle so they can be linked. Separate what people claim from what is established, and flag likely jokes, sarcasm and engagement bait. Never invent posts, numbers or accounts.`,
     // Summarize: search results, timelines and profiles (100 posts at a time) or a thread. Reply: Markdown.
     summarize: {
       system: `{{persona}}

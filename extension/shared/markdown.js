@@ -100,5 +100,34 @@
     return out.join('');
   }
 
-  Object.assign(soroagent, { escapeHtml, renderMarkdown, stripThinking });
+  /**
+   * Makes account names in a summary clickable, as Markdown links: @handle on X, u/name and
+   * r/subreddit on Reddit. `site` is the page's hostname or URL. Code spans and existing links
+   * are left alone.
+   */
+  function linkHandles(text, site) {
+    let host = String(site || '');
+    try {
+      host = new URL(host).hostname;
+    } catch {
+      // already a hostname
+    }
+    const isX = /(^|\.)(x|twitter)\.com$/i.test(host);
+    const isReddit = /(^|\.)reddit\.com$/i.test(host);
+    if (!isX && !isReddit) return String(text || '');
+    // Before a name: start, whitespace, or opening punctuation and Markdown emphasis.
+    const lead = '(^|[\\s(\\[“"\'*_—–:,;-])';
+    return String(text || '')
+      .split(/(`[^`\n]*`|\[[^\]\n]*\]\([^)\s]*\))/)
+      .map((part, i) => {
+        if (i % 2) return part; // code span or existing link
+        if (isX) return part.replace(new RegExp(`${lead}@([A-Za-z0-9_]{1,15})\\b(?![@.]\\w)`, 'g'), '$1[@$2](https://x.com/$2)');
+        return part
+          .replace(new RegExp(`${lead}/?u/([A-Za-z0-9_-]{3,20})\\b`, 'g'), '$1[u/$2](https://www.reddit.com/user/$2)')
+          .replace(new RegExp(`${lead}/?r/([A-Za-z0-9_]{2,21})\\b`, 'g'), '$1[r/$2](https://www.reddit.com/r/$2)');
+      })
+      .join('');
+  }
+
+  Object.assign(soroagent, { escapeHtml, renderMarkdown, stripThinking, linkHandles });
 })(globalThis);

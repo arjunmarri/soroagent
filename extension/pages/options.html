@@ -42,13 +42,19 @@
     .rec .btn { margin-left: auto; }
     .savebar { position: sticky; bottom: 0; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 0; background: linear-gradient(transparent, var(--bg) 30%); }
     details summary { cursor: pointer; font-weight: 550; margin: 8px 0; }
+    textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--fg); font: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; min-height: 140px; }
+    textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--spark-soft); color: var(--spark-fg); font-size: 11px; font-weight: 650; }
+    #optimizePrompt span { color: var(--spark); }
+    #promptStatus.working::before { content: ""; display: inline-block; width: 11px; height: 11px; margin-right: 6px; vertical-align: -1px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand); border-right-color: var(--spark); animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 <main>
   <header>
     <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Settings</span></div>
-    <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="snippets.html">Saved snippets</a></div>
+    <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="snippets.html">Saved snippets</a><a class="btn small" href="stats.html">Stats</a></div>
   </header>
 
   <form id="form">
@@ -165,6 +171,35 @@
       </div>
     </section>
 
+    <section id="stats">
+      <h2>Stats</h2>
+      <p>soroagent can count the time you spend on each page and website, so the <a href="stats.html">Stats</a> page can show exactly where your browsing time goes. It only counts while a tab is in front and you're active (or a video is playing). The numbers never leave this browser and are kept for 90 days.</p>
+      <label class="check"><input type="checkbox" id="trackTime">
+        <span>Track time on pages<small>Turn off to stop counting. Existing stats stay until you clear them on the Stats page.</small></span>
+      </label>
+    </section>
+
+    <section id="prompts">
+      <h2>Prompts</h2>
+      <p>The system prompt tells soroagent how to read and write on a kind of site. X, Reddit, YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon, Stack Overflow and major news sites have their own, already tuned. Rewrite any of them, or let your model optimize it for you.</p>
+      <div class="grid">
+        <label class="field"><span>Site</span>
+          <select id="promptSite"></select>
+          <small id="promptHosts"></small>
+        </label>
+      </div>
+      <label class="field"><span>System prompt <small id="promptBadge" class="badge" hidden>Customized</small></span>
+        <textarea id="promptText" rows="7" spellcheck="true"></textarea>
+        <small>Site-specific formatting (for example how X posts are summarized) still applies on top. Saved with the button below.</small>
+      </label>
+      <div class="row">
+        <button class="btn" type="button" id="optimizePrompt"><span aria-hidden="true">✦</span> Optimize with AI</button>
+        <button class="btn small" type="button" id="undoPrompt" hidden>Undo</button>
+        <button class="btn small" type="button" id="resetPrompt">Reset to built-in</button>
+        <span class="muted" id="promptStatus" aria-live="polite"></span>
+      </div>
+    </section>
+
     <section>
       <h2>Research</h2>
       <p><b>Research</b> searches the web for a snippet's topic, reads the top results and writes a cited brief. The search query goes to the search engine below; the page you're reading doesn't.</p>
@@ -227,6 +262,20 @@
 </main>
 <footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a></footer>
 <script src="../shared/config.js"></script>
+<script src="../shared/markdown.js"></script>
+<script src="../shared/prompts.js"></script>
+<script src="../prompts/default.js"></script>
+<script src="../prompts/amazon.js"></script>
+<script src="../prompts/github.js"></script>
+<script src="../prompts/hackernews.js"></script>
+<script src="../prompts/linkedin.js"></script>
+<script src="../prompts/news.js"></script>
+<script src="../prompts/reddit.js"></script>
+<script src="../prompts/stackoverflow.js"></script>
+<script src="../prompts/wikipedia.js"></script>
+<script src="../prompts/x.js"></script>
+<script src="../prompts/youtube.js"></script>
+<script src="../shared/ask.js"></script>
 <script src="../shared/backup.js"></script>
 <script src="options.js"></script>
 </body>

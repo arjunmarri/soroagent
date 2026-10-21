@@ -11,8 +11,8 @@
     return node;
   };
   // Model output is escaped by renderMarkdown; DOMParser keeps it inert.
-  const markdown = (text) => {
-    const doc = new DOMParser().parseFromString(`<body>${renderMarkdown(stripThinking(text || ''))}</body>`, 'text/html');
+  const markdown = (text, url) => {
+    const doc = new DOMParser().parseFromString(`<body>${renderMarkdown(S.linkHandles(stripThinking(text || ''), url))}</body>`, 'text/html');
     return [...doc.body.childNodes];
   };
 
@@ -81,7 +81,7 @@
     if (record.status === 'running') card.append(el('div', { className: 'working', textContent: record.statusText || 'Summarizing in the background…' }));
     if (record.error && record.status !== 'done') card.append(el('div', { className: 'problem', textContent: `${record.error}${record.hint ? ` ${record.hint}` : ''}` }));
     if (record.text) {
-      const result = el('div', { className: `result${expanded.has(record.id) || record.status === 'running' ? ' open' : ''}` }, markdown(record.text));
+      const result = el('div', { className: `result${expanded.has(record.id) || record.status === 'running' ? ' open' : ''}` }, markdown(record.text, record.url));
       card.append(result);
     }
     if (record.sources && record.sources.length) {

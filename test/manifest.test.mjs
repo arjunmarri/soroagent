@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { root } from './helpers.mjs';
 import { expandScripts } from '../scripts/manifest-utils.mjs';
@@ -28,7 +28,7 @@ test('the Chrome service worker loads the same scripts as Firefox, in order', ()
 });
 
 test('pages only load scripts that exist', () => {
-  for (const page of ['options', 'snippets', 'history']) {
+  for (const page of ['options', 'snippets', 'history', 'stats']) {
     const html = readFileSync(join(ext, 'pages', `${page}.html`), 'utf8');
     for (const [, src] of html.matchAll(/<script src="([^"]+)"/g)) {
       assert.ok(existsSync(join(ext, 'pages', src)), `${page}.html -> ${src}`);
@@ -52,4 +52,12 @@ test('dark mode loads on its own at document_start so pages never flash white', 
   const dark = manifest.content_scripts.find((script) => script.js.includes('content/dark.js'));
   assert.equal(dark.run_at, 'document_start');
   assert.deepEqual(dark.js, ['content/dark.js']);
+});
+
+test('pages that build prompts load every prompt file', () => {
+  const files = readdirSync(join(ext, 'prompts')).filter((f) => f.endsWith('.js') && !f.startsWith('_'));
+  for (const page of ['options', 'snippets']) {
+    const html = readFileSync(join(ext, 'pages', `${page}.html`), 'utf8');
+    for (const file of files) assert.ok(html.includes(`../prompts/${file}`), `${page}.html loads prompts/${file}`);
+  }
 });

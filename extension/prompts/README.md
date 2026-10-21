@@ -112,3 +112,22 @@ You can reword anything, but **keep the JSON field names** in the `save` prompt 
 - **Give concrete examples** of what you want and don't want. One example phrase works better than adjectives.
 - **Write for small models too.** Short, direct sentences and explicit formats help 3–8B models most.
 - **Change one thing at a time** and compare runs on the same input.
+
+## Prompts for websites without a site profile
+
+A prompt file can also name the websites it covers, with `label` (shown in settings) and `hosts`
+(subdomains match too). This is how YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon,
+Stack Overflow and news sites get their own prompts:
+
+```js
+root.soroagent.definePrompts('youtube', {
+  label: 'YouTube',
+  hosts: ['youtube.com', 'youtu.be'],
+  persona: `You are soroagent, …`,
+  summarize: { system: `{{persona}}`, user: `{{page}}\n\nSummarize this YouTube video page. …` },
+});
+```
+
+Add the new file to the `<script>` tags in `pages/options.html` and `pages/snippets.html` (a test checks this).
+Users can rewrite any set's `persona` in **Settings → Prompts**, and optimize it with their model.
+
