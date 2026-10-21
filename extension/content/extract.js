@@ -1,5 +1,5 @@
 // Reads the useful text out of a live page: the main readable content for summaries,
-// questions, saving and the AI Slop check.
+// questions and saving.
 (function (root) {
   'use strict';
 

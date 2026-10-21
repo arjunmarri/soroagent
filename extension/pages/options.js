@@ -265,7 +265,9 @@
       pendingKeys = {};
       showKeyField();
     }
-    saved = await S.saveSettings(readForm());
+    const form = readForm();
+    // Choosing a model here means the panel never needs to suggest one.
+    saved = await S.saveSettings({ ...form, modelTipSeen: Boolean(saved.modelTipSeen || chosenModel()) });
     $('saved').textContent = 'Saved.';
     setTimeout(() => ($('saved').textContent = ''), 2500);
   });

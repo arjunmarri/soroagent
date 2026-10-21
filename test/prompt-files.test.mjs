@@ -9,11 +9,7 @@ const siteFiles = readdirSync(join(root, 'extension/sites')).filter((f) => f.end
 const S = await load('shared/markdown.js', 'shared/prompts.js', ...promptFiles, 'sites/registry.js', ...siteFiles.map((f) => `sites/${f}`));
 
 const setIds = promptFiles.map((f) => f.replace(/^prompts\/|\.js$/g, ''));
-const JSON_SHAPES = {
-  save: ['"title"', '"summary"', '"tags"'],
-  aiCheck: ['"ai_probability"', '"confidence"', '"signals"'],
-  aiCheckItems: ['"scores"', '"ai"', '"why"'],
-};
+const JSON_SHAPES = { save: ['"title"', '"summary"', '"tags"'] };
 
 test('there is a default prompt set covering every action', () => {
   const defaults = S.promptsFor('default');

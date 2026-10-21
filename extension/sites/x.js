@@ -258,8 +258,6 @@
       format: formatPosts,
       focused: focusedPost,
       element: (post) => (post.el && post.el.isConnected ? post.el : null),
-      // Where to show an AI-check badge inside a post.
-      badgeAnchor: (post) => post.el && post.el.querySelector('[data-testid="tweetText"]'),
       describe: (post) => `${post.handle}${post.name ? ` (${post.name})` : ''}: ${post.text}${post.url ? `\n${post.url}` : ''}`,
     },
   });

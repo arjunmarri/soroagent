@@ -2,9 +2,9 @@
 // prompts in extension/prompts/ quickly.
 //
 //   npm run try-prompt -- --action summarize
-//   npm run try-prompt -- --site x --action aiCheckItems --show-prompt
+//   npm run try-prompt -- --site x --action summarize --show-prompt
 //   npm run try-prompt -- --site x --action ask --question "Which posts are about privacy?"
-//   npm run try-prompt -- --action aiCheck --input my-page.txt --model qwen3:30b-a3b
+//   npm run try-prompt -- --action save --input my-page.txt --model qwen3:30b-a3b
 //
 // Options: --site <id> (default "default"), --action <name>, --input <file>, --question <text>,
 //          --context <text>, --model <name> (default: the best installed model), --url <server>
@@ -63,16 +63,13 @@ if (!connection.model) {
   process.exit(1);
 }
 
-const json = ['save', 'aiCheck', 'aiCheckItems'].includes(args.action);
+const json = args.action === 'save';
 console.log(`\x1b[2m──── ${args.site}/${args.action} on ${connection.model} ────\x1b[0m`);
 const started = Date.now();
 const reply = await S.chat({ connection, api: status.api, messages, json, onToken: (t) => process.stdout.write(t) });
 console.log(`\n\x1b[2m──── ${((Date.now() - started) / 1000).toFixed(1)}s ────\x1b[0m`);
 
 if (json) {
-  const parsed =
-    args.action === 'aiCheck' ? S.parseAiCheck(reply)
-    : args.action === 'aiCheckItems' ? Object.fromEntries(S.parseAiScores(reply, Array.from({ length: count || 50 }, (_, i) => i + 1)))
-    : S.parseSnippetMeta(reply, basename(inputFile));
-  console.log('Parsed by SoroAgent:', parsed ? JSON.stringify(parsed, null, 2) : "(couldn't read the reply — SoroAgent would show an error)");
+  const parsed = S.parseSnippetMeta(reply, basename(inputFile));
+  console.log('Parsed by SoroAgent:', JSON.stringify(parsed, null, 2));
 }

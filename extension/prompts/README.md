@@ -1,6 +1,6 @@
 # Site-specific prompts
 
-Every prompt SoroAgent sends to the model lives in this folder as plain text. To change how SoroAgent summarizes, answers, saves or runs the AI Slop check, edit the prompt here; you don't need to touch any extension code.
+Every prompt SoroAgent sends to the model lives in this folder as plain text. To change how SoroAgent summarizes, answers questions or labels what you save, edit the prompt here; you don't need to touch any extension code.
 
 | File | Used on |
 |---|---|
@@ -17,7 +17,7 @@ For each action, SoroAgent combines up to three layers. A later layer wins, sepa
 2. `prompts/<site id>.js`, for example `x.js`, when the page matches the site profile with that id in [`../sites/`](../sites)
 3. `prompts` written directly inside a site profile (rarely needed)
 
-So a site file only needs the parts it changes. For example, `x.js` replaces the AI Slop check's `system` prompt but keeps the default `user` prompt and its JSON format.
+So a site file only needs the parts it changes. For example, `x.js` replaces the `user` prompt for **Save** but keeps the default `system` prompt.
 
 ## Fine-tuning loop
 
@@ -43,7 +43,7 @@ So a site file only needs the parts it changes. For example, `x.js` replaces the
 | Option | Default | |
 |---|---|---|
 | `--site` | `default` | Prompt set to use (`default`, `x`, …) |
-| `--action` | `summarize` | `summarize`, `notes`, `ask`, `save`, `aiCheck`, `aiCheckItems` |
+| `--action` | `summarize` | `summarize`, `notes`, `ask`, `save` |
 | `--input` | a file in `samples/` | Text to run the prompt on |
 | `--question` | | The question, for `ask` |
 | `--context` | an X search description for `x` | Fills `{{context}}` |
@@ -51,7 +51,7 @@ So a site file only needs the parts it changes. For example, `x.js` replaces the
 | `--url` | `http://127.0.0.1:11434` | Your local server (or set `SOROAGENT_URL`) |
 | `--show-prompt` | off | Print the exact messages sent to the model |
 
-For JSON actions, `try-prompt` also prints what SoroAgent read from the reply. If that line says it couldn't read the reply, the extension would show an error too.
+For `save`, `try-prompt` also prints the title, summary and tags SoroAgent read from the reply.
 
 ## Actions
 
@@ -61,10 +61,8 @@ For JSON actions, `try-prompt` also prints what SoroAgent read from the reply. I
 | `notes` | Long content is summarized in parts: notes per part, then `summarize` merges them | Markdown |
 | `ask` | A question typed in the panel. `system` carries the page; `user` is the question | Markdown |
 | `save` | **Save**: title, summary and tags | JSON `{ "title", "summary", "tags" }` |
-| `aiCheck` | **AI Slop check** on a whole page | JSON `{ "ai_probability", "confidence", "signals" }` |
-| `aiCheckItems` | **AI Slop check** on sites with posts: one score per post | JSON `{ "scores": { "<n>": { "ai", "why" } } }` |
 
-You can reword anything, but **keep the JSON field names** for JSON actions so SoroAgent can read the reply. Every prompt set can also define a `persona` string, which fills `{{persona}}`.
+You can reword anything, but **keep the JSON field names** in the `save` prompt so SoroAgent can read the reply. Every prompt set can also define a `persona` string, which fills `{{persona}}`.
 
 ## Placeholders
 
@@ -90,6 +88,6 @@ You can reword anything, but **keep the JSON field names** for JSON actions so S
 
 - **Say what the content is.** "Posts from an X search for …" or "a GitHub issue thread" helps more than general instructions. `{{context}}` is the place for it.
 - **Ask for structure** (headings, bullets), and say what to leave out.
-- **List concrete signals** for judgments such as the AI Slop check. One example phrase per signal works better than adjectives.
+- **Give concrete examples** of what you want and don't want. One example phrase works better than adjectives.
 - **Write for small models too.** Short, direct sentences and explicit formats help 3–8B models most.
 - **Change one thing at a time** and compare runs on the same input.

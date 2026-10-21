@@ -22,7 +22,7 @@
     const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
     const usable = tab && /^https?:/.test(tab.url || '');
     if (!usable) {
-      for (const id of ['open', 'summarize', 'aicheck']) $(id).disabled = true;
+      for (const id of ['open', 'summarize', 'save']) $(id).disabled = true;
       $('note').textContent = "SoroAgent can't run on this page (browser and store pages are off-limits).";
     }
   }
@@ -38,7 +38,7 @@
 
   $('open').addEventListener('click', () => runInTab('open'));
   $('summarize').addEventListener('click', () => runInTab('summarize'));
-  $('aicheck').addEventListener('click', () => runInTab('aicheck'));
+  $('save').addEventListener('click', () => runInTab('save'));
   $('snippets').addEventListener('click', () => ext.runtime.sendMessage({ type: 'open:snippets' }).then(() => window.close()));
   $('settings').addEventListener('click', () => ext.runtime.openOptionsPage().then(() => window.close()));
 

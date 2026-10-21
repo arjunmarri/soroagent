@@ -5,12 +5,11 @@ An AI assistant on every web page. SoroAgent is a browser extension for Chrome (
 - **A local model on your computer:** [Ollama](https://ollama.com), LM Studio, llama.cpp, Jan, or any OpenAI-compatible server. This is private and free.
 - **A cloud API with your own key:** Anthropic (Claude), OpenAI, Google Gemini, OpenRouter, Groq, Mistral, DeepSeek, xAI, or any OpenAI-compatible API. Use this if you don't have a local model.
 
-Click the smiling ☺ button on any page to:
+Click the owl 🦉 on any page (a monochrome outline on a translucent button, always there and quietly watching) to:
 
 - **Summarize** the page. Ask again while nothing has changed and you get the earlier summary instantly, with a **Regenerate** link.
 - **Ask** follow-up questions about the page in a chat.
 - **Save** your selection (or the page) to a local library. The model writes a title, a summary and tags.
-- **AI Slop check**: estimates how likely the main content was **written by AI or by a person**, as a percentage with a confidence level and the signals it noticed. On sites made of posts, each post gets its own badge, and you can hide the ones that are likely AI.
 
 **Extra features on X (formerly Twitter)**, detected automatically:
 
@@ -85,22 +84,22 @@ On first install the settings page opens and tests the connection to `http://127
 
 | Where | How |
 |---|---|
-| Any page | The ☺ button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). Drag it to either edge to move it; SoroAgent remembers the spot per site. |
+| Any page | The owl button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). Drag it to either edge to move it; SoroAgent remembers the spot per site. |
 | Keyboard | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens or closes the assistant (Option on a Mac). You can change it at `chrome://extensions/shortcuts`. |
-| Right-click menu | *Save selection to SoroAgent*, *Summarize this page*, *AI Slop check* |
+| Right-click menu | *Save selection to SoroAgent*, *Summarize this page* |
 | Toolbar icon | Connection status, quick actions, snippets and settings |
 
 Saved snippets are listed on the **Snippets** page, where you can search, filter by tag, copy, delete, and export to JSON or Markdown (and import JSON).
 
 The panel's **⋯** menu can hide the button on the current site or reset a dragged position. In settings you can turn the button off everywhere or pin it to a corner. You can also change the server URL, model, temperature, context window and how much page text to send.
 
-**Picking a local model.** When you connect a local server, SoroAgent ranks your installed models for its tasks by family, size and speed. Mixture-of-experts models such as `qwen3:30b-a3b` give large-model quality at small-model speed. It suggests the best fit (plus a lighter option and a higher-quality one) in settings and in the panel. If nothing installed fits well, it suggests a model to download.
+**Picking a local model.** When you connect a local server, SoroAgent ranks your installed models for its tasks by family, size and speed. Mixture-of-experts models such as `qwen3:30b-a3b` give large-model quality at small-model speed. Settings always shows the best fit, plus a lighter option and a higher-quality one. The panel suggests a better model only once, the first time, and never again once you've picked a model yourself. If nothing installed fits well, it suggests a model to download.
 
 ## Site-specific prompts
 
 Every prompt SoroAgent uses is plain text in [`extension/prompts/`](extension/prompts), so you can fine-tune it without touching the extension code:
 
-- [`default.js`](extension/prompts/default.js): prompts for every site (Summarize, Ask, Save, AI Slop check).
+- [`default.js`](extension/prompts/default.js): prompts for every site (Summarize, Ask, Save).
 - [`x.js`](extension/prompts/x.js): prompts for X, overriding only what differs.
 - `<site>.js`: add your own. A site file only needs the parts it changes.
 
@@ -131,7 +130,6 @@ Profiles in [`extension/sites/`](extension/sites) give SoroAgent site-specific b
   - *Limits:* this protects against websites, other extensions, and copies or backups of extension storage. It can't stop malware running as your user account, which could control the browser itself. Treat API keys like passwords: give them a spending limit and revoke them if a device is lost.
 - **Ollama and 403 errors:** Ollama rejects requests from `chrome-extension://` and `moz-extension://` origins by default. SoroAgent rewrites the `Origin` header to the server's own origin, which Ollama always accepts. This applies only to the extension's own background requests: Chrome uses a session `declarativeNetRequest` rule and Firefox uses `webRequest`. Requests from web pages are never changed, so you don't need to set `OLLAMA_ORIGINS`.
 - Reasoning models (Qwen3, DeepSeek-R1, Gemma 4…) run with thinking turned off for speed, and any `<think>` output is removed. You can turn thinking on in settings.
-- **AI Slop check is an estimate.** A language model judges style signals; it isn't a detector with a known error rate. Short, edited or translated text is often misjudged, and larger models judge better. On a 40-post test set, `qwen3:30b-a3b` scored 37/40 and `llama3.2:3b` scored 32/40.
 - Settings, keys and snippets are stored in `chrome.storage.local` on your machine (one key per snippet, so saves from several tabs can't overwrite each other).
 
 ## Development

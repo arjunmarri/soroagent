@@ -17,7 +17,7 @@
 
   const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
 
-  const ACTIONS = Object.freeze(['summarize', 'notes', 'ask', 'save', 'aiCheck', 'aiCheckItems']);
+  const ACTIONS = Object.freeze(['summarize', 'notes', 'ask', 'save']);
   const PLACEHOLDERS = Object.freeze(['persona', 'title', 'url', 'content', 'page', 'count', 'context', 'note', 'question']);
   const promptSets = {}; // set id ("default", "x", …) -> { persona?, <action>: { system?, user? } }
 
@@ -116,67 +116,6 @@
     return null;
   }
 
-  // Accepts 0-100 or a 0-1 fraction (e.g. 0.72) and returns an integer percentage.
-  function toPercent(value) {
-    const n = Number(String(value).replace('%', '').trim());
-    if (value === null || value === '' || !Number.isFinite(n)) return null;
-    const pct = n > 0 && n < 1 ? n * 100 : n;
-    return Math.max(0, Math.min(100, Math.round(pct)));
-  }
-
-  function verdictFor(percent) {
-    if (percent >= 70) return 'ai';
-    if (percent <= 30) return 'human';
-    return 'mixed';
-  }
-
-  /** Whole-page AI check → { aiPercent, verdict, confidence, signals }, or null if unusable. */
-  function parseAiCheck(text) {
-    const json = parseJsonLoose(text);
-    if (!json) return null;
-    const aiPercent = toPercent(json.ai_probability ?? json.aiProbability ?? json.ai ?? json.probability);
-    if (aiPercent === null) return null;
-    const conf = String(json.confidence || '').toLowerCase();
-    const signals = (Array.isArray(json.signals) ? json.signals : [])
-      .map((s) => String(s).replace(/\s+/g, ' ').trim().slice(0, 200))
-      .filter(Boolean)
-      .slice(0, 5);
-    return {
-      aiPercent,
-      verdict: verdictFor(aiPercent),
-      confidence: ['low', 'medium', 'high'].includes(conf) ? conf : 'low',
-      signals,
-    };
-  }
-
-  /**
-   * Per-item AI check → Map(id → { ai, why }) for the given valid ids. Accepts the documented
-   * {"scores": {"1": {...}}} and the variations small models produce: keys like "[1]", "#1" or
-   * "1.", plain numbers instead of objects, and lists of { id, ai }.
-   */
-  function parseAiScores(text, validIds) {
-    const json = parseJsonLoose(text) || {};
-    let scores = json.scores !== undefined ? json.scores : json;
-    if (Array.isArray(scores)) {
-      scores = Object.fromEntries(scores.filter((e) => e && typeof e === 'object').map((e, i) => [e.id ?? e.item ?? i + 1, e]));
-    }
-    const byId = new Map();
-    for (const [key, entry] of Object.entries(scores && typeof scores === 'object' ? scores : {})) {
-      const id = Number(String(key).replace(/[^\d]/g, ''));
-      if (Number.isInteger(id) && !byId.has(id)) byId.set(id, entry);
-    }
-    const out = new Map();
-    for (const id of validIds) {
-      const entry = byId.get(id);
-      if (entry === undefined || entry === null) continue;
-      const isObj = typeof entry === 'object';
-      const ai = toPercent(isObj ? entry.ai ?? entry.score ?? entry.probability : entry);
-      if (ai === null) continue;
-      out.set(id, { ai, why: isObj ? String(entry.why || entry.reason || '').trim().slice(0, 80) : '' });
-    }
-    return out;
-  }
-
   function parseSnippetMeta(text, fallbackTitle) {
     const json = parseJsonLoose(text) || {};
     const clean = (value, max) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -197,9 +136,6 @@
     pageVars,
     buildMessages,
     parseJsonLoose,
-    parseAiCheck,
-    parseAiScores,
-    verdictFor,
     parseSnippetMeta,
   });
 })(globalThis);

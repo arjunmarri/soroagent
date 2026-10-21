@@ -252,7 +252,6 @@
   const MENU_ITEMS = [
     { id: 'soroagent-save-selection', title: 'Save selection to SoroAgent', contexts: ['selection'], action: 'save' },
     { id: 'soroagent-summarize', title: 'Summarize this page', contexts: ['page'], action: 'summarize' },
-    { id: 'soroagent-aicheck', title: 'AI Slop check', contexts: ['page'], action: 'aicheck' },
   ];
 
   async function createMenus() {

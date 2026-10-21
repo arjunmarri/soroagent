@@ -2,7 +2,7 @@
 
 SoroAgent works on any page, but a **site profile** makes it smarter on a specific website. A profile can:
 
-- use **specialized prompts** for each action (summarize, ask, save, AI Slop check). The prompt texts live in [`../prompts/`](../prompts), one file per site, so they're easy to fine-tune;
+- use **specialized prompts** for each action (summarize, ask, save). The prompt texts live in [`../prompts/`](../prompts), one file per site, so they're easy to fine-tune;
 - read the page as **items** (posts, comments, results) rather than plain text;
 - **gather more content by scrolling** (for example, 100 posts from a search page);
 - add **toggles** to the panel (for example, "Verified only" on X).
@@ -48,7 +48,6 @@ For sites made of posts or results, add an `items` object:
 | `collect({ target, skip, options, signal, onProgress, fromY })` | Scrolls and gathers items. Resolves with `{ items, endY, exhausted }`. |
 | `focused(document, location)` | The item **Save** stores when nothing is selected. |
 | `describe(item)` | Plain-text version of an item for saving. |
-| `badgeAnchor(item)` | Element after which the AI Slop check badge is placed. |
 
 ## Tips
 

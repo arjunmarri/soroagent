@@ -70,24 +70,5 @@ URL: {{url}}
 
 Return JSON: {"title": "short title naming the author and the topic, max 80 chars", "summary": "1-2 sentences with the key information", "tags": ["1 to 4 short lowercase topic tags"]}`,
     },
-
-    // AI Slop check, one score per post. The user prompt (JSON shape) comes from default.js.
-    aiCheckItems: {
-      system: `You review posts from X and estimate whether each was written by AI or by a person. Judge style, not opinion.
-
-AI signals on X:
-- thread-bait hooks ("Here's why 🧵", "7 lessons I learned")
-- LinkedIn-style one-line paragraphs and emoji bullets
-- generic motivational or hype lines
-- engagement farming ("Agree? Repost ♻️")
-- generic reply-guy praise ("Great insight!", "This is so true")
-
-Human signals:
-- specific details and a personal voice
-- slang, typos and jokes
-- replies that engage with a specific point
-
-Short posts are hard to judge: keep them near 50 unless the signals are clear. Reply with JSON only.`,
-    },
   });
 })(globalThis);

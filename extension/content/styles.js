@@ -48,30 +48,32 @@ svg { width: 18px; height: 18px; flex: none; }
 
 .launcher {
   position: fixed; right: 16px; bottom: 20px; z-index: 2147483647;
-  width: 48px; height: 48px; border-radius: 50%; border: none; padding: 0;
+  width: 48px; height: 48px; border-radius: 50%; padding: 0;
   display: grid; place-items: center; touch-action: none;
-  background: linear-gradient(140deg, #6366f1, #8b5cf6);
-  color: #fff; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.45);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, top 0.25s ease, left 0.25s ease, right 0.25s ease;
+  color: #fff;
+  background: rgba(18, 18, 22, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, top 0.25s ease, left 0.25s ease, right 0.25s ease;
 }
-.launcher:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 12px 28px rgba(79, 70, 229, 0.55); }
-.launcher.dragging { transition: none; cursor: grabbing; transform: scale(1.08); }
+.launcher:hover { transform: translateY(-2px); background: rgba(18, 18, 22, 0.68); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.launcher.dragging { transition: none; cursor: grabbing; transform: scale(1.06); }
 .launcher.busy::after {
   content: ""; position: absolute; inset: -4px; border-radius: 50%;
-  border: 2px solid transparent; border-top-color: #8b5cf6; animation: spin 0.9s linear infinite;
+  border: 1.5px solid transparent; border-top-color: rgba(255, 255, 255, 0.85); animation: spin 0.9s linear infinite;
 }
 
-/* The face: eyes blink now and then; opening the panel turns the small smile into a grin. */
-.face { width: 34px; height: 34px; overflow: visible; }
-.face .eye { fill: currentColor; transform-box: fill-box; transform-origin: center; animation: blink 6s infinite; }
-.face .mouth { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; transform-box: fill-box; transform-origin: center; transition: opacity 0.2s ease, transform 0.3s cubic-bezier(.3, 1.6, .5, 1); }
-.face .smile { opacity: 0; transform: scale(0.6); }
-.launcher.open .face .rest { opacity: 0; transform: scale(1.3); }
-.launcher.open .face .smile { opacity: 1; transform: scale(1); }
-.launcher.open .face .eye { animation: none; transform: scaleY(0.55) translateY(1px); transition: transform 0.25s ease; }
-.launcher.open { animation: hop 0.45s ease; }
-.brand-mark .face { width: 18px; height: 18px; }
-.brand-mark .face .eye { animation: none; }
+/* The owl: pupils drift as it watches, it blinks now and then; opening the panel wakes it up. */
+.owl { width: 33px; height: 33px; overflow: visible; }
+.owl .eyes, .owl .pupils, .owl { transform-box: fill-box; transform-origin: center; }
+.owl .eyes { animation: blink 7s infinite; }
+.owl .pupils { animation: watch 11s ease-in-out infinite; transition: transform 0.3s ease; }
+.launcher.open .owl { animation: perk 0.5s ease; }
+.launcher.open .owl .pupils { animation: none; transform: scale(1.35); }
+.brand-mark .owl { width: 18px; height: 18px; }
+.brand-mark .owl .wings { display: none; }
 
 .panel {
   position: fixed; right: 16px; bottom: 80px; z-index: 2147483647;
@@ -88,9 +90,10 @@ header {
 }
 .brand { display: flex; align-items: center; gap: 7px; font-weight: 650; letter-spacing: -0.01em; }
 .brand-mark {
-  width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center;
-  background: linear-gradient(140deg, #6366f1, #8b5cf6); color: #fff;
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: #18181b; color: #fff;
 }
+@media (prefers-color-scheme: dark) { .brand-mark { background: rgba(255, 255, 255, 0.12); } }
 .status {
   margin-left: auto; min-width: 0; display: flex; align-items: center; gap: 6px;
   padding: 3px 4px 3px 9px; border-radius: 999px; background: var(--bg-soft);
@@ -185,18 +188,6 @@ header {
 .toggle[aria-pressed="true"] { border-color: var(--accent); }
 .toggle[aria-pressed="true"]::before { background: var(--accent); box-shadow: inset 9px 0 0 2px var(--bg); }
 
-/* AI Slop check result */
-.meter { position: relative; height: 10px; border-radius: 999px; overflow: hidden; margin: 10px 0 6px; background: linear-gradient(90deg, #16a34a, #d97706 50%, #dc2626); }
-.meter > i { position: absolute; top: -3px; width: 4px; height: 16px; border-radius: 2px; background: var(--fg); box-shadow: 0 0 0 2px var(--bg); transform: translateX(-50%); }
-.meter-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--fg-muted); }
-.big-number { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
-.verdict-ai { color: var(--err); } .verdict-human { color: var(--ok); } .verdict-mixed { color: var(--warn); }
-.card ul.signals { margin: 8px 0 0; padding-left: 18px; color: var(--fg); }
-.card ul.signals li { margin: 2px 0; }
-.fine { font-size: 11.5px; color: var(--fg-muted); margin-top: 8px; }
-.stats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.stat { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); }
-
 /* Model suggestions */
 .recs { display: grid; gap: 6px; margin-top: 8px; }
 .rec { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); }
@@ -221,28 +212,17 @@ header {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: 0.35; } }
-@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
-@keyframes hop { 0% { transform: scale(1); } 35% { transform: scale(1.14) translateY(-3px); } 70% { transform: scale(0.97); } 100% { transform: scale(1); } }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
+@keyframes watch { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-0.5px); } 45% { transform: translateX(0.6px); } 70% { transform: translate(0.2px, 0.3px); } }
+@keyframes perk { 0% { transform: rotate(0) scale(1); } 35% { transform: rotate(-9deg) scale(1.08); } 70% { transform: rotate(4deg) scale(1); } 100% { transform: rotate(0) scale(1); } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 `;
 
-  // Applied to the page itself (outside the shadow root): site filters and AI Slop check badges.
+  // Applied to the page itself (outside the shadow root): site filters such as X's "Verified only".
   SoroAgent.PAGE_CSS = `
-[data-soroagent-filtered], [data-soroagent-aihidden] { display: none !important; }
-soroagent-badge {
-  display: inline-flex !important; align-items: center; gap: 5px; margin: 6px 0 2px; padding: 1px 9px;
-  border-radius: 999px; font: 600 12px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #fef3c7; color: #92400e; cursor: help;
-}
-soroagent-badge[data-verdict="ai"] { background: #fee2e2; color: #b91c1c; }
-soroagent-badge[data-verdict="human"] { background: #dcfce7; color: #166534; }
-@media (prefers-color-scheme: dark) {
-  soroagent-badge { background: #422006; color: #fcd34d; }
-  soroagent-badge[data-verdict="ai"] { background: #450a0a; color: #fca5a5; }
-  soroagent-badge[data-verdict="human"] { background: #052e16; color: #86efac; }
-}
+[data-soroagent-filtered] { display: none !important; }
 `;
 })(globalThis);

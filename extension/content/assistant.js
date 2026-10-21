@@ -1,4 +1,4 @@
-// The on-page assistant: a floating face button that opens a panel connected to the model.
+// The on-page assistant: a floating owl button that opens a panel connected to the model.
 // Loaded last; depends on shared/*.js, sites/*.js, content/extract.js, styles.js and launcher.js.
 (function () {
   'use strict';
@@ -14,16 +14,18 @@
 
   const svg = (body, fill = 'none') =>
     `<svg viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
-  const FACE =
-    '<svg class="face" viewBox="0 0 48 48" aria-hidden="true">' +
-    '<ellipse class="eye" cx="17" cy="20" rx="3" ry="3.8"/><ellipse class="eye" cx="31" cy="20" rx="3" ry="3.8"/>' +
-    '<path class="mouth rest" d="M18.5 30 Q24 33.5 29.5 30"/><path class="mouth smile" d="M14.5 27.5 Q24 39 33.5 27.5"/></svg>';
+  // The SoroAgent owl: a monochrome outline — always there, quietly watching.
+  const OWL =
+    '<svg class="owl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5.5 3.5 6.2 8.2Q4.8 10.5 5.2 13.5Q6 19.5 12 20.5Q18 19.5 18.8 13.5Q19.2 10.5 17.8 8.2L18.5 3.5 15 6.2Q12 5.2 9 6.2Z"/>' +
+    '<g class="eyes"><circle cx="9.2" cy="10.6" r="2.3"/><circle cx="14.8" cy="10.6" r="2.3"/>' +
+    '<g class="pupils" fill="currentColor" stroke="none"><circle cx="9.2" cy="10.6" r="0.95"/><circle cx="14.8" cy="10.6" r="0.95"/></g></g>' +
+    '<path d="M11.2 13.2 12 14.6 12.8 13.2"/><path class="wings" d="M7.6 13.6q.7 3 3.4 4.6M16.4 13.6q-.7 3-3.4 4.6"/></svg>';
   const ICONS = {
     close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
     more: svg('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
     summarize: svg('<path d="M4 6h16M4 12h16M4 18h10"/>'),
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
-    aicheck: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8.5 11h5M11 8.5v5"/>'),
     send: svg('<path d="M12 19V5M5 12l7-7 7 7"/>'),
     stop: svg('<rect x="7" y="7" width="10" height="10" rx="1.5"/>', 'currentColor'),
     check: svg('<path d="M20 6 9 17l-5-5"/>'),
@@ -57,10 +59,10 @@
 
   const ui = document.createElement('div');
   setHtml(ui, `
-    <button class="launcher" type="button" hidden aria-label="Open SoroAgent" title="SoroAgent (Alt+Shift+K) · drag to move">${FACE}</button>
+    <button class="launcher" type="button" hidden aria-label="Open SoroAgent" title="SoroAgent (Alt+Shift+K) · drag to move">${OWL}</button>
     <section class="panel" role="dialog" aria-label="SoroAgent" hidden>
       <header>
-        <div class="brand"><span class="brand-mark">${FACE}</span>SoroAgent</div>
+        <div class="brand"><span class="brand-mark">${OWL}</span>SoroAgent</div>
         <div class="status">
           <span class="dot" aria-hidden="true"></span>
           <span class="status-text">Not connected</span>
@@ -80,7 +82,6 @@
       <div class="actions">
         <button class="chip" type="button" data-action="summarize">${ICONS.summarize}<span>Summarize</span></button>
         <button class="chip" type="button" data-action="save">${ICONS.save}<span>Save</span></button>
-        <button class="chip" type="button" data-action="aicheck" title="Estimate whether the content was written by AI or a person">${ICONS.aicheck}<span>AI Slop check</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="thread" aria-live="polite">
@@ -90,7 +91,6 @@
           <ul>
             <li><b>Summarize</b> the page</li>
             <li><b>Save</b> your selection or the page</li>
-            <li><b>AI Slop check</b>: was this written by AI or a person?</li>
             <li>Or ask anything about the page below</li>
           </ul>
         </div>
@@ -161,8 +161,6 @@
     lastSelection: { text: '', at: 0 },
     summaries: new Map(), // content fingerprint -> earlier summary, for repeat Summarize on unchanged content
     feed: null, // batches gathered by scrolling: { url, optionsKey, seen, endY, done, exhausted }
-    badges: new Map(), // item id -> { ai, why } from the AI Slop check
-    aiHidden: false,
   };
 
   const launcherCtl = S.createLauncherController({
@@ -301,35 +299,30 @@
     }
   }
 
-  // Once per page: if a better-suited local model is installed than the one in use, say so.
+  // The model suggestion appears at most once, ever: the first time a better-suited local model is
+  // installed than the one in use. Choosing a model (here or in settings) also turns it off for good.
   function maybeSuggestModels(status) {
-    if (state.tipShown || status.cloud) return;
+    if (state.tipShown || status.cloud || state.settings.modelTipSeen) return;
     const best = state.recommended[0];
     const inUse = status.model;
-    if (status.pullSuggestion && (!best || best.id === inUse)) {
-      state.tipShown = true;
+    const needsPull = status.pullSuggestion && (!best || best.id === inUse);
+    if (!needsPull && (!best || best.id === inUse)) return;
+    state.tipShown = true;
+    S.saveSettings({ modelTipSeen: true });
+    if (needsPull) {
       append(card({ icon: 'star', title: 'Tip: a better model for SoroAgent', body: `Your installed models aren't a great fit. Try ${status.pullSuggestion.reason}:`, pre: status.pullSuggestion.command }));
       return;
     }
-    if (!best || best.id === inUse || state.settings.dismissedModelTip === best.id) return;
-    state.tipShown = true;
     const node = card({
       icon: 'star',
-      title: 'Better models for SoroAgent are installed',
-      body: `You're using ${inUse}. Based on size and model family, these fit best:`,
-      actions: [
-        {
-          label: "Don't suggest again",
-          onClick: () => {
-            S.saveSettings({ dismissedModelTip: best.id });
-            node.remove();
-          },
-        },
-      ],
+      title: 'A better model for SoroAgent is installed',
+      body: `You're using ${inUse}. Based on size and model family, these fit best. You can change this any time in the model menu or settings.`,
+      actions: [{ label: 'Keep current model', onClick: () => node.remove() }],
     });
     const list = el('div', { className: 'recs' });
     for (const rec of state.recommended) {
-      const use = el('button', { type: 'button', textContent: 'Use' });
+      const use = el('button', { type: 'button', textContent: rec.id === inUse ? 'In use' : 'Use' });
+      use.disabled = rec.id === inUse;
       use.addEventListener('click', () => {
         els.model.value = rec.id;
         els.model.dispatchEvent(new Event('change'));
@@ -778,152 +771,6 @@
   }
 
   // ---------------------------------------------------------------------------
-  // AI Slop check
-  // ---------------------------------------------------------------------------
-
-  const VERDICT_TEXT = { ai: 'Likely AI-generated', human: 'Likely written by a person', mixed: 'Mixed or unclear' };
-  const DISCLAIMER = 'An estimate by a language model, not proof. Short, edited or translated text is often misjudged.';
-
-  function aiCheck() {
-    const site = items();
-    if (site) {
-      const posts = site.visible(document, siteOptions());
-      if (posts.length) return aiCheckItems(posts);
-    }
-    return aiCheckPage();
-  }
-
-  function aiCheckPage() {
-    return runTask(async (signal) => {
-      const page = getPage(Math.min(maxChars(), 8000));
-      if (!page.text) throw new Error('This page has no readable text to check.');
-      addUserMessage('AI Slop check');
-      const progress = progressCard('aicheck', 'Checking the main content…');
-      let reply;
-      try {
-        const vars = S.pageVars(page, { context: pageInfo().context || '' });
-        reply = await runChat({ messages: S.buildMessages('aiCheck', vars, sitePrompts()), json: true, signal });
-      } finally {
-        progress.node.remove();
-      }
-      const result = S.parseAiCheck(reply);
-      if (!result) throw new Error("The model's answer couldn't be read. Try again or pick another model.");
-
-      const node = card({ icon: 'aicheck', title: VERDICT_TEXT[result.verdict] });
-      node.append(
-        el('div', {}, [
-          el('span', { className: `big-number verdict-${result.verdict}`, textContent: `${result.aiPercent}%` }),
-          el('span', { textContent: ` likely AI-generated · ${100 - result.aiPercent}% human · ${result.confidence} confidence` }),
-        ]),
-        el('div', { className: 'meter', title: `${result.aiPercent}% likely AI` }, [el('i', { style: `left:${result.aiPercent}%` })]),
-        el('div', { className: 'meter-scale' }, [el('span', { textContent: 'Human' }), el('span', { textContent: 'AI' })])
-      );
-      if (result.signals.length) node.append(el('ul', { className: 'signals' }, result.signals.map((s) => el('li', { textContent: s }))));
-      const words = page.text.split(/\s+/).length;
-      node.append(el('div', { className: 'fine', textContent: `${words < 150 ? 'There is only a little text to judge. ' : ''}${DISCLAIMER}` }));
-      append(node);
-    });
-  }
-
-  function badgeFor(score) {
-    const verdict = S.verdictFor(score.ai);
-    const label = verdict === 'human' ? `Human ${100 - score.ai}%` : verdict === 'ai' ? `AI ${score.ai}%` : `Unclear · AI ${score.ai}%`;
-    const badge = document.createElement('soroagent-badge');
-    badge.dataset.verdict = verdict;
-    badge.textContent = `${verdict === 'ai' ? '🤖' : verdict === 'human' ? '✍️' : '❔'} ${label}`;
-    badge.title = `${score.why ? `${score.why}. ` : ''}SoroAgent AI Slop check. ${DISCLAIMER}`;
-    return badge;
-  }
-
-  function placeBadge(item, score) {
-    const site = items();
-    const target = site.element(item);
-    if (!target) return;
-    target.querySelectorAll('soroagent-badge').forEach((b) => b.remove());
-    const anchor = (site.badgeAnchor && site.badgeAnchor(item)) || target.lastElementChild;
-    if (anchor) anchor.after(badgeFor(score));
-    if (state.aiHidden && score.ai >= 70) target.setAttribute('data-soroagent-aihidden', '');
-  }
-
-  function setAiHidden(hidden) {
-    state.aiHidden = hidden;
-    const site = items();
-    for (const item of site.visible(document, {})) {
-      const score = state.badges.get(item.id);
-      const target = site.element(item);
-      if (!target) continue;
-      if (hidden && score && score.ai >= 70) target.setAttribute('data-soroagent-aihidden', '');
-      else target.removeAttribute('data-soroagent-aihidden');
-    }
-  }
-
-  function aiCheckItems(posts) {
-    return runTask(async (signal) => {
-      const site = items();
-      const noun = site.noun || 'items';
-      // Re-attach badges the site may have re-rendered away, then check only new items.
-      for (const post of posts) if (state.badges.has(post.id)) placeBadge(post, state.badges.get(post.id));
-      const fresh = posts.filter((p) => !state.badges.has(p.id)).slice(0, 40);
-      addUserMessage(`AI Slop check · ${fresh.length || posts.length} ${noun}`);
-      if (!fresh.length) {
-        append(card({ title: `All visible ${noun} are already checked.`, body: 'Scroll to load more, then run the check again.' }));
-        return;
-      }
-      const progress = progressCard('aicheck', `Checking ${fresh.length} ${noun}…`);
-      try {
-        for (let i = 0; i < fresh.length; i += 10) {
-          const batch = fresh.slice(i, i + 10);
-          const vars = S.pageVars({ title: document.title, url: location.href, text: site.format(batch, { start: 1 }) }, { context: pageInfo().context || '', count: batch.length });
-          const messages = S.buildMessages('aiCheckItems', vars, sitePrompts());
-          const ids = batch.map((_, n) => n + 1);
-          let scores = S.parseAiScores(await runChat({ messages, json: true, signal }), ids);
-          // Small models sometimes return unreadable JSON: retry the batch once.
-          if (scores.size < batch.length / 2) {
-            const retry = S.parseAiScores(await runChat({ messages, json: true, signal }), ids);
-            if (retry.size > scores.size) scores = retry;
-          }
-          batch.forEach((post, n) => {
-            const score = scores.get(n + 1);
-            if (!score) return;
-            state.badges.set(post.id, score);
-            placeBadge(post, score);
-          });
-          const done = Math.min(i + 10, fresh.length);
-          progress.update(`Checked ${done} of ${fresh.length} ${noun}…`, done / fresh.length);
-        }
-      } finally {
-        progress.node.remove();
-      }
-
-      const checked = fresh.map((p) => state.badges.get(p.id)).filter(Boolean);
-      const count = (verdict) => checked.filter((s) => S.verdictFor(s.ai) === verdict).length;
-      const node = card({ icon: 'aicheck', title: `Checked ${checked.length} ${noun}` });
-      node.append(
-        el('div', { className: 'stats' }, [
-          el('span', { className: 'stat', textContent: `🤖 ${count('ai')} likely AI` }),
-          el('span', { className: 'stat', textContent: `✍️ ${count('human')} likely human` }),
-          el('span', { className: 'stat', textContent: `❔ ${count('mixed')} unclear` }),
-        ]),
-        el('div', { className: 'fine', textContent: `Each ${nounOne()} now shows its score. ${DISCLAIMER}` })
-      );
-      const hide = el('button', { type: 'button', textContent: state.aiHidden ? `Show likely-AI ${noun}` : `Hide likely-AI ${noun}` });
-      hide.addEventListener('click', () => {
-        setAiHidden(!state.aiHidden);
-        hide.textContent = state.aiHidden ? `Show likely-AI ${noun}` : `Hide likely-AI ${noun}`;
-      });
-      const clear = el('button', { type: 'button', textContent: 'Remove badges' });
-      clear.addEventListener('click', () => {
-        setAiHidden(false);
-        document.querySelectorAll('soroagent-badge').forEach((b) => b.remove());
-        state.badges.clear();
-        hide.textContent = `Hide likely-AI ${noun}`;
-      });
-      node.append(el('div', { className: 'card-actions' }, [hide, clear]));
-      append(node);
-    });
-  }
-
-  // ---------------------------------------------------------------------------
   // Site bar: page label and the site's toggles
   // ---------------------------------------------------------------------------
 
@@ -1012,7 +859,6 @@
     const action = chip.dataset.action;
     if (action === 'summarize') summarize();
     else if (action === 'save') save();
-    else if (action === 'aicheck') aiCheck();
   });
 
   // Clicking a chip would otherwise clear the user's text selection on the page.
@@ -1043,7 +889,8 @@
   });
 
   els.model.addEventListener('change', () => {
-    S.saveSettings(S.modelPatch(state.settings, els.model.value));
+    // Picking a model counts as an answer to the model suggestion.
+    S.saveSettings({ ...S.modelPatch(state.settings, els.model.value), modelTipSeen: true });
     els.statusText.textContent = els.model.value;
   });
 
@@ -1090,7 +937,6 @@
       openPanel();
       if (msg.action === 'summarize') summarize();
       else if (msg.action === 'save') save(msg.selectionText);
-      else if (msg.action === 'aicheck') aiCheck();
     }
     sendResponse({ ok: true });
     return false;
