@@ -28,6 +28,31 @@
     return snippet;
   }
 
+  /**
+   * Saves a snippet, replacing an earlier one with the same `dedupeKey` (e.g. re-summarizing an
+   * unchanged page) while keeping its id, creation time and any research attached to it.
+   */
+  async function upsertSnippet(fields) {
+    if (fields.dedupeKey) {
+      const existing = (await listSnippets()).find((s) => s.dedupeKey === fields.dedupeKey);
+      if (existing) {
+        const updated = { ...existing, ...fields, id: existing.id, createdAt: existing.createdAt, updatedAt: new Date().toISOString(), research: fields.research || existing.research };
+        await SoroAgent.ext.storage.local.set({ [PREFIX + existing.id]: updated });
+        return updated;
+      }
+    }
+    return addSnippet(fields);
+  }
+
+  async function updateSnippet(id, patch) {
+    const key = PREFIX + id;
+    const current = (await SoroAgent.ext.storage.local.get(key))[key];
+    if (!current) return null;
+    const updated = { ...current, ...patch, updatedAt: new Date().toISOString() };
+    await SoroAgent.ext.storage.local.set({ [key]: updated });
+    return updated;
+  }
+
   async function listSnippets() {
     const all = await SoroAgent.ext.storage.local.get(null);
     return Object.keys(all)
@@ -58,5 +83,5 @@
     return Object.keys(changes).some((key) => key.startsWith(PREFIX));
   }
 
-  Object.assign(SoroAgent, { addSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange });
+  Object.assign(SoroAgent, { addSnippet, upsertSnippet, updateSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange });
 })(globalThis);

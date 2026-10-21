@@ -166,6 +166,34 @@
     </section>
 
     <section>
+      <h2>Research</h2>
+      <p><b>Research</b> searches the web for a snippet's topic, reads the top results and writes a cited brief. The search query goes to the search engine below; the page you're reading doesn't.</p>
+      <div class="grid">
+        <label class="field"><span>Search engine</span>
+          <select id="researchEngine">
+            <option value="auto">Automatic: DuckDuckGo, then Brave Search, then Bing</option>
+            <option value="duckduckgo">DuckDuckGo first</option>
+            <option value="brave">Brave Search first</option>
+            <option value="searxng">My SearXNG server (self-hosted, most private)</option>
+          </select>
+        </label>
+        <label class="field"><span>SearXNG URL <small>(only for SearXNG)</small></span>
+          <input type="text" id="searxUrl" spellcheck="false" placeholder="http://127.0.0.1:8888">
+        </label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Backup &amp; restore</h2>
+      <p>Your snippets, summary history and settings stay on this device and carry over to every new SoroAgent version automatically. Use a backup to move them to another browser or computer, or from an older copy of SoroAgent. API keys are never included.</p>
+      <div class="row">
+        <button class="btn" type="button" id="backup">Download backup</button>
+        <label class="btn">Restore from backup…<input type="file" id="restore" accept="application/json,.json" hidden></label>
+        <span class="muted" id="backupStatus" role="status"></span>
+      </div>
+    </section>
+
+    <section>
       <h2>Troubleshooting</h2>
       <p>If the connection test fails:</p>
       <details>
@@ -198,6 +226,7 @@
   </form>
 </main>
 <script src="../shared/config.js"></script>
+<script src="../shared/backup.js"></script>
 <script src="options.js"></script>
 </body>
 </html>

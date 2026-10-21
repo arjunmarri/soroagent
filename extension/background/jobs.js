@@ -40,10 +40,14 @@
   // Runner
   // ---------------------------------------------------------------------------
 
+  // Placeholders the page leaves in job messages for things only known while the job runs.
+  // (Defined in shared/prompts.js, which the page and the worker both load.)
+  const { summary: SUMMARY_PLACEHOLDER, sources: SOURCES_PLACEHOLDER, query: QUERY_PLACEHOLDER } = SoroAgent.JOB_PLACEHOLDERS || {};
+
   /**
-   * opts: { ext, runChat({ messages, model, signal, onToken, onThinking }) → text, errorPayload(err) }
+   * opts: { ext, runChat({ messages, model, signal, onToken, onThinking, json }) → text, errorPayload(err), getSettings }
    */
-  function createJobRunner({ ext, runChat, errorPayload }) {
+  function createJobRunner({ ext, runChat, errorPayload, getSettings }) {
     const jobs = new Map(); // id -> { record, controller, ports: Set }
     let keepAlive = 0;
 
@@ -105,6 +109,8 @@
         save(record);
       };
       try {
+        let final = spec.final;
+        if (record.kind === 'research') final = await prepareResearch(job, spec, progress);
         // Long content: notes on each part first, then one summary of all the notes.
         const notes = [];
         for (let i = 0; i < (spec.notes || []).length; i++) {
@@ -113,7 +119,7 @@
           notes.push(`--- Part ${i + 1} ---\n${text}`);
         }
         if (notes.length) progress('Writing the summary…');
-        const final = notes.length ? fillPlaceholder(spec.final, spec.placeholder, notes.join('\n\n')) : spec.final;
+        if (notes.length) final = fillPlaceholder(final, spec.placeholder, notes.join('\n\n'));
         record.text = '';
         const text = await runChat({
           messages: final,
@@ -131,6 +137,9 @@
           },
         });
         Object.assign(record, { text, status: 'done', statusText: '', finishedAt: new Date().toISOString(), seen: job.ports.size > 0 });
+        // Every summary is kept as a snippet automatically; research is attached to its snippet.
+        if (record.kind === 'research') await attachResearch(record, spec);
+        else if (spec.saveMessages) record.snippetId = await autoSave(record, spec);
       } catch (err) {
         const stopped = err && err.name === 'AbortError';
         const payload = stopped ? {} : errorPayload(err);
@@ -150,6 +159,82 @@
       updateBadge();
     }
 
+    // Research: a search query (from the model unless given), then the web sources it finds.
+    async function prepareResearch(job, spec, progress) {
+      const { record } = job;
+      let query = String(spec.query || '').trim();
+      if (!query && spec.queryMessages) {
+        progress('Choosing what to search for…');
+        try {
+          const reply = await runChat({ messages: spec.queryMessages, model: record.model, signal: job.controller.signal, json: true });
+          const json = SoroAgent.parseJsonLoose(reply);
+          query = String((json && json.query) || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+        } catch (err) {
+          if (err && err.name === 'AbortError') throw err;
+        }
+      }
+      query = query || String(spec.fallbackQuery || record.pageTitle || '').slice(0, 120);
+      record.query = query;
+      const settings = await getSettings();
+      const sources = await SoroAgent.gatherSources(query, {
+        count: 5,
+        engine: settings.researchEngine,
+        searxUrl: settings.searxUrl,
+        signal: job.controller.signal,
+        onStatus: progress,
+      });
+      record.sources = sources.map((src) => ({ title: src.title, url: src.url }));
+      record.engine = sources.engine || '';
+      broadcast(job, { type: 'sources', query, sources: record.sources });
+      progress(`Writing the research brief from ${sources.length} sources…`);
+      return fillPlaceholder(fillPlaceholder(spec.final, SOURCES_PLACEHOLDER, SoroAgent.formatSources(sources)), QUERY_PLACEHOLDER, query);
+    }
+
+    async function autoSave(record, spec) {
+      let meta = SoroAgent.parseSnippetMeta('', record.pageTitle || record.label);
+      try {
+        const reply = await runChat({ messages: fillPlaceholder(spec.saveMessages, SUMMARY_PLACEHOLDER, record.text.slice(0, 6000)), model: record.model, json: true });
+        meta = SoroAgent.parseSnippetMeta(reply, record.pageTitle || record.label);
+      } catch {
+        // Saved with the page title if labelling fails.
+      }
+      const snippet = await SoroAgent.upsertSnippet({
+        ...meta,
+        kind: 'summary',
+        source: 'summary',
+        text: record.text,
+        url: record.url,
+        pageTitle: record.pageTitle,
+        site: record.site,
+        model: record.model,
+        summaryId: record.id,
+        label: record.label,
+        dedupeKey: record.fingerprint ? `summary:${record.url}:${record.fingerprint}` : '',
+      });
+      return snippet.id;
+    }
+
+    async function attachResearch(record, spec) {
+      const research = { text: record.text, query: record.query, sources: record.sources || [], at: record.finishedAt, model: record.model, summaryId: record.id };
+      if (spec.snippetId && (await SoroAgent.updateSnippet(spec.snippetId, { research }))) {
+        record.snippetId = spec.snippetId;
+        return;
+      }
+      const snippet = await SoroAgent.addSnippet({
+        kind: 'research',
+        source: 'research',
+        title: `Research: ${record.query || record.pageTitle}`.slice(0, 120),
+        summary: '',
+        tags: ['research'],
+        text: record.text,
+        url: record.url,
+        pageTitle: record.pageTitle,
+        model: record.model,
+        research,
+      });
+      record.snippetId = snippet.id;
+    }
+
     /** Starts a summary job. spec: { url, pageTitle, site, label, kind, fingerprint, model, notes, final, placeholder } */
     async function start(spec, port) {
       const record = {
@@ -161,6 +246,9 @@
         site: spec.site || '',
         label: spec.label || 'Summary',
         kind: spec.kind || 'page',
+        snippetId: spec.snippetId || '',
+        query: spec.query || '',
+        sources: [],
         fingerprint: spec.fingerprint || '',
         model: spec.model || '',
         status: 'running',
@@ -250,5 +338,12 @@
     return { start, attach, detach, stop, markSeen, remove, find, forUrl, recover, updateBadge };
   }
 
-  Object.assign(SoroAgent, { createJobRunner, fillPlaceholder, idsToPrune, pendingForUrl, unseenCount, SUMMARY_PREFIX: PREFIX });
+  Object.assign(SoroAgent, {
+    createJobRunner,
+    fillPlaceholder,
+    idsToPrune,
+    pendingForUrl,
+    unseenCount,
+    SUMMARY_PREFIX: PREFIX,
+  });
 })(globalThis);

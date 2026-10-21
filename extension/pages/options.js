@@ -4,7 +4,7 @@
   const S = globalThis.SoroAgent;
   const { ext, DEFAULT_SETTINGS, PROVIDER_PRESETS, CLOUD_PROVIDERS } = S;
   const $ = (id) => document.getElementById(id);
-  const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl'];
+  const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl'];
   const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit'];
   const CHECK_FIELDS = ['allowThinking', 'showLauncher'];
 
@@ -249,6 +249,31 @@
   $('resetPlacements').addEventListener('click', async () => {
     saved = await S.saveSettings({ launcherPlacements: {} });
     renderPlacements();
+  });
+
+  // Backup & restore (snippets, summary history, settings; never API keys).
+  $('backup').addEventListener('click', async () => {
+    const backup = S.buildBackup(await ext.storage.local.get(null), ext.runtime.getManifest().version);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+    Object.assign(document.createElement('a'), { href: url, download: `soroagent-backup-${new Date().toISOString().slice(0, 10)}.json` }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    $('backupStatus').textContent = `Backed up ${backup.snippets.length} snippets and ${backup.summaries.length} summaries.`;
+  });
+  $('restore').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const backup = JSON.parse(await file.text());
+      const includeSettings = confirm('Also restore the settings from this backup? (Cancel keeps your current settings.)');
+      const { updates, counts } = S.planRestore(backup, await ext.storage.local.get(null), { includeSettings });
+      await ext.storage.local.set(updates);
+      await S.migrate(ext.storage.local);
+      $('backupStatus').textContent = `Restored ${counts.snippets} snippets and ${counts.summaries} summaries${counts.settings ? ' and settings' : ''}. Items you already had were kept.`;
+      if (counts.settings) fillForm(await S.getSettings());
+    } catch (err) {
+      $('backupStatus').textContent = `Couldn't restore: ${err.message}`;
+    }
   });
 
   $('test').addEventListener('click', testConnection);

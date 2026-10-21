@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './helpers.mjs';
 
-const S = await load('background/jobs.js');
+const S = await load('shared/markdown.js', 'shared/prompts.js', 'background/jobs.js');
 const rec = (id, createdAt, extra = {}) => ({ id, createdAt, status: 'done', seen: true, url: 'https://a.test/', ...extra });
 
 test('fillPlaceholder inserts merged notes into the final prompt', () => {

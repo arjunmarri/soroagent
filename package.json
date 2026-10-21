@@ -1,6 +1,6 @@
 {
   "name": "soroagent",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "private": true,
   "description": "SoroAgent: an AI assistant for any web page, powered by a local LLM or your own API key.",
   "type": "module",
@@ -14,6 +14,7 @@
     "package": "node scripts/build.mjs --zip",
     "downloads": "node scripts/build.mjs --downloads",
     "release": "node scripts/release.mjs",
+    "store": "node scripts/build.mjs --store --zip",
     "icons": "node scripts/make-icons.mjs",
     "try-prompt": "node scripts/try-prompt.mjs",
     "test": "node --test \"test/*.test.mjs\""

@@ -26,6 +26,9 @@
     temperature: 0.3,
     contextWindow: 8192, // Ollama num_ctx; its default is too small for whole pages
     maxPageChars: 12000,
+    researchEngine: 'auto', // 'auto' | 'duckduckgo' | 'brave' | 'searxng'
+    searxUrl: '', // e.g. http://127.0.0.1:8888 for a self-hosted SearXNG
+    cleanSites: [], // sites where "Hide ads" is applied automatically
     readMoreLimit: 200, // feeds: "Read more" stops for good after this many posts on a page
     allowThinking: false,
     showLauncher: true,

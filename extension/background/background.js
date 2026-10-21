@@ -180,9 +180,10 @@
   const jobs = createJobRunner({
     ext,
     errorPayload,
-    runChat: async ({ messages, model, signal, onToken, onThinking }) => {
+    getSettings,
+    runChat: async ({ messages, model, signal, onToken, onThinking, json }) => {
       const { connection, api } = await resolveChat(model);
-      return chat({ connection, api, messages, signal, onToken, onThinking });
+      return chat({ connection, api, messages, signal, onToken, onThinking, json });
     },
   });
   jobs.recover();
@@ -356,6 +357,9 @@
       sendToActiveTab({ type: 'assistant:toggle' }).catch((err) => console.warn('[SoroAgent]', err));
     }
   });
+
+  // Upgrade stored data in place whenever a new version is installed (and on first start).
+  globalThis.SoroAgent.migrate(ext.storage.local).catch((err) => console.warn('[SoroAgent] Storage upgrade failed:', err));
 
   ext.runtime.onInstalled.addListener((details) => {
     createMenus();

@@ -199,6 +199,13 @@ header {
 .toggle[aria-pressed="true"] { border-color: var(--accent); }
 .toggle[aria-pressed="true"]::before { background: var(--accent); box-shadow: inset 9px 0 0 2px var(--bg); }
 
+/* Research sources */
+.sources { margin: 6px 0 0; padding-left: 20px; font-size: 13px; }
+.sources li { margin: 3px 0; }
+.sources a { color: var(--accent); text-decoration: none; }
+.sources a:hover { text-decoration: underline; }
+.sources small { color: var(--fg-muted); }
+
 /* Model suggestions */
 .recs { display: grid; gap: 6px; margin-top: 8px; }
 .rec { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); }

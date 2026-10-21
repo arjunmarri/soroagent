@@ -24,6 +24,8 @@
     more: svg('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
     summarize: svg('<path d="M4 6h16M4 12h16M4 18h10"/>'),
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
+    clean: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5.5 0 9 5 10 7a17 17 0 0 1-3 3.8M6.3 6.3C3.9 7.9 2.5 10.4 2 12c1 2 4.5 7 10 7 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
+    research: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6M11 8v6"/>'),
     send: svg('<path d="M12 19V5M5 12l7-7 7 7"/>'),
     stop: svg('<rect x="7" y="7" width="10" height="10" rx="1.5"/>', 'currentColor'),
     check: svg('<path d="M20 6 9 17l-5-5"/>'),
@@ -80,7 +82,7 @@
       </header>
       <div class="actions">
         <button class="chip" type="button" data-action="summarize">${ICONS.summarize}<span>Summarize</span></button>
-        <button class="chip" type="button" data-action="save">${ICONS.save}<span>Save</span></button>
+        <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="thread" aria-live="polite">
@@ -89,7 +91,8 @@
           <span class="empty-note">Runs on the model served at your local URL. Nothing leaves your machine.</span>
           <ul>
             <li><b>Summarize</b> the page. It keeps going if you leave, and every summary is kept in your history</li>
-            <li><b>Save</b> your selection or the page</li>
+            <li><b>Hide ads</b> and distractions, keeping the layout</li>
+            <li>Every summary is <b>saved</b> to your snippets; <b>Research</b> any of them further on the web</li>
             <li>Or ask anything about the page below</li>
           </ul>
         </div>
@@ -141,6 +144,7 @@
     }
   }
   adoptStyles(document, S.PAGE_CSS);
+  adoptStyles(document, S.DECLUTTER_CSS);
 
   // ---------------------------------------------------------------------------
   // State
@@ -507,8 +511,8 @@
 
   const NOTES_PLACEHOLDER = '@@SOROAGENT_NOTES@@';
 
-  /** Connects a reply bubble to a job (new or running). Resolves with the final text. */
-  function followJob(port, reply, { signal, onStarted } = {}) {
+  /** Connects a reply bubble to a job (new or running). Resolves with the finished record. */
+  function followJob(port, reply, { signal, onStarted, onSources } = {}) {
     return new Promise((resolve, reject) => {
       let id = '';
       let settled = false;
@@ -531,11 +535,12 @@
           if (msg.record.text) reply.push(msg.record.text);
           else if (msg.record.statusText) reply.status(msg.record.statusText);
         } else if (msg.type === 'status') reply.status(msg.text);
+        else if (msg.type === 'sources' && onSources) onSources(msg);
         else if (msg.type === 'thinking') reply.thinking();
         else if (msg.type === 'token') reply.push(msg.text);
         else if (msg.type === 'done') {
           reply.finish(msg.record.text);
-          finish(resolve, msg.record.text);
+          finish(resolve, msg.record);
         } else if (msg.type === 'error' || msg.type === 'gone') {
           const record = msg.record || {};
           finish(reject, record.status === 'stopped' ? Object.assign(new Error('Stopped.'), { name: 'AbortError' }) : toError(record));
@@ -555,12 +560,18 @@
    * Runs a summary as a background job and streams it into a reply bubble.
    * job: { label, kind, fingerprint, final (messages), notes (list of messages; optional) }
    */
-  async function runSummaryJob(job, { signal, reply }) {
+  async function runSummaryJob(job, { signal, reply, onSources }) {
     const port = ext.runtime.connect({ name: 'summary' });
-    const done = followJob(port, reply, { signal });
+    const done = followJob(port, reply, { signal, onSources });
+    // Every summary is saved as a snippet; the background labels it with this prompt.
+    const saveMessages =
+      job.kind === 'research'
+        ? undefined
+        : S.buildMessages('save', S.pageVars({ title: document.title, url: location.href, text: S.JOB_PLACEHOLDERS.summary }), sitePrompts());
     port.postMessage({
       type: 'start',
       job: {
+        saveMessages,
         ...job,
         placeholder: NOTES_PLACEHOLDER,
         url: location.href,
@@ -570,10 +581,11 @@
       },
     });
     try {
-      const text = await done;
-      state.history.push({ role: 'user', content: job.label }, { role: 'assistant', content: text });
+      const record = await done;
+      state.history.push({ role: 'user', content: job.label }, { role: 'assistant', content: record.text });
       state.history = state.history.slice(-12);
-      return text;
+      afterJob(record);
+      return record;
     } catch (err) {
       if (!reply.node.textContent.trim() || /Reading|Writing|Thinking/.test(reply.node.textContent)) reply.node.remove();
       throw err;
@@ -656,7 +668,7 @@
       fullContext = `${context} The content below is notes taken on ${list.length} ${noun} in ${groups.length} parts.`;
     }
     const vars = S.pageVars({ ...base, text: content }, { context: fullContext, count: list.length });
-    const text = await runSummaryJob(
+    const { text } = await runSummaryJob(
       { label, kind: 'items', fingerprint: print, notes, final: S.buildMessages('summarize', vars, prompts) },
       { signal, reply: addAssistantMessage(`Reading ${list.length} ${noun}…`) }
     );
@@ -664,6 +676,109 @@
     const asText = site.format(list, { start });
     state.pageContext = { url: location.href, page: { ...base, text: asText.slice(0, budget), truncated: asText.length > budget } };
     return text;
+  }
+
+  // Under each finished summary: it's saved, and it can be researched further.
+  function afterJob(record) {
+    if (record.kind === 'research') {
+      if (record.sources && record.sources.length) append(sourcesCard(record.query, record.sources, 'Sources'));
+      return;
+    }
+    const research = el('button', { type: 'button', textContent: 'Research this further' });
+    research.addEventListener('click', () => runResearch(record));
+    const open = el('button', { type: 'button', textContent: 'Open snippets' });
+    open.addEventListener('click', () => sendMessage({ type: 'open:snippets' }));
+    append(el('div', { className: 'card ok saved' }, [
+      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: record.snippetId ? '✓ Saved to your snippets' : 'Summary kept in your history' })]),
+      el('p', { textContent: 'Research looks this topic up on the web, reads the top sources and writes a cited brief.' }),
+      el('div', { className: 'card-actions' }, [research, open]),
+    ]));
+  }
+
+  function sourcesCard(query, sources, title) {
+    const list = el('ol', { className: 'sources' }, sources.map((src) => {
+      let host = '';
+      try {
+        host = new URL(src.url).hostname.replace(/^www\./, '');
+      } catch {
+        // keep empty
+      }
+      return el('li', {}, [el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer', textContent: src.title || host }), el('small', { textContent: ` ${host}` })]);
+    }));
+    return el('div', { className: 'card' }, [
+      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: `${title}${query ? ` · searched “${query}”` : ''}` })]),
+      list,
+    ]);
+  }
+
+  // Research: search the web for the summary's topic, read the top sources, write a cited brief.
+  function runResearch(record) {
+    return runTask(async (signal) => {
+      const title = record.pageTitle || document.title;
+      addUserMessage(`Research: ${title}`);
+      const seed = S.pageVars({ title, url: record.url || location.href, text: record.text.slice(0, 4000) });
+      let shown = false;
+      await runSummaryJob(
+        {
+          label: `Research: ${title}`,
+          kind: 'research',
+          snippetId: record.snippetId || '',
+          fallbackQuery: title,
+          queryMessages: S.buildMessages('researchQuery', seed, sitePrompts()),
+          final: S.buildMessages('research', S.pageVars(
+            { title, url: record.url || location.href, text: S.JOB_PLACEHOLDERS.sources },
+            { context: record.text.slice(0, 3000), question: S.JOB_PLACEHOLDERS.query }
+          ), sitePrompts()),
+        },
+        {
+          signal,
+          reply: addAssistantMessage('Choosing what to search for…'),
+          onSources: (msg) => {
+            if (shown) return;
+            shown = true;
+            els.thread.insertBefore(sourcesCard(msg.query, msg.sources, 'Reading'), els.thread.lastElementChild);
+          },
+        }
+      );
+    });
+  }
+
+  // Hide ads: keeps the layout; can be remembered per site.
+  function updateDeclutterChip() {
+    const chip = els.actions.querySelector('[data-action="declutter"]');
+    const on = S.declutter.isActive();
+    chip.classList.toggle('active', on);
+    chip.querySelector('span').textContent = on ? 'Show ads' : 'Hide ads';
+  }
+
+  function toggleDeclutter() {
+    const host = location.hostname;
+    if (S.declutter.isActive()) {
+      S.declutter.showAds();
+      updateDeclutterChip();
+      append(card({ title: 'Ads and distractions are back.' }));
+      return;
+    }
+    const count = S.declutter.hideAds();
+    updateDeclutterChip();
+    const remembered = (state.settings.cleanSites || []).includes(host);
+    const always = el('button', { type: 'button', textContent: remembered ? `Stop hiding automatically on ${host}` : `Always hide on ${host}` });
+    always.addEventListener('click', async () => {
+      const sites = new Set(state.settings.cleanSites || []);
+      if (sites.has(host)) sites.delete(host);
+      else sites.add(host);
+      await S.saveSettings({ cleanSites: [...sites] });
+      always.textContent = sites.has(host) ? `Stop hiding automatically on ${host}` : `Always hide on ${host}`;
+    });
+    const undo = el('button', { type: 'button', textContent: 'Show them again' });
+    undo.addEventListener('click', () => {
+      if (S.declutter.isActive()) toggleDeclutter();
+    });
+    append(el('div', { className: 'card ok' }, [
+      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: count ? `Hid ${count} ad${count === 1 ? '' : 's'} and distraction${count === 1 ? '' : 's'}.` : 'No ads found right now. New ones will be hidden as they load.' })]),
+      el('p', { textContent: 'The page layout stays exactly the same; only the clutter is gone.' }),
+      el('div', { className: 'card-actions' }, [undo, always]),
+    ]));
   }
 
   // Coming back to a page: show summaries that finished while the reader was away, and
@@ -685,8 +800,9 @@
         append(card({ icon: 'summarize', title: `Still working on "${record.label}" (started ${when}).`, body: 'It kept running while you were away.' }));
         const reply = addAssistantMessage(record.statusText || 'Summarizing…');
         const port = ext.runtime.connect({ name: 'summary' });
-        followJob(port, reply).then((text) => {
-          state.history.push({ role: 'user', content: record.label }, { role: 'assistant', content: text });
+        followJob(port, reply).then((finished) => {
+          state.history.push({ role: 'user', content: record.label }, { role: 'assistant', content: finished.text });
+          afterJob(finished);
           sendMessage({ type: 'summary:seen', ids: [record.id] }).catch(() => {});
         }).catch((err) => showError(err, err.hint, false));
         port.postMessage({ type: 'attach', id: record.id });
@@ -697,6 +813,7 @@
         append(card({ kind: 'ok', icon: 'check', title: `Finished while you were away: ${record.label}`, body: `Started at ${when}.` }));
         addAssistantMessage().finish(record.text);
         state.history.push({ role: 'user', content: record.label }, { role: 'assistant', content: record.text });
+        afterJob(record);
       } else if (record.status !== 'stopped') {
         showError(new Error(`"${record.label}" didn't finish: ${record.error || record.status}`), record.hint, false);
       }
@@ -1016,7 +1133,7 @@
     if (!chip) return;
     const action = chip.dataset.action;
     if (action === 'summarize') summarize();
-    else if (action === 'save') save();
+    else if (action === 'declutter') toggleDeclutter();
   });
 
   // Clicking a chip would otherwise clear the user's text selection on the page.
@@ -1134,6 +1251,13 @@
     applySettings();
     applySiteOptions();
     showPendingSummaries();
+    // Sites where the reader chose "Always hide": clean up once the page (and its ads) has loaded.
+    if ((settings.cleanSites || []).includes(location.hostname)) {
+      setTimeout(() => {
+        S.declutter.hideAds();
+        updateDeclutterChip();
+      }, 1200);
+    }
   });
   updateControls();
 })();

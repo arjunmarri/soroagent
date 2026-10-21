@@ -78,7 +78,9 @@ For `save`, `try-prompt` also prints the title, summary and tags SoroAgent read 
 | `summarize` | **Summarize** | Markdown |
 | `notes` | Long content is summarized in parts: notes per part, then `summarize` merges them | Markdown |
 | `ask` | A question typed in the panel. `system` carries the page; `user` is the question | Markdown |
-| `save` | **Save**: title, summary and tags | JSON `{ "title", "summary", "tags" }` |
+| `save` | Labels each auto-saved summary (and saved selections): title, summary and tags | JSON `{ "title", "summary", "tags" }` |
+| `researchQuery` | **Research**, step 1: the web search query | JSON `{ "query" }` |
+| `research` | **Research**, step 2: the cited brief. `{{question}}` is the query, `{{content}}` the numbered web sources, `{{context}}` what the user already read | Markdown |
 
 You can reword anything, but **keep the JSON field names** in the `save` prompt so SoroAgent can read the reply. Every prompt set can also define a `persona` string, which fills `{{persona}}`.
 

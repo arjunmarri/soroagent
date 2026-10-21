@@ -84,6 +84,10 @@
       const result = el('div', { className: `result${expanded.has(record.id) || record.status === 'running' ? ' open' : ''}` }, markdown(record.text));
       card.append(result);
     }
+    if (record.sources && record.sources.length) {
+      card.append(el('div', { className: 'meta', textContent: `Research sources · searched “${record.query || ''}”` }));
+      card.append(el('ol', { className: 'sources' }, record.sources.map((src) => el('li', {}, [el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer', textContent: src.title || src.url })]))));
+    }
 
     const actions = el('div', { className: 'actions' });
     if (record.text && record.status !== 'running') {

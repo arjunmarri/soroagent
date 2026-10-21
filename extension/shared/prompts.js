@@ -17,7 +17,7 @@
 
   const SoroAgent = (root.SoroAgent = root.SoroAgent || {});
 
-  const ACTIONS = Object.freeze(['summarize', 'notes', 'ask', 'save']);
+  const ACTIONS = Object.freeze(['summarize', 'notes', 'ask', 'save', 'researchQuery', 'research']);
   const PLACEHOLDERS = Object.freeze(['persona', 'title', 'url', 'content', 'page', 'count', 'context', 'note', 'question']);
   const promptSets = {}; // set id ("default", "x", …) -> { persona?, <action>: { system?, user? } }
 
@@ -143,7 +143,12 @@
     };
   }
 
+  // Markers the page leaves in background-job prompts for text only known while the job runs
+  // (the finished summary, the web sources, the search query).
+  const JOB_PLACEHOLDERS = Object.freeze({ summary: '@@SOROAGENT_SUMMARY@@', sources: '@@SOROAGENT_SOURCES@@', query: '@@SOROAGENT_QUERY@@' });
+
   Object.assign(SoroAgent, {
+    JOB_PLACEHOLDERS,
     PROMPT_ACTIONS: ACTIONS,
     PROMPT_PLACEHOLDERS: PLACEHOLDERS,
     definePrompts,

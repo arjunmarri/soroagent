@@ -55,5 +55,40 @@ URL: {{url}}
 
 Return JSON: {"title": "a specific title, max 80 chars", "summary": "1-2 sentences with the key information", "tags": ["1 to 4 short lowercase topic tags"]}`,
     },
+
+    // Research, step 1: a web search query for going deeper. Reply: JSON (keep this shape).
+    researchQuery: {
+      system: `You write web search queries. Reply with JSON only.`,
+      user: `{{page}}
+
+Write one focused web search query (at most 8 words) that would find authoritative, recent sources to go deeper on the main topic above. Prefer specific names, products and terms from the text over generic words.
+Return JSON: {"query": "..."}`,
+    },
+
+    // Research, step 2: a brief from the web sources. {{question}} is the search query,
+    // {{content}} the numbered sources, {{context}} what the user already read. Reply: Markdown.
+    research: {
+      system: `{{persona}}
+You write research briefs from web sources. Cite sources inline as [n]. Use only the sources; say when they disagree or when coverage is thin.`,
+      user: `What the user already read:
+<starting-point>
+{{context}}
+</starting-point>
+
+Web sources found for “{{question}}”:
+<sources>
+{{content}}
+</sources>
+
+Write a research brief that goes beyond the starting point.
+**What's new**
+- 3 to 6 bullets with facts, numbers and specifics the starting point didn't have, each with [n].
+
+**Different views or caveats**
+- 1 to 3 bullets.
+
+**Worth reading**
+- 2 or 3 sources by title with [n] and why.`,
+    },
   });
 })(globalThis);

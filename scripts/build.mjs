@@ -18,9 +18,11 @@ const BROWSERS = ['chrome', 'firefox'];
 
 const args = process.argv.slice(2);
 const downloads = args.includes('--downloads');
+// --store: a Chrome Web Store upload (no "key"; the store assigns the extension ID).
+const store = args.includes('--store');
 const zip = downloads || args.includes('--zip');
 const targets = args.filter((a) => BROWSERS.includes(a));
-const unknown = args.filter((a) => !['--zip', '--downloads'].includes(a) && !BROWSERS.includes(a));
+const unknown = args.filter((a) => !['--zip', '--downloads', '--store'].includes(a) && !BROWSERS.includes(a));
 if (unknown.length) {
   console.error(`Unknown argument(s): ${unknown.join(', ')}. Use: chrome, firefox, --zip, --downloads`);
   process.exit(1);
@@ -34,6 +36,9 @@ function manifestFor(browser) {
   if (browser === 'chrome') {
     manifest.background = { service_worker: base.background.service_worker };
     delete manifest.browser_specific_settings;
+    // A fixed public key pins the extension ID, so updates keep their storage (see keys/README.md).
+    const keyFile = join(ROOT, 'keys/chrome-public-key.txt');
+    if (!store && existsSync(keyFile)) manifest.key = readFileSync(keyFile, 'utf8').trim();
   } else {
     // Firefox runs background scripts as an event page and rewrites the Origin header with webRequest.
     manifest.background = { scripts: base.background.scripts };
@@ -112,8 +117,8 @@ function writeZip(outFile, dir) {
   writeFileSync(outFile, Buffer.concat([...locals, centralDir, end]));
 }
 
-for (const browser of targets.length ? targets : BROWSERS) {
-  const out = join(DIST, browser);
+for (const browser of store ? ['chrome'] : targets.length ? targets : BROWSERS) {
+  const out = join(DIST, store ? 'chrome-store' : browser);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   // Ship only what the extension needs: no docs, samples or "_template" files, and our generated manifest.
@@ -126,7 +131,7 @@ for (const browser of targets.length ? targets : BROWSERS) {
   console.log(`Built ${relative(ROOT, out)}`);
 
   if (zip) {
-    const zipFile = join(DIST, `soroagent-${browser}-${base.version}.zip`);
+    const zipFile = join(DIST, `soroagent-${browser}${store ? '-store' : ''}-${base.version}.zip`);
     writeZip(zipFile, out);
     console.log(`Packed ${relative(ROOT, zipFile)}`);
     if (downloads) {
