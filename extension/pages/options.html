@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SoroAgent settings</title>
+  <link rel="stylesheet" href="pages.css">
+  <style>
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; }
+    section h2 { font-size: 15px; margin: 0 0 4px; }
+    section > p { margin: 0 0 14px; color: var(--fg-muted); font-size: 13px; }
+    .field { display: grid; gap: 5px; margin-bottom: 14px; }
+    .field > span { font-weight: 550; font-size: 13px; }
+    .field small { color: var(--fg-muted); font-size: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0 16px; }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .check { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+    .check input { margin-top: 3px; }
+    .check small { display: block; color: var(--fg-muted); font-size: 12px; }
+    .result { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--surface-soft); font-size: 13px; margin-top: 4px; }
+    .result .dot { margin-top: 5px; }
+    .result pre { margin: 6px 0 0; background: none; padding: 0; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .sites { display: flex; flex-wrap: wrap; gap: 6px; }
+    .site { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; }
+    .site button { border: none; background: none; color: var(--fg-muted); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 5px; }
+    .sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .source { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+    .source:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+    .source input { margin-top: 3px; accent-color: var(--accent); }
+    .source small { display: block; color: var(--fg-muted); font-size: 12.5px; margin-top: 2px; }
+    .key-row { display: flex; gap: 8px; }
+    .key-row input { flex: 1; }
+    .field a { font-weight: 400; font-size: 12.5px; margin-left: 6px; }
+    .notice { font-size: 13px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); margin-bottom: 10px; }
+    .recs { display: grid; gap: 6px; margin-top: 10px; }
+    .recs-title { font-weight: 600; font-size: 13px; }
+    .rec { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; }
+    .rec small { display: block; color: var(--fg-muted); font-size: 12px; }
+    .rec .btn { margin-left: auto; }
+    .savebar { position: sticky; bottom: 0; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 0; background: linear-gradient(transparent, var(--bg) 30%); }
+    details summary { cursor: pointer; font-weight: 550; margin: 8px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand"><img src="../icons/icon-48.png" alt="">SoroAgent settings</div>
+    <a class="btn small" href="snippets.html">Saved snippets</a>
+  </header>
+
+  <form id="form">
+    <section>
+      <h2>Model</h2>
+      <p>Choose where SoroAgent's AI runs.</p>
+      <div class="sources" role="radiogroup" aria-label="Where the model runs">
+        <label class="source"><input type="radio" name="source" value="local">
+          <span><b>Local model</b><small>Ollama, LM Studio, llama.cpp… Private and free: page text stays on your computer.</small></span>
+        </label>
+        <label class="source"><input type="radio" name="source" value="cloud">
+          <span><b>Cloud API</b><small>Claude, OpenAI, Gemini and others with your own API key. Nothing to install.</small></span>
+        </label>
+      </div>
+
+      <div id="localFields">
+        <div class="presets" id="presets"></div>
+        <div class="grid">
+          <label class="field"><span>Server URL</span>
+            <input type="text" id="baseUrl" spellcheck="false" placeholder="http://127.0.0.1:11434">
+          </label>
+          <label class="field"><span>API type</span>
+            <select id="provider">
+              <option value="auto">Detect automatically</option>
+              <option value="ollama">Ollama</option>
+              <option value="openai">OpenAI-compatible (/v1)</option>
+            </select>
+          </label>
+        </div>
+        <label class="field"><span>API key <small>(optional — only if your server requires one)</small></span>
+          <input type="password" id="apiKey" autocomplete="off" spellcheck="false">
+        </label>
+      </div>
+
+      <div id="cloudFields" hidden>
+        <label class="field"><span>Provider</span>
+          <select id="cloudProvider"></select>
+        </label>
+        <label class="field" id="customBaseUrlField" hidden><span>API base URL <small>(OpenAI-compatible, usually ending in /v1)</small></span>
+          <input type="text" id="customBaseUrl" spellcheck="false" placeholder="https://api.together.xyz/v1">
+        </label>
+        <label class="field"><span>API key <a id="keyLink" target="_blank" rel="noopener">Get a key ↗</a></span>
+          <span class="key-row">
+            <input type="password" id="cloudKey" autocomplete="off" spellcheck="false">
+            <button class="btn small" type="button" id="toggleKey">Show</button>
+            <button class="btn small danger" type="button" id="removeKey" hidden>Remove</button>
+          </span>
+          <small>Encrypted and stored only on this device. Other extensions and websites can't read it, and it is sent only to the provider you pick.</small>
+        </label>
+        <div class="notice" role="note">
+          Page text you summarize, ask about, save or filter is sent to <b id="cloudName">the provider</b> and billed to your API key. Use a local model for pages you want to keep private.
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:6px">
+        <button class="btn" type="button" id="test">Test connection</button>
+      </div>
+      <div class="result" id="result" hidden><span class="dot" id="resultDot"></span><div id="resultText"></div></div>
+      <div class="recs" id="recs" hidden></div>
+      <label class="field" style="margin-top:14px"><span>Model</span>
+        <select id="model"><option value="">Recommended</option></select>
+        <small id="modelHint">Smaller models (3–8B) answer faster; larger ones summarize and filter better.</small>
+      </label>
+    </section>
+
+    <section>
+      <h2>Generation</h2>
+      <p>Defaults suit most models.</p>
+      <div class="grid">
+        <label class="field"><span>Temperature</span>
+          <input type="number" id="temperature" min="0" max="2" step="0.1">
+          <small>Lower is more focused. Claude and reasoning models use their own setting.</small>
+        </label>
+        <label class="field"><span>Context window (tokens)</span>
+          <input type="number" id="contextWindow" min="2048" max="262144" step="1024">
+          <small>Ollama only. Higher uses more memory.</small>
+        </label>
+        <label class="field"><span>Max page text (characters)</span>
+          <input type="number" id="maxPageChars" min="2000" max="200000" step="1000">
+          <small>Longer pages are cut off at this length.</small>
+        </label>
+      </div>
+      <label class="check"><input type="checkbox" id="allowThinking">
+        <span>Let reasoning models think first<small>Better answers from models like Qwen3 or DeepSeek-R1, but much slower.</small></span>
+      </label>
+    </section>
+
+    <section>
+      <h2>On the page</h2>
+      <p>The assistant button appears in the bottom-right corner of every website.</p>
+      <label class="check"><input type="checkbox" id="showLauncher">
+        <span>Show the assistant button<small>When off, open it from the toolbar icon, the right-click menu, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.</small></span>
+      </label>
+      <label class="field"><span>Button position</span>
+        <select id="launcherPosition">
+          <option value="auto">Automatic — find a spot that doesn't cover the page's buttons</option>
+          <option value="bottom-right">Bottom right</option>
+          <option value="bottom-left">Bottom left</option>
+          <option value="top-right">Top right</option>
+          <option value="top-left">Top left</option>
+        </select>
+        <small>You can also drag the button to either edge of any page; SoroAgent remembers it for that site.</small>
+      </label>
+      <div class="row" id="placementsRow" hidden style="margin-bottom:14px">
+        <span class="muted" id="placementsText"></span>
+        <button class="btn small" type="button" id="resetPlacements">Reset dragged positions</button>
+      </div>
+      <div class="field"><span>Button hidden on these sites</span>
+        <div class="sites" id="sites"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Troubleshooting</h2>
+      <p>If the connection test fails:</p>
+      <details>
+        <summary>Ollama isn't running</summary>
+        <p>Open the Ollama app (macOS menu bar / Windows system tray), or run <code>ollama serve</code>. Then download a model, for example <code>ollama pull llama3.2</code>.</p>
+      </details>
+      <details>
+        <summary>403 Forbidden</summary>
+        <p>SoroAgent normally handles this. If your setup still rejects the extension, allow extension origins and restart Ollama:</p>
+        <p><b>macOS</b></p>
+        <pre>launchctl setenv OLLAMA_ORIGINS "chrome-extension://*,moz-extension://*"</pre>
+        <p><b>Windows</b> (PowerShell or Command Prompt)</p>
+        <pre>setx OLLAMA_ORIGINS "chrome-extension://*,moz-extension://*"</pre>
+        <p>Then quit Ollama completely and start it again.</p>
+      </details>
+      <details>
+        <summary>Cloud API errors</summary>
+        <p><b>Key rejected (401/403):</b> check you copied the whole key and that billing or credits are set up on the provider's site. <b>Rate limited (429):</b> wait a minute, or raise your account's limits. <b>Model not found:</b> pick another model from the list.</p>
+      </details>
+      <details>
+        <summary>LM Studio, llama.cpp, Jan and others</summary>
+        <p>Start the app's local server and use its URL ending in <code>/v1</code>, for example <code>http://127.0.0.1:1234/v1</code> for LM Studio. In LM Studio, load a chat model and turn on “Enable CORS” if requests fail.</p>
+      </details>
+    </section>
+
+    <div class="savebar">
+      <span class="muted" id="saved" role="status"></span>
+      <button class="btn primary" type="submit">Save settings</button>
+    </div>
+  </form>
+</main>
+<script src="../shared/config.js"></script>
+<script src="options.js"></script>
+</body>
+</html>
