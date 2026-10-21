@@ -193,9 +193,6 @@ After editing, run `npm run build` and click **Reload** on the extension card (o
 - **Cloud API errors:** *rejected the API key* means a wrong or expired key, or no billing set up. *Rate limiting* means wait a minute or check your account limits. *Model not found* means pick another model in settings.
 - **Slow first answer**: the model is loading into memory. Later requests are much faster.
 
-## Earlier versions
-
-soroagent was called **SoroTrack** until version 2.2 and was developed in [arjunmarri/sorotracker](https://github.com/arjunmarri/sorotracker). SoroTrack 1.x, an 𝕏-history archive with a React dashboard, Express server, Firestore and Gemini, lives on there.
 
 ---
 
