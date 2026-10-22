@@ -94,6 +94,8 @@ Answers come in two parts, **From your sources** (every claim cited [S1], [S2]â€
 - **Your data:** your library, history and settings live in your browser, and search vectors stay on your device.
 - **Google Drive sync** asks only for soroagent's own app folder in your Drive (`drive.appdata`), never your files. The sign-in token stays in memory for the session.
 - **Opt-in only:** passive capture, sync and the Markdown folder are off until you turn them on, and only go where you point them.
+
+Read the full [privacy policy](https://arjunmarri.github.io/soroagent/privacy.html).
 - **No tracking:** there are no soroagent accounts, servers, trackers or analytics.
 
 ## Download
