@@ -74,9 +74,6 @@ svg { width: 18px; height: 18px; flex: none; }
 .launcher:hover { transform: translateY(-2px); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 35%, transparent), 0 10px 24px rgba(0, 0, 0, 0.22); }
 .launcher.open { box-shadow: 0 0 0 2px var(--brand), 0 8px 22px rgba(0, 0, 0, 0.2); }
 .launcher:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand), 0 8px 22px rgba(0, 0, 0, 0.2); }
-.launcher.danger { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.9), 0 0 22px 6px rgba(239, 68, 68, 0.5); animation: danger-glow 1.8s ease-in-out infinite; }
-.launcher.danger:hover, .launcher.danger.open { box-shadow: 0 0 0 3px #ef4444, 0 0 26px 8px rgba(239, 68, 68, 0.6); }
-@keyframes danger-glow { 50% { box-shadow: 0 0 0 3px #ef4444, 0 0 32px 12px rgba(239, 68, 68, 0.7); } }
 .launcher.dragging { transition: none; cursor: grabbing; transform: scale(1.06); }
 .launcher.busy::after {
   content: ""; position: absolute; inset: -1px; border-radius: 50%;
@@ -215,9 +212,6 @@ header {
 .thread.home > :not(.empty) { display: none; }
 .back-to-chat { margin-top: 10px; border: none; background: none; color: var(--accent); font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 8px; }
 .back-to-chat:hover { background: var(--accent-soft); }
-.suggest button.wish { border-color: color-mix(in srgb, var(--spark) 50%, var(--border)); background: var(--spark-soft); font-weight: 600; }
-.suggest button.wish::before { content: "♡"; color: var(--spark); }
-.suggest button.wish:hover { border-color: var(--spark); }
 .shutter { position: fixed; inset: 0; z-index: 2147483647; background: #fff; pointer-events: none; animation: shutter .45s ease-out forwards; }
 @keyframes shutter { from { opacity: .55; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .shutter { display: none; } }
@@ -304,23 +298,23 @@ header {
 .next-actions .primary:hover { background: var(--accent-strong); }
 .next-actions .dismiss { border: none; background: none; color: var(--fg-muted); font-size: 15px; line-height: 1; padding: 2px 5px; }
 .next-actions .dismiss:hover { color: var(--fg); background: var(--bg-hover); }
-/* Safety warning above the conversation */
-.safety { margin: 10px 12px 0; padding: 10px 12px; border-radius: 12px; border: 1px solid; font-size: 12.5px; }
-.safety.danger { border-color: color-mix(in srgb, var(--err) 55%, var(--border)); background: color-mix(in srgb, var(--err) 9%, var(--bg)); }
-.safety.caution { border-color: color-mix(in srgb, var(--spark) 55%, var(--border)); background: var(--spark-soft); }
-.safety-title { display: flex; align-items: center; gap: 6px; font-weight: 650; font-size: 13px; }
-.safety-title svg { width: 16px; height: 16px; }
-.safety.danger .safety-title svg { color: var(--err); }
-.safety.caution .safety-title svg { color: var(--spark); }
-.safety ul { margin: 6px 0 0; padding-left: 18px; }
-.safety li { margin: 2px 0; }
-.safety-note { margin: 6px 0 0; color: var(--fg-muted); font-size: 11.5px; }
-.safety-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.safety-actions button { border: 1px solid var(--border); background: var(--bg); border-radius: 8px; padding: 3px 9px; font-size: 11.5px; font-weight: 550; }
-.safety-actions .primary { background: var(--err); border-color: var(--err); color: #fff; }
-.safety-actions .quiet { border-color: transparent; background: none; color: var(--fg-muted); }
 .onboarding .card-title { font-size: 13.5px; }
 .onboard-frame { display: block; width: 100%; height: 300px; margin-top: 10px; border: 0; border-radius: 10px; background: var(--bg); color-scheme: normal; }
+/* Related saved notes: a slim bar under the actions */
+.related { margin: 8px 12px 0; padding: 6px 8px 6px 10px; border-radius: 10px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); font-size: 12px; }
+.related-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.related-text { font-weight: 600; color: var(--fg); }
+.related .link { border: none; background: none; padding: 0; color: var(--accent); font-weight: 600; font-size: 12px; text-align: left; }
+.related .link:hover { text-decoration: underline; }
+.related-actions { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.related-actions button { border: 1px solid var(--border); background: var(--bg); border-radius: 8px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; }
+.related-actions .primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.related-actions .quiet { background: none; }
+.related-actions .dismiss { border: none; background: none; color: var(--fg-muted); font-size: 15px; line-height: 1; padding: 0 4px; }
+.related-list { list-style: none; margin: 6px 0 6px; padding: 0; display: grid; gap: 3px; }
+.related-list li { display: flex; align-items: baseline; gap: 6px; }
+.related-list .n { font-size: 10.5px; font-weight: 700; color: var(--accent); }
+.related-list small { margin-left: auto; color: var(--fg-muted); white-space: nowrap; }
 .progress { height: 4px; border-radius: 4px; background: var(--border); margin-top: 8px; overflow: hidden; }
 .progress > div { height: 100%; background: linear-gradient(90deg, var(--brand), var(--spark)); width: 0; transition: width 0.2s ease; }
 

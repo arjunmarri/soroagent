@@ -31,12 +31,12 @@
     const model = ctx.cloud
       ? `**Your AI model:** you're using **${ctx.providerLabel || 'a cloud AI'}** with your own key. When you summarize, ask or research, the page text and your question go to ${ctx.providerLabel || 'that provider'} to get an answer, and their privacy policy applies. Nothing goes to soroagent.`
       : '**Your AI model:** you\'re using a model on your own computer, so page text and your questions never leave this machine.';
-    const local = `Everything soroagent keeps (snippets, read-later pages, wish list, screenshots, summary history${ctx.trackTime === false ? '' : ', browsing stats'} and settings) is stored **in this browser on your computer**.${ctx.autoBackup === false ? '' : ' A backup copy is also kept in your Downloads folder (`Downloads/soroagent/`).'} There are **no soroagent accounts, servers or cloud storage**.`;
+    const local = `Everything soroagent keeps (snippets, read-later pages, screenshots, summary history${ctx.trackTime === false ? '' : ', browsing stats'} and settings) is stored **in this browser on your computer**.${ctx.autoBackup === false ? '' : ' A backup copy is also kept in your Downloads folder (`Downloads/soroagent/`).'} There are **no soroagent accounts, servers or cloud storage**.`;
     switch (topic) {
       case 'opensource':
         return [
-          '**About soroagent:** its code is public on GitHub at [github.com/arjunmarri/soroagent](https://github.com/arjunmarri/soroagent), so anyone can read every line of what it does.',
-          'It doesn\'t have an open-source license file yet, so it\'s *source-available* rather than formally open source. It\'s free to use, made by [soroai.com](https://soroai.com).',
+          '**About soroagent:** its code is on GitHub at [github.com/arjunmarri/soroagent](https://github.com/arjunmarri/soroagent), so anyone can read every line of what it does.',
+          'Yes, it\'s **open source under the MIT license**: free to use, change and share. It\'s made by [soroai.com](https://soroai.com), and contributions are welcome.',
         ].join('\n\n');
       case 'keys':
         return [

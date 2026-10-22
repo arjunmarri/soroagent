@@ -1,6 +1,6 @@
 {
   "name": "soroagent",
-  "version": "2.20.0",
+  "version": "2.21.0",
   "private": true,
   "description": "soroagent: an AI assistant for any web page, powered by a local LLM or your own API key.",
   "type": "module",
@@ -18,5 +18,6 @@
     "icons": "node scripts/make-icons.mjs",
     "try-prompt": "node scripts/try-prompt.mjs",
     "test": "node --test \"test/*.test.mjs\""
-  }
+  },
+  "license": "MIT"
 }

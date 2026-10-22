@@ -68,3 +68,13 @@ test('backup file paths become file URLs on every platform', () => {
   assert.ok(new RegExp(S.BACKUP_FILE_PATTERN).test('/x/Downloads/soroagent/soroagent-backup (1).json'));
   assert.ok(!new RegExp(S.BACKUP_FILE_PATTERN).test('/x/soroagent-backup.json/other.txt'));
 });
+
+test('the retired wish list becomes read-later pages, nothing is lost', () => {
+  const all = { meta: { schemaVersion: 2 }, 'snippet:w': { id: 'w', kind: 'wishlist', source: 'wishlist', title: 'Owl lamp', url: 'https://shop/x', price: '$19', image: 'https://img', text: '' } };
+  const updates = S.planMigrations(all);
+  assert.equal(updates['snippet:w'].kind, 'readlater');
+  assert.equal(updates['snippet:w'].title, 'Owl lamp');
+  assert.equal(updates['snippet:w'].summary, '$19');
+  assert.equal(updates['snippet:w'].image, undefined);
+  assert.equal(updates.meta.schemaVersion, 3);
+});

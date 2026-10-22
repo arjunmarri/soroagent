@@ -313,6 +313,8 @@
       else ext.downloads.showDefaultFolder();
       return { ok: true };
     },
+    // "Ask your notes", optionally starting with a topic.
+    'open:notes': (msg) => ext.tabs.create({ url: ext.runtime.getURL(`pages/notes.html${msg && msg.topic ? `?topic=${encodeURIComponent(String(msg.topic).slice(0, 120))}` : ''}`) }),
     'open:stats': () => ext.tabs.create({ url: ext.runtime.getURL('pages/stats.html') }),
     // Time on a page, from content/timetrack.js. Writes are queued so reports never overwrite each other.
     'stats:add': (msg, sender) => {
@@ -384,6 +386,7 @@
   const ACTION_MENU_ITEMS = [
     { id: 'soroagent-open-history', title: 'Summary history', open: () => handlers['open:history']() },
     { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']({}) },
+    { id: 'soroagent-open-notes', title: 'Ask your notes', open: () => handlers['open:notes']({}) },
     { id: 'soroagent-open-stats', title: 'Browsing stats', open: () => handlers['open:stats']() },
     { id: 'soroagent-feedback', title: 'Send feedback', open: () => ext.tabs.create({ url: S.feedbackUrl('toolbar') }) },
     { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },

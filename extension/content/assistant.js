@@ -28,7 +28,6 @@
     history: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
     chat: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'),
     home: svg('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'),
-    heart: svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
     moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
     camera: svg('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
     research: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6M11 8v6"/>'),
@@ -82,6 +81,7 @@
         <button class="icon-btn close-btn" type="button" aria-label="Close soroagent">${ICONS.close}</button>
         <div class="menu" role="menu" hidden>
           <button type="button" role="menuitem" data-cmd="history">Summary history</button>
+          <button type="button" role="menuitem" data-cmd="notes">Ask your notes</button>
           <button type="button" role="menuitem" data-cmd="snippets">Saved snippets</button>
           <button type="button" role="menuitem" data-cmd="stats">Browsing stats</button>
           <button type="button" role="menuitem" data-cmd="clear">Clear conversation</button>
@@ -95,12 +95,11 @@
       </header>
       <div class="actions">
         <button class="chip" type="button" data-action="summarize" title="A short summary of this page">${ICONS.summarize}<span>Summarize</span></button>
-        <button class="chip spark icon-only" type="button" data-action="wishlist" hidden aria-label="Buy later" title="Buy later: add this product to your wish list">${ICONS.heart}</button>
         <button class="chip" type="button" data-action="declutter" aria-pressed="false" title="Hide ads and distractions (the layout stays the same)">${ICONS.clean}<span>Ads</span></button>
         <button class="chip" type="button" data-action="read-later" title="Save this page to read later">${ICONS.save}<span>Save</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
-      <div class="safety" hidden role="alert"></div>
+      <div class="related" hidden></div>
       <div class="thread" aria-live="polite">
         <div class="empty">
           <span class="empty-mark">${OWL_MARK}</span>
@@ -108,8 +107,6 @@
           <strong>How can I help with this page?</strong>
           <span class="empty-note">Runs on the model served at your local URL. Nothing leaves your machine.</span>
           <div class="suggest" role="group" aria-label="Suggested questions">
-            <button type="button" class="wish" data-cmd="wishlist" hidden>Add to wish list</button>
-            <button type="button" class="deal" data-ask="Is this a good deal? Weigh the price, specs and what reviewers say, and mention anything that should make me wait or look elsewhere." hidden>Is this a good deal?</button>
             <button type="button" data-ask="What are the key points of this page?">What are the key points?</button>
             <button type="button" data-ask="Explain this page simply, as if I'm new to the topic.">Explain it simply</button>
             <button type="button" data-ask="What claims here need checking, and what might be missing?">What should I double-check?</button>
@@ -1095,7 +1092,6 @@
   // Home: the opening screen ("How can I help with this page?"). The conversation stays and comes
   // back with "Back to the conversation" or the next message.
   function showHome() {
-    refreshProduct();
     showQuip();
     els.empty.hidden = false;
     els.thread.classList.add('home');
@@ -1117,115 +1113,70 @@
     quip.textContent = lastQuip;
   }
 
-  // Safety check: signs of scams, phishing, malware tricks or spam on this page. Strong signs turn
-  // the owl red; opening the panel explains why. It reads the page only; it's not an antivirus.
-  let safety = null;
-  let safetyUrl = '';
-  let safetyDismissed = '';
-  let safetyTimer = 0;
-  const launcherTitle = els.launcher.title;
+  // Related notes: saved notes about the same topic as this page (found locally, no model). The
+  // reader can bring them into the chat; answers then cite them as [N1]… and keep what the notes
+  // say apart from the model's own reading.
+  const related = { url: '', notes: [], using: false, open: false, dismissed: '' };
 
-  function runSafetyCheck() {
-    safetyUrl = location.href;
-    const trusted = (state.settings.trustedSites || []).includes(location.hostname);
-    safety = state.settings.safetyCheck === false || trusted ? null : S.checkPageSafety(document, location);
-    const danger = Boolean(safety && safety.level === 'danger');
-    els.launcher.classList.toggle('danger', danger);
-    els.launcher.title = danger ? 'soroagent: this page shows signs of a scam or malware. Click to see why.' : launcherTitle;
-    renderSafety();
-  }
-  function scheduleSafetyCheck() {
-    safetyUrl = location.href;
-    clearTimeout(safetyTimer);
-    // Scam pages often build themselves after loading; look again a little later too.
-    safetyTimer = setTimeout(() => {
-      runSafetyCheck();
-      safetyTimer = setTimeout(runSafetyCheck, 7000);
-    }, 2500);
-  }
-
-  function renderSafety() {
-    const box = shadow.querySelector('.safety');
-    const show = Boolean(safety && safety.level !== 'ok' && safetyDismissed !== location.href);
-    box.hidden = !show;
-    if (!show) return;
-    const danger = safety.level === 'danger';
-    box.className = `safety ${safety.level}`;
-    const title = el('div', { className: 'safety-title' });
-    setHtml(title, ICONS.alert);
-    title.append(el('span', { textContent: danger ? 'Careful: this page looks unsafe' : 'Be careful on this page' }));
-    const reasons = el('ul', {}, safety.reasons.slice(0, 4).map((r) => el('li', { textContent: r.text })));
-    const actions = el('div', { className: 'safety-actions' });
-    if (danger && history.length > 1) {
-      const back = el('button', { type: 'button', className: 'primary', textContent: 'Go back' });
-      back.addEventListener('click', () => history.back());
-      actions.append(back);
-    }
-    const trust = el('button', { type: 'button', textContent: 'I trust this site' });
-    trust.addEventListener('click', async () => {
-      const sites = new Set(state.settings.trustedSites || []);
-      sites.add(location.hostname);
-      await S.saveSettings({ trustedSites: [...sites] });
-    });
-    const dismiss = el('button', { type: 'button', className: 'quiet', textContent: 'Dismiss' });
-    dismiss.addEventListener('click', () => {
-      safetyDismissed = location.href;
-      renderSafety();
-    });
-    actions.append(trust, dismiss);
-    box.replaceChildren(title, reasons, el('p', { className: 'safety-note', textContent: 'A quick check of what this page shows, not an antivirus. Don\'t enter passwords or card details, or download files, unless you\'re sure.' }), actions);
-  }
-
-  // Shop product pages: "Buy later" saves the product to the wish list in snippets.
-  let product = null;
-  let productUrl = '';
-  function refreshProduct() {
-    if (productUrl !== location.href || !product) {
-      try {
-        product = S.detectProduct(document, location);
-      } catch {
-        product = null;
-      }
-      productUrl = location.href;
-    }
-    const on = Boolean(product);
-    els.actions.querySelector('[data-action="wishlist"]').hidden = !on;
-    for (const b of els.empty.querySelectorAll('.wish, .deal')) b.hidden = !on;
-    return product;
-  }
-  // Single-page shops change product without reloading; re-check while the panel is open.
-  setInterval(() => {
-    if (isOpen() && productUrl !== location.href) refreshProduct();
-    if (safetyUrl && safetyUrl !== location.href) scheduleSafetyCheck();
-  }, 2000);
-
-  async function addToWishlist() {
-    const item = refreshProduct() || S.detectProduct(document, location);
-    if (!item) {
-      append(card({ icon: 'heart', title: 'This doesn\'t look like a product page.', body: 'Open a product with an "Add to cart" button to save it for later.' }));
-      return;
-    }
-    const open = { label: 'Open wish list', onClick: () => sendMessage({ type: 'open:snippets', view: 'wishlist' }) };
+  async function findRelated() {
+    if (related.url === location.href) return renderRelated();
+    related.url = location.href;
+    related.using = false;
+    related.open = false;
     try {
-      const saved = (await S.snippetsForPage(item.url)).find((s) => s.kind === 'wishlist');
-      if (saved) {
-        append(card({ kind: 'ok', icon: 'heart', title: 'Already on your wish list.', body: `${saved.title}${saved.price ? ` · ${saved.price}` : ''}`, actions: [open] }));
-        return;
-      }
-      await S.addSnippet({
-        kind: 'wishlist',
-        source: 'wishlist',
-        title: item.title || document.title,
-        pageTitle: document.title,
-        url: item.url,
-        price: item.price,
-        image: /^https:\/\//.test(item.image) ? item.image : '',
-        summary: [item.price, item.site].filter(Boolean).join(' · '),
-      });
-      append(card({ kind: 'ok', icon: 'heart', title: 'Added to your wish list.', body: `${item.title}${item.price ? ` · ${item.price}` : ''}`, actions: [open] }));
-    } catch (err) {
-      showError(err, '', false);
+      const all = await S.listSnippets();
+      const description = document.querySelector('meta[name="description"], meta[property="og:description"]');
+      const text = [document.title, document.title, description && description.content, getPage(4000).text].join(' ');
+      related.notes = S.relatedNotes(S.buildIndex(all), text, { excludeUrl: location.href }).map((h) => h.note);
+    } catch {
+      related.notes = [];
     }
+    renderRelated();
+  }
+
+  function notesForChat() {
+    return `\n\nThe user's own saved notes that relate to this page, numbered [N1], [N2]…:\n<notes>\n${S.formatNotes(related.notes, { prefix: 'N', perNote: 1500, total: 6000 })}\n</notes>\nWhen you use these notes, cite them as [N#] and keep what they say separate from your own interpretation (for example, "Your notes say … [N1]" versus "My read: …"). Don't present the page's content or your reasoning as coming from the notes.`;
+  }
+
+  function renderRelated() {
+    const bar = shadow.querySelector('.related');
+    const count = related.notes.length;
+    bar.hidden = !count || related.dismissed === location.href;
+    if (bar.hidden) return;
+    const n = count === 1 ? '1 of your saved notes' : `${count} of your saved notes`;
+    const text = el('span', { className: 'related-text', textContent: related.using ? `Using ${n} in this chat` : `📚 ${n} relate${count === 1 ? 's' : ''} to this page` });
+    const toggle = el('button', { type: 'button', className: 'link', textContent: related.open ? 'Hide' : 'Show' });
+    toggle.addEventListener('click', () => {
+      related.open = !related.open;
+      renderRelated();
+    });
+    const use = el('button', { type: 'button', className: related.using ? 'quiet' : 'primary', textContent: related.using ? 'Stop using' : 'Use in chat' });
+    use.title = related.using ? 'Answer from this page only' : 'Answers will draw on these notes too, cited as [N1], [N2]…';
+    use.addEventListener('click', () => {
+      related.using = !related.using;
+      renderRelated();
+      if (related.using) els.input.focus({ preventScroll: true });
+    });
+    const dismiss = el('button', { type: 'button', className: 'dismiss', textContent: '×', title: 'Hide for this page' });
+    dismiss.setAttribute('aria-label', 'Hide related notes');
+    dismiss.addEventListener('click', () => {
+      related.dismissed = location.href;
+      related.using = false;
+      renderRelated();
+    });
+    const row = el('div', { className: 'related-row' }, [text, toggle, el('span', { className: 'related-actions' }, [use, dismiss])]);
+    const nodes = [row];
+    if (related.open) {
+      const list = el('ol', { className: 'related-list' }, related.notes.map((note, i) => {
+        const open = el('button', { type: 'button', className: 'link', textContent: note.title || note.pageTitle || 'Untitled' });
+        open.addEventListener('click', () => sendMessage({ type: 'open:snippets', id: note.id }));
+        return el('li', {}, [el('span', { className: 'n', textContent: `N${i + 1}` }), open, el('small', { textContent: new Date(note.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) })]);
+      }));
+      const deeper = el('button', { type: 'button', className: 'link', textContent: 'Ask your notes about this topic →' });
+      deeper.addEventListener('click', () => sendMessage({ type: 'open:notes', topic: document.title.slice(0, 120) }));
+      nodes.push(list, deeper);
+    }
+    bar.replaceChildren(...nodes);
   }
 
   // Read later: keep this page in the Read later list (once per page).
@@ -1258,7 +1209,7 @@
   }
 
   // History: everything saved from this exact page before (summaries, selections, screenshots).
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot', readlater: 'Later', wishlist: 'Wish' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot', readlater: 'Later' };
   async function showPageHistory() {
     let items = [];
     try {
@@ -1550,6 +1501,7 @@
       if (echo) addUserMessage(question);
       const vars = S.pageVars(state.pageContext.page, { context: pageInfo().context || '', question });
       const [system] = S.buildMessages('ask', vars, sitePrompts());
+      if (related.using && related.notes.length) system.content += notesForChat();
       await streamReply([system, ...state.history, { role: 'user', content: question }], question, signal);
     });
   }
@@ -1617,9 +1569,8 @@
       els.launcher.classList.add('open');
       renderSiteBar();
       launcherCtl.placePanel();
-      refreshProduct();
       showQuip();
-      renderSafety();
+      findRelated();
       if (state.status !== 'ready') connect();
     }
     if (focus) els.input.focus({ preventScroll: true });
@@ -1654,14 +1605,12 @@
     else if (action === 'screenshot') takeScreenshot();
     else if (action === 'page-history') showPageHistory();
     else if (action === 'read-later') readLater();
-    else if (action === 'wishlist') addToWishlist();
   });
 
   // Suggested questions on the empty screen.
   els.empty.addEventListener('click', (e) => {
     const button = e.target.closest('[data-ask]');
     if (button) ask(button.dataset.ask);
-    else if (e.target.closest('[data-cmd="wishlist"]')) addToWishlist();
     else if (e.target.closest('.back-to-chat')) {
       leaveHome();
       if (els.thread.querySelector('.msg, .card, .cached')) els.empty.hidden = true;
@@ -1715,6 +1664,7 @@
     if (cmd === 'snippets') sendMessage({ type: 'open:snippets' });
     else if (cmd === 'history') sendMessage({ type: 'open:history' });
     else if (cmd === 'stats') sendMessage({ type: 'open:stats' });
+    else if (cmd === 'notes') sendMessage({ type: 'open:notes' });
     else if (cmd === 'dark') toggleDark();
     else if (cmd === 'feedback') window.open(S.feedbackUrl('menu'), '_blank', 'noopener');
     else if (cmd === 'settings') sendMessage({ type: 'open:options' });
@@ -1765,7 +1715,6 @@
     const before = state.settings;
     state.settings = { ...S.DEFAULT_SETTINGS, ...(changes.settings.newValue || {}) };
     applySettings();
-    if (before.safetyCheck !== state.settings.safetyCheck || JSON.stringify(before.trustedSites) !== JSON.stringify(state.settings.trustedSites)) runSafetyCheck();
     if (JSON.stringify(before.siteOptions) !== JSON.stringify(state.settings.siteOptions)) {
       applySiteOptions();
       renderSiteBar();
@@ -1789,7 +1738,6 @@
     applySettings();
     applySiteOptions();
     showPendingSummaries();
-    scheduleSafetyCheck();
     // Sites where the reader chose "Always hide": clean up once the page (and its ads) has loaded.
     if ((settings.cleanSites || []).includes(location.hostname)) {
       setTimeout(() => {

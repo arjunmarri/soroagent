@@ -6,7 +6,7 @@
   'use strict';
 
   const soroagent = (root.soroagent = root.soroagent || {});
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
   const FORMAT = 'soroagent-backup';
   const DATA_PREFIXES = ['snippet:', 'summary:', 'stats:'];
   // The automatic backup, relative to the browser's Downloads folder (overwritten each time).
@@ -21,6 +21,17 @@
       for (const [key, value] of Object.entries(all)) {
         if (key.startsWith('snippet:') && value && !value.kind) {
           updates[key] = { ...value, kind: value.source === 'selection' ? 'selection' : value.source === 'summary' ? 'summary' : 'page' };
+        }
+      }
+      return updates;
+    },
+    // v3: the wish list was retired; its items become read-later pages (with the price kept).
+    3: (all) => {
+      const updates = {};
+      for (const [key, value] of Object.entries(all)) {
+        if (key.startsWith('snippet:') && value && value.kind === 'wishlist') {
+          const { price, image, boughtAt, ...rest } = value;
+          updates[key] = { ...rest, kind: 'readlater', source: 'readlater', summary: value.summary || price || '', ...(boughtAt ? { readAt: boughtAt } : {}) };
         }
       }
       return updates;

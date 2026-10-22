@@ -40,9 +40,9 @@
   };
   const research = new Map(); // snippet id -> { status, text, error, sources } while running
 
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot', readlater: 'Read later', wishlist: 'Wish list' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot', readlater: 'Read later', deliverable: 'Created' };
   // Kinds with a section of their own, kept out of the text views.
-  const SECTIONS = ['screenshot', 'readlater', 'wishlist'];
+  const SECTIONS = ['screenshot', 'readlater'];
   const topicPicks = new Map(); // snippet id -> { status: 'loading' | 'ready' | 'error', topics, error, draft }
   if (!['all', 'summary', 'research', ...SECTIONS].includes(prefs.kind)) prefs.kind = 'all'; // e.g. the old Selections view
   const kindOf = (s) => s.kind || (s.source === 'selection' ? 'selection' : s.source === 'summary' ? 'summary' : 'page');
@@ -94,10 +94,7 @@
     const kind = kindOf(s);
     const host = hostOf(s.url);
     const summary = s.summary || plain(s.text).slice(0, 220);
-    const thumb = kind === 'wishlist' && s.image ? el('img', { className: 'thumb', src: s.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }) : '';
-    if (thumb) thumb.addEventListener('error', () => thumb.remove());
-    const card = el('button', { type: 'button', className: `card${s.readAt || s.boughtAt ? ' read' : ''}${thumb ? ' with-thumb' : ''}` }, [
-      thumb,
+    const card = el('button', { type: 'button', className: `card${s.readAt ? ' read' : ''}` }, [
       el('div', { className: 'card-title', textContent: s.title || s.pageTitle || 'Untitled' }),
       summary ? el('div', { className: 'card-summary', textContent: summary }) : '',
       el('div', { className: 'meta' }, [
@@ -106,7 +103,6 @@
         el('span', { textContent: when(s.createdAt, { hour: 'numeric', minute: '2-digit', ...(prefs.group === 'day' ? {} : { day: 'numeric', month: 'short' }) }) }),
         s.research ? el('span', { className: 'has-research', textContent: '· researched' }) : '',
         s.readAt ? el('span', { className: 'is-read', textContent: '· read' }) : '',
-        s.boughtAt ? el('span', { className: 'is-read', textContent: '· bought' }) : '',
       ]),
     ]);
     card.setAttribute('aria-current', String(s.id === selectedId));
@@ -154,8 +150,6 @@
         className: 'empty',
         textContent: prefs.kind === 'screenshot'
           ? 'No screenshots yet. Use Screenshot in the soroagent panel (or right-click a page) to take one.'
-          : prefs.kind === 'wishlist'
-          ? 'Your wish list is empty. On a product page, click Buy later in the soroagent panel to save it here.'
           : prefs.kind === 'readlater'
           ? 'Nothing to read later. Click Read later in the soroagent panel to keep a page for later.'
           : snippets.some((s) => !SECTIONS.includes(kindOf(s))) ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
@@ -217,17 +211,13 @@
       renderShotReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Screenshot' })]);
       return;
     }
-    if (kind === 'wishlist') {
-      renderWishReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Product' })]);
-      return;
-    }
     if (kind === 'readlater') {
       renderLaterReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Untitled' })]);
       return;
     }
 
     const body = el('div', { className: 'prose' });
-    if (kind === 'summary' || kind === 'research') body.append(...markdown(s.text, s.url));
+    if (kind === 'summary' || kind === 'research' || kind === 'deliverable') body.append(...markdown(s.text, s.url));
     else {
       if (s.summary) body.append(el('p', { textContent: s.summary }));
       body.append(el('blockquote', { className: 'quote', textContent: s.text }));
@@ -312,28 +302,6 @@
       selectedId = '';
     });
     actions.append(remove);
-    nodes.push(actions);
-    reader.replaceChildren(...nodes);
-  }
-
-  function renderWishReader(s, reader, nodes) {
-    const details = el('div', {}, [
-      s.price ? el('p', { className: 'big-price', textContent: s.price }) : el('p', { className: 'muted', textContent: 'No price was shown on the page.' }),
-      el('p', { className: 'muted', textContent: s.boughtAt ? `Marked as bought ${when(s.boughtAt, { dateStyle: 'medium' })}.` : `Saved to buy later, ${when(s.createdAt, { dateStyle: 'medium' })}. Prices change; check the page before buying.` }),
-    ]);
-    const image = s.image ? el('img', { src: s.image, alt: s.title || '', referrerPolicy: 'no-referrer' }) : '';
-    if (image) image.addEventListener('error', () => image.remove());
-    nodes.push(image ? el('div', { className: 'product' }, [image, details]) : details);
-    const actions = el('div', { className: 'reader-actions' });
-    const buy = el('a', { className: 'btn primary', href: S.safeUrl(s.url), target: '_blank', rel: 'noopener', textContent: 'View product ↗' });
-    const bought = el('button', { type: 'button', className: 'btn', textContent: s.boughtAt ? 'Not bought yet' : 'Mark as bought' });
-    bought.addEventListener('click', () => S.updateSnippet(s.id, { boughtAt: s.boughtAt ? '' : new Date().toISOString() }));
-    const remove = el('button', { type: 'button', className: 'btn danger', textContent: 'Remove' });
-    remove.addEventListener('click', async () => {
-      await deleteSnippets([s.id]);
-      selectedId = '';
-    });
-    actions.append(buy, bought, remove);
     nodes.push(actions);
     reader.replaceChildren(...nodes);
   }
@@ -483,8 +451,6 @@
     $('count').textContent = snippets.length ? `(${snippets.length})` : '';
     $('shotCount').textContent = shots ? `(${shots})` : '';
     $('laterCount').textContent = later ? `(${later})` : '';
-    const wishes = snippets.filter((s) => kindOf(s) === 'wishlist' && !s.boughtAt).length;
-    $('wishCount').textContent = wishes ? `(${wishes})` : '';
     for (const b of document.querySelectorAll('[data-group]')) b.setAttribute('aria-pressed', String(b.dataset.group === prefs.group));
     for (const b of document.querySelectorAll('[data-kind]')) b.setAttribute('aria-pressed', String(b.dataset.kind === prefs.kind));
     renderFilters();

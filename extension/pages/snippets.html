@@ -43,16 +43,8 @@
     .kind.research { background: var(--spark-soft); color: var(--spark-fg); }
     .has-research { color: var(--spark-fg); }
     .kind.screenshot { background: var(--surface-soft); color: var(--fg); }
+    .kind.deliverable { background: var(--spark-soft); color: var(--spark-fg); }
     .kind.readlater { background: var(--spark-soft); color: var(--spark-fg); }
-    .kind.wishlist { background: var(--spark-soft); color: var(--spark-fg); }
-    .card.with-thumb { grid-template-columns: 56px minmax(0, 1fr); column-gap: 12px; }
-    .card.with-thumb .thumb { grid-row: span 3; width: 56px; height: 56px; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid var(--border); }
-    .card.with-thumb > :not(.thumb) { grid-column: 2; }
-    .price { font-weight: 650; color: var(--fg); }
-    .product { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 22px; align-items: start; margin-top: 14px; }
-    .product img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 10px; }
-    .product .big-price { font-size: 26px; font-weight: 750; letter-spacing: -0.02em; margin: 0 0 6px; }
-    @media (max-width: 860px) { .product { grid-template-columns: 1fr; } .product img { max-width: 240px; } }
     .is-read { color: var(--fg-muted); }
     .card.read .card-title { color: var(--fg-muted); font-weight: 550; }
 
@@ -114,7 +106,7 @@
 <main>
   <header>
     <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Snippets <span class="muted" id="count"></span></span></div>
-    <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="stats.html">Stats</a><a class="btn small" href="options.html">Settings</a></div>
+    <div class="row"><a class="btn small primary" href="notes.html">✦ Ask your notes</a><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="stats.html">Stats</a><a class="btn small" href="options.html">Settings</a></div>
   </header>
   <div class="toolbar">
     <input type="search" id="search" placeholder="Search snippets, research, sites and tags…" aria-label="Search snippets">
@@ -131,7 +123,6 @@
     </div>
     <div class="segmented" role="group" aria-label="Sections">
       <button type="button" data-kind="readlater" aria-pressed="false">Read later <span id="laterCount"></span></button>
-      <button type="button" data-kind="wishlist" aria-pressed="false">Wish list <span id="wishCount"></span></button>
       <button type="button" data-kind="screenshot" aria-pressed="false">Screenshots <span id="shotCount"></span></button>
     </div>
     <details class="more">

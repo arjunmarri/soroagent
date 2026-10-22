@@ -6,7 +6,7 @@
   const $ = (id) => document.getElementById(id);
   const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl'];
   const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit'];
-  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup', 'safetyCheck', 'showQuips'];
+  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup', 'showQuips'];
 
   let saved = { ...DEFAULT_SETTINGS }; // last saved settings, for fields this page doesn't show
   let hiddenSites = [];
@@ -354,12 +354,6 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     $('result').hidden = true;
   });
 
-  $('forgetTrusted').addEventListener('click', async (e) => {
-    e.preventDefault();
-    const count = (saved.trustedSites || []).length;
-    saved = await S.saveSettings({ trustedSites: [] });
-    e.target.textContent = count ? `Forgot ${count} site${count === 1 ? '' : 's'}` : 'No trusted sites';
-  });
   $('resetPlacements').addEventListener('click', async () => {
     saved = await S.saveSettings({ launcherPlacements: {} });
     renderPlacements();
@@ -438,7 +432,7 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     if (!offer) return;
     $('restoreOffer').hidden = false;
     const name = offer.path.split(/[\\/]/).slice(-2).join('/');
-    $('restoreOfferText').textContent = `A backup from ${when(offer.at)} is in your Downloads folder (${name}). Restore your snippets, wish list, history, stats and settings in one click.`;
+    $('restoreOfferText').textContent = `A backup from ${when(offer.at)} is in your Downloads folder (${name}). Restore your snippets, history, stats and settings in one click.`;
     $('restoreOfferGo').onclick = async () => {
       $('restoreOfferHint').hidden = false;
       $('restoreOfferHint').textContent = 'Restoring… If a file picker opens, choose soroagent-backup.json in Downloads/soroagent.';

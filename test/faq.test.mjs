@@ -23,5 +23,5 @@ test('answers about soroagent reflect the actual setup', () => {
   assert.match(cloud, /go to Anthropic \(Claude\)/);
   assert.doesNotMatch(cloud, /Downloads/);
   assert.match(S.ownAnswer('opensource'), /github\.com\/arjunmarri\/soroagent/);
-  assert.match(S.ownAnswer('opensource'), /source-available/);
+  assert.match(S.ownAnswer('opensource'), /MIT license/);
 });
