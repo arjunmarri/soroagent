@@ -91,7 +91,7 @@
         </div>
       </header>
       <div class="actions">
-        <button class="chip" type="button" data-action="summarize" title="TL;DR: a short summary of this page">${ICONS.summarize}<span>TL;DR</span></button>
+        <button class="chip" type="button" data-action="summarize" title="A short summary of this page">${ICONS.summarize}<span>Summarize</span></button>
         <button class="chip spark" type="button" data-action="wishlist" hidden title="Save this product to your wish list to buy later">${ICONS.heart}<span>Buy later</span></button>
         <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
         <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
@@ -544,7 +544,7 @@
   function updateControls() {
     const busy = Boolean(state.busy);
     const ready = state.status === 'ready';
-    // Only TL;DR needs the model; the other buttons always work.
+    // Only Summarize needs the model; the other buttons always work.
     for (const chip of els.actions.querySelectorAll('.chip')) chip.disabled = chip.dataset.action === 'summarize' && (busy || !ready);
     els.input.disabled = !ready;
     els.send.disabled = !busy && !ready;
@@ -715,11 +715,11 @@
       state.pageContext = { url: location.href, page };
       const print = fingerprint(`${location.href}\n${page.text}`);
       const cached = !fresh && (await findSummary(print));
-      if (cached) return showCachedSummary('TL;DR of this page', cached, () => summarize({ fresh: true }));
-      addUserMessage('TL;DR of this page');
+      if (cached) return showCachedSummary('Summarize this page', cached, () => summarize({ fresh: true }));
+      addUserMessage('Summarize this page');
       const vars = S.pageVars(page, { context: pageInfo().context || '' });
       await runSummaryJob(
-        { label: 'TL;DR of this page', kind: 'page', fingerprint: print, final: S.buildMessages('summarize', vars, sitePrompts()) },
+        { label: 'Summarize this page', kind: 'page', fingerprint: print, final: S.buildMessages('summarize', vars, sitePrompts()) },
         { signal, reply: addAssistantMessage() }
       );
     });
@@ -729,7 +729,7 @@
   function summarizeVisibleItems(posts, { fresh }) {
     return runTask(async (signal) => {
       const print = fingerprint(location.href + JSON.stringify(siteOptions()) + posts.map((p) => p.id).join(','));
-      const label = `TL;DR of ${posts.length} ${items().noun || 'items'}`;
+      const label = `Summarize ${posts.length} ${items().noun || 'items'}`;
       const cached = !fresh && (await findSummary(print));
       if (cached) return showCachedSummary(label, cached, () => summarize({ fresh: true }));
       addUserMessage(label);
@@ -1361,7 +1361,7 @@
       const cached = state.summaries.get(key);
       const onScreen = loaded.filter((p) => inViewport(site, p)).map((p) => p.id);
       const unchanged = cached && onScreen.length > 0 && onScreen.every((postId) => cached.ids.has(postId));
-      const label = `TL;DR of ${loaded.length} loaded ${noun}${info.label ? ` · ${info.label}` : ''}`;
+      const label = `Summarize ${loaded.length} loaded ${noun}${info.label ? ` · ${info.label}` : ''}`;
       if (unchanged && !fresh) {
         showCachedSummary(cached.label, cached.summary, () => summarize({ fresh: true }));
         if (!state.feed || state.feed.url !== location.href) state.feed = { ...cached.feed, seen: new Set(cached.feed.seen) };

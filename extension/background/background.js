@@ -376,7 +376,7 @@
 
 
   const MENU_ITEMS = [
-    { id: 'soroagent-summarize', title: 'TL;DR of this page', contexts: ['page'], action: 'summarize' },
+    { id: 'soroagent-summarize', title: 'Summarize this page', contexts: ['page'], action: 'summarize' },
     { id: 'soroagent-screenshot', title: 'Take a screenshot', contexts: ['page', 'image', 'video'], action: 'screenshot' },
   ];
 

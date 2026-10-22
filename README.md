@@ -17,7 +17,7 @@ Browsers were built to *fetch* pages, not to help you *understand* them. Your br
 
 **soroagent changes what a browser is for.** It sits quietly beside every page, an owl in the corner, and turns browsing from consumption into learning:
 
-- **Understand faster.** A TL;DR of any page, thread or feed in seconds, and answers to your questions about it.
+- **Understand faster.** A summary of any page, thread or feed in seconds, and answers to your questions about it.
 - **Remember automatically.** Every summary becomes a searchable snippet, so your history becomes a record of ideas, facts and sources rather than links.
 - **Go deeper on purpose.** When something matters, Research reads the web for you and writes a brief with citations.
 - **Take back your attention.** No doom-scrolling, no clutter, a comfortable dark mode on any site, and an honest view of where your time goes.
@@ -28,7 +28,7 @@ Browsers were built to *fetch* pages, not to help you *understand* them. Your br
 ## What it does
 
 ### Understand any page
-- **TL;DR** summarizes the page in a clear, scannable format. Ask again while nothing has changed and you get the earlier summary instantly, with **Regenerate** if you want a fresh one.
+- **Summarize** gives you the page in a clear, scannable format: a one-line TL;DR, then the key points. Ask again while nothing has changed and you get the earlier summary instantly, with **Regenerate** if you want a fresh one.
 - **Ask anything** about the page in a chat, or tap a suggestion on the opening screen: *What are the key points?*, *Explain it simply*, *What should I double-check?*
 - **Tuned for the sites you use.** Built-in prompts for X, Reddit, YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon, Stack Overflow and major news sites: thread consensus on Reddit, the accepted answer on Stack Overflow, pros and cons from reviews on Amazon.
 - **Works while you move on.** Summaries run in the background. Switch tabs or leave the page, and the result is waiting when you come back. The toolbar owl counts what finished while you were away.
@@ -37,7 +37,7 @@ Browsers were built to *fetch* pages, not to help you *understand* them. Your br
 On **X** and **Reddit**, soroagent reads only what's already on screen: themes, notable posts and overall sentiment, with every **@handle**, **u/user** and **r/community** linked. Then a single small card under the summary offers **Read more** and **Research** together, so the chat stays uncluttered. Each batch needs your yes, is capped in posts, scrolling and time, and after 200 posts (adjustable) it stops offering and suggests a break. Threads get a summary of the post and where the discussion agrees and disagrees. Toggles in the panel give you **Verified only** on X and **Hide ads** on both.
 
 ### Remember what you read
-- **Snippets, automatically.** Every TL;DR is saved with a title, short summary and tags. Re-summarizing the same page updates it instead of duplicating it. Browse by day, site or topic, search everything, and read in a clean reading view.
+- **Snippets, automatically.** Every summary is saved with a title, short summary and tags. Re-summarizing the same page updates it instead of duplicating it. Browse by day, site or topic, search everything, and read in a clean reading view.
 - **History of this page.** The clock button lists everything you've saved from the exact page you're on.
 - **Read later** keeps a page with a short excerpt in its own list, marked as read once you open it.
 - **Screenshots** of what you see (without soroagent's own button) in their own gallery: view, download, copy, delete.
@@ -74,12 +74,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.19.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.19.1**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.19.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.19.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.19.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.1.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.19.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.1.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -114,8 +114,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.19.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.0.zip)
-- Firefox: [soroagent-firefox-2.19.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.19.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.1.zip)
+- Firefox: [soroagent-firefox-2.19.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.1.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -131,7 +131,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.19.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.19.1.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -141,7 +141,7 @@ On first install the settings page opens and tests the connection to `http://127
 |---|---|
 | Any page | Click the owl button. It places itself where it doesn't cover the page's own buttons (on X it sits clear of Grok and Messages). |
 | Keyboard | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens or closes the assistant (Option on a Mac). You can change it at `chrome://extensions/shortcuts`. |
-| Right-click menu | *TL;DR of this page*, *Take a screenshot* |
+| Right-click menu | *Summarize this page*, *Take a screenshot* |
 | Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets**, **Browsing stats**, **Send feedback** and **Settings**. |
 | Feedback | **Share feedback** at the bottom of the panel (or in its ⋯ menu) opens a quick feedback page on soroagent.com. Only the version and browser are passed along. |
 
@@ -159,7 +159,7 @@ The panel's **⋯** menu can hide the button on the current site or reset a drag
 
 Every prompt soroagent uses is plain text in [`extension/prompts/`](extension/prompts), so you can fine-tune it without touching the extension code:
 
-- [`default.js`](extension/prompts/default.js): prompts for every site (TL;DR, Ask, Research).
+- [`default.js`](extension/prompts/default.js): prompts for every site (Summarize, Ask, Research).
 - [`x.js`](extension/prompts/x.js) and [`reddit.js`](extension/prompts/reddit.js): prompts for X and Reddit, overriding only what differs. Reddit also has separate prompts for thread pages.
 - `youtube.js`, `github.js`, `hackernews.js`, `wikipedia.js`, `linkedin.js`, `amazon.js`, `stackoverflow.js`, `news.js`: prompts for popular sites, matched by their `hosts`.
 - `<site>.js`: add your own. A site file only needs the parts it changes.
