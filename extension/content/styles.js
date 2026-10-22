@@ -205,6 +205,8 @@ header {
 .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .chip.active svg { color: var(--spark); }
 .chip.spark svg { color: var(--spark); }
+.chip.icon-only { width: 29px; padding: 0; justify-content: center; }
+.chip.icon-only svg { width: 15px; height: 15px; }
 .chip.spark { border-color: color-mix(in srgb, var(--spark) 45%, var(--border)); }
 .chip.spark:hover:not(:disabled) { background: var(--spark-soft); border-color: var(--spark); }
 

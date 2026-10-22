@@ -38,10 +38,10 @@ On **X** and **Reddit**, soroagent reads only what's already on screen: themes, 
 
 ### Remember what you read
 - **Snippets, automatically.** Every summary is saved with a title, short summary and tags. Re-summarizing the same page updates it instead of duplicating it. Browse by day, site or topic, search everything, and read in a clean reading view.
-- **History of this page.** The clock button lists everything you've saved from the exact page you're on.
-- **Read later** keeps a page with a short excerpt in its own list, marked as read once you open it.
-- **Screenshots** of what you see (without soroagent's own button) in their own gallery: view, download, copy, delete.
-- **Buy later.** On shop product pages (Amazon, Shopify stores and most shops with an *Add to cart* button), soroagent spots the product and offers **Add to wish list** right away, plus *Is this a good deal?*. Name, price, picture and link go to your **Wish list**.
+- **History of this page.** The clock icon lists everything you've saved from the exact page you're on.
+- **Save** keeps a page to read later, with a short excerpt, in its own **Read later** list, marked as read once you open it.
+- **Screenshots** (camera icon) of what you see (without soroagent's own button) in their own gallery: view, download, copy, delete.
+- **Buy later.** On shop product pages (Amazon, Shopify stores and most shops with an *Add to cart* button), soroagent spots the product and offers **Add to wish list** right away (and an orange heart button, *Buy later*), plus *Is this a good deal?*. Name, price, picture and link go to your **Wish list**.
 - **Summary history** keeps every summary run, searchable and filterable, with status.
 - **Never lose it.** Everything stays on your computer and carries over to every update. soroagent also keeps a backup file in `Downloads/soroagent/` up to date automatically, and if you ever reinstall, it finds that file and restores everything in one click. You can also export snippets as Markdown or JSON.
 
@@ -50,7 +50,7 @@ On **X** and **Reddit**, soroagent reads only what's already on screen: themes, 
 
 ### Browse calmer
 - **Safety check.** soroagent looks at each page for signs of scams, phishing, malware tricks and spam: fake "your computer is infected" alerts, sign-in pages pretending to be PayPal, Microsoft or your bank, passwords sent to another site, crypto giveaways, fake update downloads, hidden mining scripts, link farms. When the signs are strong, **the owl glows red**; open it to see exactly why, go back, or mark the site as trusted. It's a quick check of the page itself, not an antivirus.
-- **Hide ads** removes ads, sponsored widgets, cookie walls and sticky video players **without shifting the layout**, so nothing jumps while you read. Remember it per site if you like.
+- **Ads** hides ads, sponsored widgets, cookie walls and sticky video players **without shifting the layout**, so nothing jumps while you read. Remember it per site if you like.
 - **Dark mode for any site** (in the panel's **⋯** menu), even ones without their own, with brightness, contrast and sepia sliders. Photos and videos keep their real colours, and it's applied before the page paints, so there's no white flash.
 - **Stats** show exactly where your browsing time goes: per day, per website and per page. Time counts only while a tab is in front and you're active (or a video plays), and stays in your browser for 90 days.
 
@@ -74,12 +74,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.19.1**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.19.2**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.19.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.1.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.19.1.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.1.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.19.2.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.2.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.19.2.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.2.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -114,8 +114,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.19.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.1.zip)
-- Firefox: [soroagent-firefox-2.19.1.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.1.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.19.2.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.2.zip)
+- Firefox: [soroagent-firefox-2.19.2.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.2.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -131,7 +131,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.19.1.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.19.2.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 

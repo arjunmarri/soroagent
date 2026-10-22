@@ -92,11 +92,11 @@
       </header>
       <div class="actions">
         <button class="chip" type="button" data-action="summarize" title="A short summary of this page">${ICONS.summarize}<span>Summarize</span></button>
-        <button class="chip spark" type="button" data-action="wishlist" hidden title="Save this product to your wish list to buy later">${ICONS.heart}<span>Buy later</span></button>
-        <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
-        <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
-        <button class="chip" type="button" data-action="read-later" title="Keep this page in your Read later list">${ICONS.save}<span>Read later</span></button>
-        <button class="chip" type="button" data-action="page-history" title="Snippets and screenshots you saved from this page before">${ICONS.history}<span>History</span></button>
+        <button class="chip spark icon-only" type="button" data-action="wishlist" hidden aria-label="Buy later" title="Buy later: add this product to your wish list">${ICONS.heart}</button>
+        <button class="chip" type="button" data-action="declutter" aria-pressed="false" title="Hide ads and distractions (the layout stays the same)">${ICONS.clean}<span>Ads</span></button>
+        <button class="chip" type="button" data-action="read-later" title="Save this page to read later">${ICONS.save}<span>Save</span></button>
+        <button class="chip icon-only" type="button" data-action="screenshot" aria-label="Screenshot" title="Screenshot: keep what you see in your snippets">${ICONS.camera}</button>
+        <button class="chip icon-only" type="button" data-action="page-history" aria-label="History of this page" title="History: what you saved from this page before">${ICONS.history}</button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="safety" hidden role="alert"></div>
@@ -940,7 +940,8 @@
     const chip = els.actions.querySelector('[data-action="declutter"]');
     const on = S.declutter.isActive();
     chip.classList.toggle('active', on);
-    chip.querySelector('span').textContent = on ? 'Show ads' : 'Hide ads';
+    chip.setAttribute('aria-pressed', String(on));
+    chip.title = on ? 'Ads are hidden. Click to show them again.' : 'Hide ads and distractions (the layout stays the same)';
   }
 
   function toggleDeclutter() {
