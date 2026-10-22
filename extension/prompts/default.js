@@ -100,7 +100,7 @@ Write a research brief that goes beyond the starting point.
 - 2 or 3 sources by title with [n] and why.`,
     },
 
-    // "Ask your notes": questions answered from the user's saved notes. {{content}} is the numbered
+    // "Ask your library": questions answered from the user's saved notes. {{content}} is the numbered
     // notes ([S1], [S2]…), {{question}} the question, {{context}} the time range. Reply: Markdown.
     synthesize: {
       system: `{{persona}}
@@ -123,7 +123,7 @@ Answer in two clearly separated parts:
 Be concise and concrete.`,
     },
 
-    // "Ask your notes" → Create: turn the notes into a deliverable. {{question}} is what to make
+    // "Ask your library" → Create: turn the notes into a deliverable. {{question}} is what to make
     // and its goal, {{context}} the format for the kind of deliverable. Reply: Markdown.
     deliverable: {
       system: `{{persona}}

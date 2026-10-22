@@ -88,7 +88,9 @@ Summarize this discussion.
 **What people say**
 - 3 to 6 bullets with the main viewpoints and the most useful answers; name u/authors for notable ones.
 
-**Consensus:** one line on where commenters agree or disagree.
+**Thread consensus:** where most commenters agree, and the main point of disagreement.
+
+**Most useful answer:** the single most helpful reply, with u/author and why.
 
 Only use what is in the thread.`,
         },

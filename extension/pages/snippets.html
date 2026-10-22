@@ -43,6 +43,13 @@
     .kind.research { background: var(--spark-soft); color: var(--spark-fg); }
     .has-research { color: var(--spark-fg); }
     .kind.screenshot { background: var(--surface-soft); color: var(--fg); }
+    .library-line { margin: -6px 0 12px; font-size: 13px; color: var(--fg-muted); }
+    .library-line b { color: var(--fg); }
+    .related-notes .related-list { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; }
+    .related-notes .link { border: none; background: none; padding: 0; color: var(--accent); font: inherit; font-weight: 550; cursor: pointer; text-align: left; }
+    .related-notes .link:hover { text-decoration: underline; }
+    .related-notes small { color: var(--fg-muted); }
+    .kind.read { background: var(--accent-soft); color: var(--accent); }
     .kind.deliverable { background: var(--spark-soft); color: var(--spark-fg); }
     .kind.readlater { background: var(--spark-soft); color: var(--spark-fg); }
     .is-read { color: var(--fg-muted); }
@@ -106,10 +113,11 @@
 <main>
   <header>
     <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Snippets <span class="muted" id="count"></span></span></div>
-    <div class="row"><a class="btn small primary" href="notes.html">✦ Ask your notes</a><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="stats.html">Stats</a><a class="btn small" href="options.html">Settings</a></div>
+    <div class="row"><a class="btn small primary" href="notes.html">✦ Ask your library</a><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="stats.html">Stats</a><a class="btn small" href="options.html">Settings</a></div>
   </header>
+  <p class="library-line" id="libraryLine"></p>
   <div class="toolbar">
-    <input type="search" id="search" placeholder="Search snippets, research, sites and tags…" aria-label="Search snippets">
+    <input type="search" id="search" placeholder="Search everything you've read, by meaning or words…" aria-label="Search your library">
     <span class="label">Group by</span>
     <div class="segmented" role="group" aria-label="Group by">
       <button type="button" data-group="day" aria-pressed="true">Day</button>

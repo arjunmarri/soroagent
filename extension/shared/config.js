@@ -30,9 +30,13 @@
     searxUrl: '', // e.g. http://127.0.0.1:8888 for a self-hosted SearXNG
     cleanSites: [], // sites where "Hide ads" is applied automatically
     customPrompts: {}, // system prompts written in settings: { default?: string, x?: string, … }
+    autoCapture: 'off', // 'on': save pages you actually read (passive capture)
+    captureMinSeconds: 45, // active reading time before a page counts as read
+    captureLabel: true, // let the AI add a title, summary and tags to captured pages
+    captureExclude: [], // sites never captured (on top of mail, chat, banking…)
+    semanticSearch: true, // search the library by meaning when an embedding model is available
     autoBackup: true, // save a backup file to Downloads/soroagent/ automatically
     onboarded: false, // set once the first-run setup connects (or for installs from before it existed)
-    showQuips: true, // a random one-liner when the panel opens
     trackTime: true, // count time on pages for the Stats page (stored only in this browser)
     panelWidth: 400, // panel size in px, set by dragging its edges
     panelHeight: 600,
@@ -197,7 +201,8 @@
   }
 
   async function saveSettings(patch) {
-    const next = { ...(await getSettings()), ...patch };
+    // updatedAt lets sync tell which browser changed preferences last.
+    const next = { ...(await getSettings()), ...patch, updatedAt: Date.now() };
     await ext.storage.local.set({ settings: next });
     return next;
   }

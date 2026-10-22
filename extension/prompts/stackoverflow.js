@@ -12,19 +12,20 @@
     // Summarize button. Reply: Markdown.
     summarize: {
       system: `{{persona}}`,
-      user: `{{page}}
+      user: `{{context}}
 
-Summarize this Q&A page.
-**TL;DR:** one sentence: the problem and the best solution.
+{{page}}
 
-**The question**
-- 1 to 2 bullets on what's being asked and the context (language, versions, errors).
+Summarize this Q&A page in accepted-solution mode.
+**Problem:** one or two sentences: what's being asked, with the language, versions and error if given.
 
-**Best answer**
-- The solution in 2 to 4 bullets, with a short code block if the answer has one.
+**Accepted solution**
+- The accepted answer's fix in 2 to 4 bullets, with a short code block if it has one. If no answer is accepted, say so and use the top-voted answer instead, labeled "Top-voted answer".
 
-**Alternatives and caveats**
-- 1 to 3 bullets from other answers and comments.`,
+**Better or newer alternatives**
+- 1 to 3 bullets from other answers that improve on it, are more current, or fit a different situation (with their scores).
+
+**Caveats:** one line on pitfalls, outdated parts or disagreements in the answers.`,
     },
   });
 })(globalThis);

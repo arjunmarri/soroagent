@@ -1,4 +1,4 @@
-// "Ask your notes": questions across the user's saved notes (synthesis), and deliverables made
+// "Ask your library": chat across the user's saved notes (synthesis), and deliverables made
 // from them. The notes are found locally (shared/knowledge.js); only the ones used are sent to the
 // model, numbered [S1]… so every claim can be traced back. The prompts keep "what your sources
 // say" apart from "my interpretation".
@@ -25,6 +25,7 @@
   let notes = [];
   let running = null;
   let last = null; // { title, question, text, used: [notes], kind }
+  let turns = []; // the conversation so far: [{ question, answer }]
 
   const hostOf = (url) => {
     try {
@@ -43,6 +44,23 @@
   async function load() {
     notes = (await S.listSnippets()).filter((n) => S.SEARCHABLE_KINDS.has(n.kind || 'page'));
     showScope();
+    showSearchMode();
+  }
+
+  // How the library is searched right now: by meaning (an embedding model) or by words.
+  async function showSearchMode() {
+    try {
+      const st = await S.ext.runtime.sendMessage({ type: 'library:status' });
+      const box = $('searchMode');
+      box.replaceChildren();
+      if (st.mode === 'meaning') {
+        box.append('Searching by ', Object.assign(document.createElement('b'), { textContent: 'meaning and words' }), ` with ${st.model}${st.via === 'ollama' ? ' on your computer' : ''} · ${st.indexed} of ${st.total} notes indexed${st.indexed < st.total ? ' (the rest index in the background)' : ''}.`);
+      } else {
+        box.append('Searching by words. For search by meaning, install a free embedding model: ', Object.assign(document.createElement('code'), { textContent: 'ollama pull nomic-embed-text' }), ' (or use an OpenAI or Gemini key).');
+      }
+    } catch {
+      // status is a nicety
+    }
   }
   function showScope() {
     const since = sinceMs();
@@ -52,26 +70,34 @@
 
   // The notes to use: the most relevant to the question in the time range, topped up with the
   // most recent ones when the question is broad ("what have I learned this month?").
-  function pickNotes(question) {
+  async function pickNotes(question) {
     const since = sinceMs();
     const inRange = notes.filter((n) => !since || new Date(n.createdAt).getTime() >= since);
-    const hits = S.searchNotes(S.buildIndex(inRange), question, { limit: MAX_NOTES, minMatches: 1 }).map((h) => h.note);
+    let hits;
+    try {
+      const res = await S.ext.runtime.sendMessage({ type: 'library:search', query: question, since, limit: MAX_NOTES });
+      if (!res || res.ok === false) throw new Error('search failed');
+      hits = res.results.map((r) => r.note);
+    } catch {
+      hits = S.searchNotes(S.buildIndex(inRange), question, { limit: MAX_NOTES, minMatches: 1 }).map((h) => h.note);
+    }
     if (hits.length >= 3) return hits;
-    const recent = inRange.filter((n) => !hits.includes(n)).slice(0, MAX_NOTES - hits.length);
+    const ids = new Set(hits.map((n) => n.id));
+    const recent = inRange.filter((n) => !ids.has(n.id)).slice(0, MAX_NOTES - hits.length);
     return [...hits, ...recent];
   }
 
   // Markdown with [S1]-style citations turned into links to the source list below.
-  function render(text, used) {
+  function render(text, used, turn = 0) {
     let html = S.renderMarkdown(S.stripThinking(text || ''));
-    html = html.replace(/\[S(\d{1,2})\]/g, (m, n) => (used[Number(n) - 1] ? `<a class="cite" href="#src-${n}" title="${S.escapeHtml(used[Number(n) - 1].title || '')}">S${n}</a>` : m));
+    html = html.replace(/\[S(\d{1,2})\]/g, (m, n) => (used[Number(n) - 1] ? `<a class="cite" href="#src-${turn}-${n}" title="${S.escapeHtml(used[Number(n) - 1].title || '')}">S${n}</a>` : m));
     return [...new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html').body.childNodes];
   }
 
-  function sourceList(used) {
+  function sourceList(used, turn = 0) {
     return el('div', { className: 'sources' }, [
       el('h3', { textContent: `Sources used (${used.length} of your notes)` }),
-      el('ol', {}, used.map((n, i) => el('li', { id: `src-${i + 1}` }, [
+      el('ol', {}, used.map((n, i) => el('li', { id: `src-${turn}-${i + 1}` }, [
         el('span', { className: 'n', textContent: `S${i + 1}` }),
         el('a', { href: `snippets.html#${encodeURIComponent(n.id)}`, textContent: n.title || n.pageTitle || 'Untitled', title: 'Open this note' }),
         el('small', { textContent: [day(n.createdAt), hostOf(n.url), n.kind === 'readlater' ? (n.readAt ? 'read later · read' : 'read later · not read yet') : n.kind].filter(Boolean).join(' · ') }),
@@ -87,30 +113,44 @@
       $('question').placeholder = make ? `What should the ${MAKE[make].label.toLowerCase()} be about? e.g. Choosing a vector database` : 'Type a question first.';
       return;
     }
-    const used = pickNotes(topic);
+    // A follow-up keeps the topic of the conversation when finding notes.
+    const followUp = !make && turns.length > 0;
+    const used = await pickNotes(followUp ? `${turns[turns.length - 1].question}\n${topic}` : topic);
     const out = $('output');
     if (!used.length) {
-      out.replaceChildren(el('div', { className: 'empty', textContent: `You haven't saved any notes from ${rangeText()} yet. Summarize a few pages (they're saved automatically), or choose a longer time range.` }));
+      out.replaceChildren(el('div', { className: 'empty', textContent: `You haven't saved any notes from ${rangeText()} yet. Summarize a few pages (they're saved automatically), turn on passive capture in Settings, or choose a longer time range.` }));
       return;
     }
+    if (!followUp) {
+      turns = [];
+      out.replaceChildren();
+    }
+    const turnId = turns.length;
     const title = make ? `${MAKE[make].label}: ${topic}` : topic;
     const body = el('div', { className: 'prose' });
     const status = el('div', { className: 'working', textContent: `Reading ${used.length} of your notes…` });
     const stop = el('button', { type: 'button', className: 'btn small', textContent: 'Stop' });
-    out.replaceChildren(el('div', { className: 'box output' }, [
-      el('h2', { textContent: title }),
+    const block = el('div', { className: 'box output turn' }, [
+      el(turnId ? 'p' : 'h2', { className: turnId ? 'q' : '', textContent: title }),
       el('div', { className: 'meta', textContent: `From ${used.length} of your saved notes · ${rangeText()}` }),
       status,
       body,
-      sourceList(used),
+      sourceList(used, turnId),
       el('div', { className: 'actions' }, [stop]),
-    ]));
-    out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    ]);
+    out.append(block);
+    block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('question').value = '';
+    $('question').placeholder = 'Ask a follow-up…';
+    $('newChat').hidden = false;
 
     const vars = { content: S.formatNotes(used), question: make ? `${MAKE[make].label} about: ${topic}` : topic, context: make ? MAKE[make].format : `The notes are from ${rangeText()}.` };
     const settings = await S.getSettings();
     const persona = S.customPersona(settings, 'default');
-    const messages = S.buildMessages(make ? 'deliverable' : 'synthesize', vars, persona ? { persona } : null);
+    const [system, user] = S.buildMessages(make ? 'deliverable' : 'synthesize', vars, persona ? { persona } : null);
+    // Earlier turns go in as plain question/answer pairs (their notes were cited there).
+    const history = turns.flatMap((t) => [{ role: 'user', content: t.question }, { role: 'assistant', content: t.answer }]);
+    const messages = [system, ...history, user];
     const controller = new AbortController();
     running = controller;
     stop.addEventListener('click', () => controller.abort());
@@ -122,13 +162,14 @@
         onToken: (t) => {
           text += t;
           status.textContent = 'Writing…';
-          if (!frame) frame = requestAnimationFrame(() => ((frame = 0), body.replaceChildren(...render(text, used))));
+          if (!frame) frame = requestAnimationFrame(() => ((frame = 0), body.replaceChildren(...render(text, used, turnId))));
         },
       });
       text = reply || text;
       status.remove();
-      body.replaceChildren(...render(text, used));
+      body.replaceChildren(...render(text, used, turnId));
       last = { title, question: topic, text, used, kind: make || 'answer' };
+      turns.push({ question: topic, answer: S.stripThinking(text) });
       stop.replaceWith(...finishedActions());
     } catch (err) {
       status.className = err.name === 'AbortError' ? 'muted' : 'problem';
@@ -202,6 +243,14 @@
     }
   });
   $('range').addEventListener('change', showScope);
+  $('newChat').addEventListener('click', () => {
+    if (running) running.abort();
+    turns = [];
+    $('output').replaceChildren();
+    $('newChat').hidden = true;
+    $('question').placeholder = 'Ask about anything you\'ve read…';
+    $('question').focus();
+  });
 
   // notes.html?topic=… (from the panel) starts with that topic.
   const topic = new URLSearchParams(location.search).get('topic');

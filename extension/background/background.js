@@ -238,11 +238,71 @@
 
   const S = globalThis.soroagent;
   let statsQueue = Promise.resolve();
+  let labelQueue = Promise.resolve();
   // Browsing time is kept for STATS_KEEP_DAYS days.
   ext.storage.local.get(null).then((all) => {
     const old = S.expiredStatsKeys(Object.keys(all));
     if (old.length) return ext.storage.local.remove(old);
   }).catch(() => {});
+
+  // ---------------------------------------------------------------------------
+  // The library index: semantic + keyword search over everything saved (library.js)
+  // ---------------------------------------------------------------------------
+
+  let embedTarget = { at: 0, value: null };
+  async function getEmbeddingTarget() {
+    if (Date.now() - embedTarget.at < 60000) return embedTarget.value;
+    const settings = await getSettings();
+    let value = null;
+    if (settings.semanticSearch !== false) {
+      const local = { ...S.resolveConnection({ ...settings, source: 'local' }, {}) };
+      const cloud = settings.source === 'cloud' ? await getConnection() : null;
+      if (local.baseUrl) await ensureOriginRewrite(normalizeBaseUrl(local.baseUrl)).catch(() => {});
+      value = await S.embeddingTarget({ local, cloud });
+      // The chat connection may need its own Origin rule back.
+      if (settings.source !== 'cloud') await getConnection().catch(() => {});
+    }
+    embedTarget = { at: Date.now(), value };
+    return value;
+  }
+  const library = S.createLibrary({ ext, getTarget: getEmbeddingTarget, embed: S.embed });
+  let indexTimer = 0;
+  const scheduleIndex = (delay = 4000) => {
+    clearTimeout(indexTimer);
+    indexTimer = setTimeout(() => library.indexNow().catch(() => {}), delay);
+  };
+  scheduleIndex(8000);
+  ext.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (Object.keys(changes).some((k) => k.startsWith('snippet:'))) scheduleIndex();
+    if (changes.settings || changes.keysVersion) embedTarget = { at: 0, value: null };
+  });
+
+  // ---------------------------------------------------------------------------
+  // Sync across browsers (sync.js): the user's own storage, end-to-end encrypted
+  // ---------------------------------------------------------------------------
+
+  const sync = S.createSync({ ext, secrets });
+  const SYNC_ALARM = 'soroagent-sync';
+  let syncTimer = 0;
+  const syncSoon = (delay = 20000) => {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => sync.syncNow().catch(() => {}), delay);
+  };
+  sync.getConfig().then((cfg) => {
+    if (!cfg) return;
+    ext.alarms.create(SYNC_ALARM, { periodInMinutes: 10 });
+    syncSoon(5000);
+  }).catch(() => {});
+  ext.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === SYNC_ALARM) sync.syncNow().catch(() => {});
+  });
+  ext.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || sync.quiet()) return;
+    if (Object.keys(changes).some((k) => k.startsWith('snippet:') || k.startsWith('summary:') || k === 'settings')) {
+      sync.getConfig().then((cfg) => cfg && syncSoon()).catch(() => {});
+    }
+  });
 
   const handlers = {
     // Only extension pages may test unsaved values: overrides can redirect a key to another URL.
@@ -313,8 +373,54 @@
       else ext.downloads.showDefaultFolder();
       return { ok: true };
     },
-    // "Ask your notes", optionally starting with a topic.
+    // "Ask your library", optionally starting with a topic.
     'open:notes': (msg) => ext.tabs.create({ url: ext.runtime.getURL(`pages/notes.html${msg && msg.topic ? `?topic=${encodeURIComponent(String(msg.topic).slice(0, 120))}` : ''}`) }),
+    'library:search': async (msg) => {
+      const res = await library.search(String(msg.query || '').slice(0, 4000), { limit: Math.min(50, Number(msg.limit) || 12), since: Number(msg.since) || 0, excludeUrl: msg.excludeUrl || '' });
+      return { ok: true, ...res };
+    },
+    'library:related': async (msg) => ({ ok: true, notes: await library.related(String(msg.text || ''), { excludeUrl: msg.excludeUrl || '', limit: 3 }) }),
+    'library:status': async () => ({ ok: true, ...(await library.status()) }),
+    'library:reindex': async () => {
+      embedTarget = { at: 0, value: null };
+      return { ok: true, ...(await library.indexNow()) };
+    },
+    // Passive capture: the AI adds a title, summary and tags to a captured page, reusing the
+    // library's tags. One at a time, so a burst of reading doesn't flood the model.
+    'capture:label': (msg, sender) => {
+      if (!sender.tab || fromExtensionPage(sender) || !Array.isArray(msg.messages)) return { ok: true };
+      labelQueue = labelQueue.then(async () => {
+        const key = `snippet:${msg.id}`;
+        const note = (await ext.storage.local.get(key))[key];
+        if (!note || note.kind !== 'read' || note.labeled) return;
+        const vocabulary = S.tagVocabulary(await S.listSnippets(), 40);
+        const messages = msg.messages.slice(0, 3).map((m) => ({ role: m.role === 'system' ? 'system' : 'user', content: String(m.content).slice(0, 12000) }));
+        if (vocabulary.length) messages[messages.length - 1].content += `\n\nTags already in the user's library: ${vocabulary.map((v) => v.tag).join(', ')}.\nReuse these tags whenever they fit; add a new tag only for a genuinely new topic.`;
+        const { connection, api } = await resolveChat();
+        const meta = S.parseSnippetMeta(await chat({ connection, api, messages, json: true }), note.title);
+        await S.updateSnippet(note.id, { title: meta.title || note.title, summary: meta.summary || note.summary, tags: S.canonicalTags(meta.tags, vocabulary), labeled: true });
+      }).catch((err) => console.warn('[soroagent] Could not label a captured page:', err));
+      return { ok: true };
+    },
+    'sync:status': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, ...(await sync.status()) };
+    },
+    'sync:connect': async (msg, sender) => {
+      requireExtensionPage(sender);
+      const state = await sync.connect({ provider: msg.provider, url: msg.url, user: msg.user, secret: msg.secret, passphrase: msg.passphrase });
+      ext.alarms.create(SYNC_ALARM, { periodInMinutes: 10 });
+      return { ok: true, ...state };
+    },
+    'sync:now': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, ...(await sync.syncNow()) };
+    },
+    'sync:disconnect': async (msg, sender) => {
+      requireExtensionPage(sender);
+      ext.alarms.clear(SYNC_ALARM);
+      return sync.disconnect();
+    },
     'open:stats': () => ext.tabs.create({ url: ext.runtime.getURL('pages/stats.html') }),
     // Time on a page, from content/timetrack.js. Writes are queued so reports never overwrite each other.
     'stats:add': (msg, sender) => {
@@ -328,7 +434,7 @@
     },
     'stats:clear': async (msg, sender) => {
       requireExtensionPage(sender);
-      const keys = Object.keys(await ext.storage.local.get(null)).filter((k) => k.startsWith(S.STATS_PREFIX));
+      const keys = Object.keys(await ext.storage.local.get(null)).filter((k) => k.startsWith(S.STATS_PREFIX) || k.startsWith('xstats:'));
       await ext.storage.local.remove(keys);
       return { ok: true, removed: keys.length };
     },
@@ -386,7 +492,7 @@
   const ACTION_MENU_ITEMS = [
     { id: 'soroagent-open-history', title: 'Summary history', open: () => handlers['open:history']() },
     { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']({}) },
-    { id: 'soroagent-open-notes', title: 'Ask your notes', open: () => handlers['open:notes']({}) },
+    { id: 'soroagent-open-notes', title: 'Ask your library', open: () => handlers['open:notes']({}) },
     { id: 'soroagent-open-stats', title: 'Browsing stats', open: () => handlers['open:stats']() },
     { id: 'soroagent-feedback', title: 'Send feedback', open: () => ext.tabs.create({ url: S.feedbackUrl('toolbar') }) },
     { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },

@@ -200,7 +200,12 @@
     const all = await ext.storage.local.get(null);
     byDay = {};
     for (const [key, value] of Object.entries(all)) {
-      if (key.startsWith(STATS_PREFIX)) byDay[key.slice(STATS_PREFIX.length)] = value;
+      if (key.startsWith(STATS_PREFIX)) byDay[key.slice(STATS_PREFIX.length)] = S.mergeDays(byDay[key.slice(STATS_PREFIX.length)], value);
+    }
+    // Time from your other browsers (synced), added in.
+    for (const [key, value] of Object.entries(all)) {
+      const m = key.match(/^xstats:[^:]+:(\d{4}-\d{2}-\d{2})$/);
+      if (m) byDay[m[1]] = S.mergeDays(byDay[m[1]], value);
     }
     $('off').hidden = !(all.settings && all.settings.trackTime === false);
     render();

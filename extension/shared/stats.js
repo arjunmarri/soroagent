@@ -87,6 +87,16 @@
     };
   }
 
+  /** Pure: two day records added together (time on the same day from two browsers). */
+  function mergeDays(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    const out = { hosts: { ...(a.hosts || {}) }, pages: { ...(a.pages || {}) } };
+    for (const [h, ms] of Object.entries(b.hosts || {})) out.hosts[h] = (out.hosts[h] || 0) + ms;
+    for (const [u, p] of Object.entries(b.pages || {})) out.pages[u] = { title: (out.pages[u] && out.pages[u].title) || p.title, ms: ((out.pages[u] && out.pages[u].ms) || 0) + (p.ms || 0) };
+    return out;
+  }
+
   /** "2h 05m", "12m", "45s". */
   function formatDuration(ms) {
     const seconds = Math.round((ms || 0) / 1000);
@@ -103,5 +113,5 @@
     return keys.filter((k) => k.startsWith(STATS_PREFIX) && k.slice(STATS_PREFIX.length) < cut);
   }
 
-  Object.assign(soroagent, { statsUrl, STATS_PREFIX, STATS_KEEP_DAYS: KEEP_DAYS, statsDayKey: dayKey, addTime, summarizeStats, formatDuration, expiredStatsKeys });
+  Object.assign(soroagent, { mergeDays, statsUrl, STATS_PREFIX, STATS_KEEP_DAYS: KEEP_DAYS, statsDayKey: dayKey, addTime, summarizeStats, formatDuration, expiredStatsKeys });
 })(globalThis);

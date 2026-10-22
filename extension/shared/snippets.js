@@ -95,9 +95,36 @@
     return (await listSnippets()).filter((s) => pageKey(s.url) === key);
   }
 
+  // ---------------------------------------------------------------------------
+  // The library's tag vocabulary, so auto-tagging stays consistent over time (pure, unit tested)
+  // ---------------------------------------------------------------------------
+
+  /** Pure: "AI Agents" / "#ai_agents" → "ai-agents". */
+  const normalizeTag = (tag) => String(tag || '').toLowerCase().replace(/^#/, '').replace(/[\s_]+/g, '-').replace(/[^a-z0-9+#.-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
+  // Singular and plural forms count as the same tag.
+  const tagStem = (tag) => normalizeTag(tag).split('-').map((w) => w.replace(/(ies)$/, 'y').replace(/(?<=[a-z]{3})s$/, '')).join('-');
+
+  /** Pure: the library's most-used tags, most used first: [{ tag, count }]. */
+  function tagVocabulary(snippets, max = 40) {
+    const counts = new Map();
+    for (const s of snippets || []) for (const t of s.tags || []) counts.set(t, (counts.get(t) || 0) + 1);
+    return [...counts.entries()].map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)).slice(0, max);
+  }
+
+  /** Pure: new tags mapped onto existing ones when they're the same tag written differently. */
+  function canonicalTags(tags, vocabulary) {
+    const known = new Map((vocabulary || []).map((v) => [tagStem(v.tag || v), v.tag || v]));
+    const out = [];
+    for (const tag of tags || []) {
+      const t = known.get(tagStem(tag)) || normalizeTag(tag);
+      if (t && !out.includes(t)) out.push(t);
+    }
+    return out.slice(0, 4);
+  }
+
   function isSnippetChange(changes) {
     return Object.keys(changes).some((key) => key.startsWith(PREFIX));
   }
 
-  Object.assign(soroagent, { addSnippet, upsertSnippet, updateSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange, pageKey, snippetsForPage });
+  Object.assign(soroagent, { addSnippet, upsertSnippet, updateSnippet, listSnippets, deleteSnippets, importSnippets, isSnippetChange, pageKey, snippetsForPage, normalizeTag, tagVocabulary, canonicalTags });
 })(globalThis);

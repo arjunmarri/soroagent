@@ -4,9 +4,9 @@
   const S = globalThis.soroagent;
   const { ext, DEFAULT_SETTINGS, PROVIDER_PRESETS, CLOUD_PROVIDERS } = S;
   const $ = (id) => document.getElementById(id);
-  const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl'];
-  const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit'];
-  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup', 'showQuips'];
+  const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl', 'autoCapture'];
+  const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit', 'captureMinSeconds'];
+  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup', 'captureLabel', 'semanticSearch'];
 
   let saved = { ...DEFAULT_SETTINGS }; // last saved settings, for fields this page doesn't show
   let hiddenSites = [];
@@ -145,6 +145,7 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     for (const id of CHECK_FIELDS) values[id] = $(id).checked;
     values.baseUrl = values.baseUrl || DEFAULT_SETTINGS.baseUrl;
     values.customPrompts = { ...customPrompts };
+    values.captureExclude = $('captureExclude').value.split(/[\n,]+/).map((x) => x.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '')).filter(Boolean).slice(0, 200);
     return values;
   }
 
@@ -158,8 +159,89 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     renderSites();
     renderPlacements();
     fillPrompts(settings);
+    $('captureExclude').value = (settings.captureExclude || []).join('\n');
     showSource();
+    showLibraryStatus();
   }
+
+  async function showLibraryStatus() {
+    try {
+      const st = await ext.runtime.sendMessage({ type: 'library:status' });
+      $('libraryStatus').textContent = st.mode === 'meaning'
+        ? `Searching by meaning with ${st.model}${st.via === 'ollama' ? ' (on this computer)' : ''}: ${st.indexed} of ${st.total} notes indexed.${st.error ? ` Last error: ${st.error}` : ''}`
+        : `Searching by words (${st.total} notes). For search by meaning: ollama pull nomic-embed-text, or use an OpenAI or Gemini key.`;
+    } catch {
+      $('libraryStatus').textContent = '';
+    }
+  }
+  // ---------------------------------------------------------------------------
+  // Sync across browsers
+  // ---------------------------------------------------------------------------
+
+  const ago = (iso) => {
+    const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+    return s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleString();
+  };
+  function showSyncFields() {
+    const gist = $('syncProvider').value === 'gist';
+    $('webdavFields').hidden = gist;
+    $('syncSecretLabel').textContent = gist ? 'GitHub token (with the "gist" permission)' : 'Password (an app password is best)';
+  }
+  async function showSync() {
+    const st = await ext.runtime.sendMessage({ type: 'sync:status' }).catch(() => null);
+    const on = Boolean(st && st.on);
+    $('syncOff').hidden = on;
+    $('syncOn').hidden = !on;
+    if (!on) return;
+    $('syncWhere').textContent = `Syncing with ${st.provider === 'gist' ? 'a private GitHub Gist' : st.url}`;
+    const others = Object.entries(st.devices || {}).filter(([id]) => id !== st.deviceId).map(([, d]) => d.name);
+    $('syncInfo').textContent = [
+      st.lastSync ? `Last synced ${ago(st.lastSync)}` : 'Not synced yet',
+      `this browser: ${st.deviceName}`,
+      others.length ? `also: ${others.join(', ')}` : 'no other browsers yet: set up sync there with the same passphrase',
+      st.error ? `Problem: ${st.error}` : '',
+    ].filter(Boolean).join(' · ');
+  }
+  $('syncProvider').addEventListener('change', showSyncFields);
+  $('syncConnect').addEventListener('click', async () => {
+    $('syncConnect').disabled = true;
+    $('syncMsg').textContent = 'Connecting…';
+    const res = await ext.runtime.sendMessage({
+      type: 'sync:connect',
+      provider: $('syncProvider').value,
+      url: $('syncUrl').value,
+      user: $('syncUser').value,
+      secret: $('syncSecret').value,
+      passphrase: $('syncPassphrase').value,
+    }).catch((err) => ({ ok: false, error: err.message }));
+    $('syncConnect').disabled = false;
+    if (!res || res.ok === false) {
+      $('syncMsg').textContent = (res && res.error) || 'Could not connect.';
+      return;
+    }
+    $('syncSecret').value = '';
+    $('syncPassphrase').value = '';
+    $('syncMsg').textContent = '';
+    showSync();
+  });
+  $('syncNow').addEventListener('click', async () => {
+    $('syncInfo').textContent = 'Syncing…';
+    await ext.runtime.sendMessage({ type: 'sync:now' }).catch(() => {});
+    showSync();
+  });
+  $('syncStop').addEventListener('click', async () => {
+    if (!confirm('Stop syncing in this browser? Your library stays here; other browsers keep syncing.')) return;
+    await ext.runtime.sendMessage({ type: 'sync:disconnect' });
+    showSync();
+  });
+  showSyncFields();
+  showSync();
+
+  $('reindex').addEventListener('click', async () => {
+    $('libraryStatus').textContent = 'Indexing…';
+    await ext.runtime.sendMessage({ type: 'library:reindex' }).catch(() => {});
+    showLibraryStatus();
+  });
 
   // Shows the fields for the selected source/provider and resets the model list.
   function showSource() {

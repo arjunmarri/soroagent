@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ask your notes · soroagent</title>
+  <title>Ask your library · soroagent</title>
   <link rel="stylesheet" href="pages.css">
   <style>
     body { overflow-y: scroll; }
@@ -46,19 +46,23 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .problem { color: var(--err); }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .search-mode { font-size: 12px; margin-top: 8px; }
+    .search-mode b { color: var(--accent); }
+    .turn + .turn { margin-top: 14px; }
+    .turn .q { font-size: 16px; font-weight: 650; margin: 0 0 4px; }
     .empty { text-align: center; padding: 34px 16px; color: var(--fg-muted); border: 1px dashed var(--border); border-radius: 16px; }
   </style>
 </head>
 <body>
 <main>
   <header>
-    <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Ask your notes</span></div>
+    <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Ask your library</span></div>
     <div class="row"><a class="btn small" href="snippets.html">Snippets</a><a class="btn small" href="stats.html">Stats</a><a class="btn small" href="options.html">Settings</a></div>
   </header>
-  <p class="intro">Ask questions across everything you've saved, or turn it into something you can use. Answers keep <b>what your sources say</b> (with [S1]-style citations) apart from <b>the AI's interpretation</b>.</p>
+  <p class="intro">Chat with everything you've read and saved, or turn it into something you can use. soroagent finds the right notes by meaning, not just matching words, and every answer keeps <b>what your sources say</b> (cited [S1], [S2]…) apart from <b>the AI's interpretation</b>.</p>
 
   <section class="box">
-    <textarea id="question" placeholder="Ask about anything you've saved… e.g. What have I learned about AI agents?" aria-label="Your question or topic"></textarea>
+    <textarea id="question" placeholder="Ask about anything you've read… e.g. What have I learned about AI agents?" aria-label="Your question or topic"></textarea>
     <div class="controls">
       <label class="muted" for="range">From</label>
       <select id="range">
@@ -68,8 +72,10 @@
         <option value="0">all time</option>
       </select>
       <span class="grow muted" id="scope"></span>
+      <button class="btn small" id="newChat" type="button" hidden>New conversation</button>
       <button class="btn primary" id="ask" type="button">Ask</button>
     </div>
+    <div class="search-mode muted" id="searchMode"></div>
     <div class="label">Try</div>
     <div class="chips" id="suggest">
       <button class="chip" type="button" data-q="What have I learned about [topic] over the past month?" data-range="30">What have I learned about…?</button>

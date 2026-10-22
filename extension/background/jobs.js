@@ -192,9 +192,18 @@
 
     async function autoSave(record, spec) {
       let meta = soroagent.parseSnippetMeta('', record.pageTitle || record.label);
+      // The archivist keeps one vocabulary: the model sees the library's existing tags and reuses
+      // them, and its answer is mapped onto them (so "AI Agents" files under "ai-agents").
+      const vocabulary = soroagent.tagVocabulary(await soroagent.listSnippets(), 40);
       try {
-        const reply = await runChat({ messages: fillPlaceholder(spec.saveMessages, SUMMARY_PLACEHOLDER, record.text.slice(0, 6000)), model: record.model, json: true });
+        const messages = fillPlaceholder(spec.saveMessages, SUMMARY_PLACEHOLDER, record.text.slice(0, 6000));
+        if (vocabulary.length) {
+          const last = messages[messages.length - 1];
+          last.content += `\n\nTags already in the user's library: ${vocabulary.map((v) => v.tag).join(', ')}.\nReuse these tags whenever they fit; add a new tag only for a genuinely new topic.`;
+        }
+        const reply = await runChat({ messages, model: record.model, json: true });
         meta = soroagent.parseSnippetMeta(reply, record.pageTitle || record.label);
+        meta.tags = soroagent.canonicalTags(meta.tags, vocabulary);
       } catch {
         // Saved with the page title if labelling fails.
       }

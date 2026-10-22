@@ -12,18 +12,22 @@
     // Summarize button. Reply: Markdown.
     summarize: {
       system: `{{persona}}`,
-      user: `{{page}}
+      user: `{{context}}
+
+{{page}}
 
 Summarize this Wikipedia article.
 **TL;DR:** one sentence defining the subject.
 
 **Key facts**
-- 4 to 7 bullets with the most important facts, dates and numbers.
+- 4 to 7 bullets from the infobox and lead: names, dates, numbers, places, exactly as written.
+
+**What the article covers:** one line naming the main sections.
 
 **Context**
-- 1 to 3 bullets on why it matters or how it connects to related topics in the article.
+- 1 to 2 bullets on why it matters.
 
-If the article is marked as disputed, outdated or lacking sources, add a short **Worth noting** line.`,
+If statements are marked "citation needed" or the article is flagged as disputed or outdated, add a short **Worth noting** line.`,
     },
   });
 })(globalThis);

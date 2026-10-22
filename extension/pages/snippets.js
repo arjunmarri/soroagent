@@ -39,8 +39,11 @@
     return S.promptsFor(id, persona ? { persona } : null);
   };
   const research = new Map(); // snippet id -> { status, text, error, sources } while running
+  // Search by meaning and words (the library index), ranked; null when the box is empty.
+  let ranked = null; // { query, ids: [...], mode }
+  const relatedCache = new Map(); // snippet id -> related notes
 
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot', readlater: 'Read later', deliverable: 'Created' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot', readlater: 'Read later', deliverable: 'Created', read: 'Read' };
   // Kinds with a section of their own, kept out of the text views.
   const SECTIONS = ['screenshot', 'readlater'];
   const topicPicks = new Map(); // snippet id -> { status: 'loading' | 'ready' | 'error', topics, error, draft }
@@ -75,6 +78,7 @@
     if (tagFilter && !s.tags.includes(tagFilter)) return false;
     if (siteFilter && hostOf(s.url) !== siteFilter) return false;
     if (!query) return true;
+    if (ranked && ranked.query === query) return ranked.ids.includes(s.id);
     const haystack = [s.title, s.summary, s.text, s.pageTitle, s.url, ...s.tags, s.research && s.research.text].join(' ').toLowerCase();
     return query.split(/\s+/).every((word) => haystack.includes(word));
   }
@@ -144,7 +148,7 @@
     return groupTimeline(visible).flatMap((month) => month.days.map((day) => ({ label: day.label, items: day.items })));
   }
 
-  function renderList(visible) {
+  function renderList(visible, rankedBy = null) {
     if (!visible.length) {
       $('list').replaceChildren(el('div', {
         className: 'empty',
@@ -152,13 +156,23 @@
           ? 'No screenshots yet. Use Screenshot in the soroagent panel (or right-click a page) to take one.'
           : prefs.kind === 'readlater'
           ? 'Nothing to read later. Click Read later in the soroagent panel to keep a page for later.'
-          : snippets.some((s) => !SECTIONS.includes(kindOf(s))) ? 'No snippets match.' : 'No snippets yet. Every summary you make is saved here automatically.',
+          : snippets.some((s) => !SECTIONS.includes(kindOf(s)))
+          ? libraryMode === 'words' && $('search').value.trim()
+            ? 'Nothing uses those words. To also find notes by meaning (the same idea in other words), install a free embedding model: ollama pull nomic-embed-text'
+            : 'No snippets match.'
+          : 'No snippets yet. Every summary you make is saved here automatically.',
       }));
       $('list').classList.remove('gallery');
       return;
     }
     $('list').classList.toggle('gallery', prefs.kind === 'screenshot');
     const nodes = [];
+    if (rankedBy) {
+      nodes.push(el('div', { className: 'group-head' }, [el('span', { textContent: `Best matches${rankedBy.mode === 'meaning' ? ' · by meaning and words' : ''}` }), el('small', { textContent: String(visible.length) })]));
+      for (const s of visible) nodes.push(kindOf(s) === 'screenshot' ? renderShot(s) : renderCard(s));
+      $('list').replaceChildren(...nodes);
+      return;
+    }
     for (const group of groups(visible)) {
       nodes.push(el('div', { className: 'group-head' }, [el('span', { textContent: group.label }), el('small', { textContent: String(group.items.length) })]));
       for (const s of group.items) nodes.push(kindOf(s) === 'screenshot' ? renderShot(s) : renderCard(s));
@@ -223,6 +237,7 @@
       body.append(el('blockquote', { className: 'quote', textContent: s.text }));
     }
     nodes.push(body);
+    nodes.push(relatedSection(s));
 
     // Research: further reading from the web, attached to this snippet.
     nodes.push(el('div', { className: 'section-title', textContent: 'Research' }));
@@ -419,6 +434,33 @@
     });
   }
 
+  // "Related in your library": notes about the same thing, found by meaning and words.
+  function relatedSection(s) {
+    const box = el('div', { className: 'related-notes' });
+    const show = (list) => {
+      if (!list.length) return box.replaceChildren();
+      box.replaceChildren(
+        el('div', { className: 'section-title', textContent: 'Related in your library' }),
+        el('ul', { className: 'related-list' }, list.map((n) => {
+          const link = el('button', { type: 'button', className: 'link', textContent: n.title || n.pageTitle || 'Untitled' });
+          link.addEventListener('click', () => select(n.id));
+          return el('li', {}, [link, el('small', { textContent: ` ${hostOf(n.url)} · ${when(n.createdAt, { day: 'numeric', month: 'short' })}` })]);
+        }))
+      );
+    };
+    if (relatedCache.has(s.id)) show(relatedCache.get(s.id));
+    else {
+      ext.runtime.sendMessage({ type: 'library:search', query: `${s.title}\n${(s.tags || []).join(' ')}\n${s.summary || ''}`, limit: 6 })
+        .then((res) => {
+          const list = ((res && res.results) || []).map((r) => r.note).filter((n) => n.id !== s.id && !(s.url && n.url === s.url)).slice(0, 4);
+          relatedCache.set(s.id, list);
+          if (s.id === selectedId) show(list);
+        })
+        .catch(() => {});
+    }
+    return box;
+  }
+
   function select(id) {
     selectedId = id;
     render();
@@ -454,8 +496,28 @@
     for (const b of document.querySelectorAll('[data-group]')) b.setAttribute('aria-pressed', String(b.dataset.group === prefs.group));
     for (const b of document.querySelectorAll('[data-kind]')) b.setAttribute('aria-pressed', String(b.dataset.kind === prefs.kind));
     renderFilters();
-    renderList(visible);
+    renderLibraryLine();
+    if (ranked && ranked.query === query) visible.sort((a, b) => ranked.ids.indexOf(a.id) - ranked.ids.indexOf(b.id));
+    renderList(visible, ranked && ranked.query === query ? ranked : null);
     renderReader();
+  }
+
+  // The library at a glance: it grows with everything you read.
+  let libraryMode = '';
+  function renderLibraryLine() {
+    const text = snippets.filter((s) => kindOf(s) !== 'screenshot');
+    if (!text.length) {
+      $('libraryLine').textContent = '';
+      return;
+    }
+    const topics = new Set(text.flatMap((s) => s.tags));
+    const sites = new Set(text.map((s) => hostOf(s.url)).filter(Boolean));
+    const first = text.reduce((min, s) => (String(s.createdAt) < min ? String(s.createdAt) : min), String(text[0].createdAt));
+    const week = text.filter((s) => Date.now() - new Date(s.createdAt).getTime() < 7 * 86400000).length;
+    const parts = [`${text.length} note${text.length === 1 ? '' : 's'}`, `${topics.size} topic${topics.size === 1 ? '' : 's'}`, `${sites.size} site${sites.size === 1 ? '' : 's'}`, `growing since ${when(first, { month: 'long', year: 'numeric' })}`];
+    if (week) parts.push(`+${week} this week`);
+    if (libraryMode) parts.push(libraryMode === 'meaning' ? 'searchable by meaning' : 'searchable by words');
+    $('libraryLine').replaceChildren(el('b', { textContent: 'Your library: ' }), document.createTextNode(parts.join(' · ')));
   }
 
   // snippets.html#<id> opens that snippet (the panel links new screenshots this way).
@@ -476,6 +538,7 @@
   }
 
   async function load() {
+    relatedCache.clear();
     settings = await S.getSettings();
     snippets = (await listSnippets()).map((s) => ({ ...s, tags: Array.isArray(s.tags) ? s.tags : [] }));
     openFromHash();
@@ -507,7 +570,32 @@
       render();
     });
   }
-  $('search').addEventListener('input', render);
+  // Typing searches the library index (by meaning and words) after a short pause.
+  let searchTimer = 0;
+  $('search').addEventListener('input', () => {
+    render();
+    clearTimeout(searchTimer);
+    const query = $('search').value.trim().toLowerCase();
+    if (query.length < 3) {
+      ranked = null;
+      return;
+    }
+    searchTimer = setTimeout(async () => {
+      try {
+        const res = await ext.runtime.sendMessage({ type: 'library:search', query, limit: 50 });
+        if (res && res.ok !== false && $('search').value.trim().toLowerCase() === query) {
+          ranked = { query, ids: res.results.map((r) => r.note.id), mode: res.mode };
+          render();
+        }
+      } catch {
+        // keep the word-match results
+      }
+    }, 300);
+  });
+  ext.runtime.sendMessage({ type: 'library:status' }).then((st) => {
+    libraryMode = (st && st.mode) || '';
+    renderLibraryLine();
+  }).catch(() => {});
 
   window.addEventListener('hashchange', () => {
     openFromHash();

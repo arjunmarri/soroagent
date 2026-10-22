@@ -394,7 +394,65 @@
     return reply;
   }
 
+  // ---------------------------------------------------------------------------
+  // Embeddings (semantic search over the library)
+  // ---------------------------------------------------------------------------
+
+  // Embedding models the hosted APIs offer (Anthropic, Groq and DeepSeek have none).
+  const CLOUD_EMBEDDINGS = { openai: 'text-embedding-3-small', gemini: 'text-embedding-004', mistral: 'mistral-embed' };
+  const OLLAMA_EMBED_PREFERENCE = [/nomic-embed-text/, /mxbai-embed/, /snowflake-arctic-embed/, /bge-m3/, /all-minilm/, /embed/];
+
+  /** Pure: the best installed Ollama embedding model id, or ''. */
+  function pickOllamaEmbedding(models) {
+    const ids = models.filter((m) => /embed|minilm|bge-/i.test(m.id) || (m.capabilities || []).includes('embedding')).map((m) => m.id);
+    for (const pattern of OLLAMA_EMBED_PREFERENCE) {
+      const hit = ids.find((id) => pattern.test(id));
+      if (hit) return hit;
+    }
+    return ids[0] || '';
+  }
+
+  /**
+   * Where to compute embeddings: a local Ollama embedding model if one is installed (private and
+   * free), else the cloud provider's, else null (search then falls back to keywords).
+   * Resolves with { kind: 'ollama' | 'openai', baseUrl, model, conn } or null.
+   */
+  async function embeddingTarget({ local, cloud }, fetchImpl = root.fetch.bind(root)) {
+    if (local && local.baseUrl) {
+      try {
+        const baseUrl = normalizeBaseUrl(local.baseUrl);
+        const model = pickOllamaEmbedding(await listOllamaModels(local, baseUrl, fetchImpl));
+        if (model) return { kind: 'ollama', baseUrl, model, conn: local };
+      } catch {
+        // no local Ollama; try the cloud
+      }
+    }
+    if (cloud && cloud.cloud && cloud.apiKey && CLOUD_EMBEDDINGS[cloud.id]) {
+      return { kind: 'openai', baseUrl: normalizeBaseUrl(cloud.baseUrl), model: CLOUD_EMBEDDINGS[cloud.id], conn: cloud };
+    }
+    return null;
+  }
+
+  /** Embeds texts with a target from embeddingTarget(). Resolves with one vector per text. */
+  async function embed(target, texts, fetchImpl = root.fetch.bind(root)) {
+    const { kind, baseUrl, model, conn } = target;
+    const init = (body) => ({ method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(conn) }, body: JSON.stringify(body) });
+    if (kind === 'ollama') {
+      const res = await request(fetchImpl, `${ollamaRoot(baseUrl)}/api/embed`, init({ model, input: texts }), conn, baseUrl);
+      const json = await res.json();
+      if (!json || !Array.isArray(json.embeddings)) throw new LLMError('http', 'The embedding model returned no vectors.');
+      return json.embeddings;
+    }
+    const res = await request(fetchImpl, `${openaiRoot(conn, baseUrl)}/embeddings`, init({ model, input: texts }), conn, baseUrl);
+    const json = await res.json();
+    if (!json || !Array.isArray(json.data)) throw new LLMError('http', 'The embedding API returned no vectors.');
+    return json.data.sort((a, b) => a.index - b.index).map((d) => d.embedding);
+  }
+
   Object.assign(soroagent, {
+    pickOllamaEmbedding,
+    embeddingTarget,
+    embed,
     LLMError,
     normalizeBaseUrl,
     listModels,

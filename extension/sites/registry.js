@@ -92,7 +92,39 @@
     return { items: [...found.values()].slice(0, target), endY: window.scrollY, exhausted: idle >= SCROLL_LIMITS.idleSteps };
   }
 
-  Object.assign(soroagent, { DEFAULT_SITE, registerSite, siteFor, siteOptionValues, collectByScrolling, SCROLL_LIMITS });
+  // ---------------------------------------------------------------------------
+  // Helpers for structured extraction (profiles with extract())
+  // ---------------------------------------------------------------------------
+
+  const squash = (text) => String(text || '').replace(/[ \t\u00a0]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+
+  /**
+   * An element's text with its structure kept for the model: code blocks fenced, list items as
+   * bullets, paragraphs on their own lines. Works on a copy, so the page isn't touched.
+   */
+  function readableText(el, max = 4000) {
+    if (!el) return '';
+    const copy = el.cloneNode(true);
+    copy.querySelectorAll('script, style, button, svg, .js-post-menu, .reply, .comment-copy-link').forEach((n) => n.remove());
+    const doc = el.ownerDocument;
+    copy.querySelectorAll('pre').forEach((pre) => pre.replaceWith(doc.createTextNode(`\n\`\`\`\n${pre.textContent.replace(/\n+$/, '')}\n\`\`\`\n`)));
+    copy.querySelectorAll('code').forEach((code) => code.replaceWith(doc.createTextNode(`\`${code.textContent}\``)));
+    copy.querySelectorAll('br').forEach((br) => br.replaceWith(doc.createTextNode('\n')));
+    copy.querySelectorAll('li').forEach((li) => li.prepend(doc.createTextNode('\n- ')));
+    copy.querySelectorAll('p, h1, h2, h3, h4, h5, blockquote, tr, div').forEach((block) => block.append(doc.createTextNode('\n')));
+    const text = squash(copy.textContent);
+    return text.length > max ? `${text.slice(0, max)}…` : text;
+  }
+
+  /** Pure: the first number in a text ("1,204 points" → 1204), or 0. */
+  const numberIn = (text) => {
+    const m = String(text || '').replace(/,/g, '').match(/-?\d+(\.\d+)?\s*([kKmM])?/);
+    if (!m) return 0;
+    const n = parseFloat(m[0]);
+    return Math.round(/k/i.test(m[2] || '') ? n * 1000 : /m/i.test(m[2] || '') ? n * 1000000 : n);
+  };
+
+  Object.assign(soroagent, { readableText, numberIn, squashText: squash, DEFAULT_SITE, registerSite, siteFor, siteOptionValues, collectByScrolling, SCROLL_LIMITS });
   // (A getter inside Object.assign would be copied as a one-time value.)
   Object.defineProperty(soroagent, 'siteProfiles', { get: () => profiles.slice(), configurable: true });
 })(globalThis);

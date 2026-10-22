@@ -81,7 +81,7 @@
         <button class="icon-btn close-btn" type="button" aria-label="Close soroagent">${ICONS.close}</button>
         <div class="menu" role="menu" hidden>
           <button type="button" role="menuitem" data-cmd="history">Summary history</button>
-          <button type="button" role="menuitem" data-cmd="notes">Ask your notes</button>
+          <button type="button" role="menuitem" data-cmd="notes">Ask your library</button>
           <button type="button" role="menuitem" data-cmd="snippets">Saved snippets</button>
           <button type="button" role="menuitem" data-cmd="stats">Browsing stats</button>
           <button type="button" role="menuitem" data-cmd="clear">Clear conversation</button>
@@ -103,7 +103,6 @@
       <div class="thread" aria-live="polite">
         <div class="empty">
           <span class="empty-mark">${OWL_MARK}</span>
-          <p class="quip" hidden></p>
           <strong>How can I help with this page?</strong>
           <span class="empty-note">Runs on the model served at your local URL. Nothing leaves your machine.</span>
           <div class="suggest" role="group" aria-label="Suggested questions">
@@ -580,6 +579,21 @@
 
   const maxChars = () => Number(state.settings.maxPageChars) || 12000;
   const getPage = (limit = maxChars()) => S.extractPage(document, { maxChars: limit });
+  // Site profiles with extract() read the page's structure (Stack Overflow answers with the
+  // accepted one marked, Hacker News comment trees, GitHub issue state…); others get its text.
+  function sitePage(limit = maxChars()) {
+    if (state.site.extract) {
+      try {
+        const page = state.site.extract(document, location);
+        if (page && page.text && page.text.length > 120) {
+          return { title: page.title || document.title, url: location.href, text: page.text.slice(0, limit), truncated: page.text.length > limit };
+        }
+      } catch (err) {
+        console.warn('[soroagent] Site extraction failed, reading the page as text:', err);
+      }
+    }
+    return getPage(limit);
+  }
 
   function updateControls() {
     const busy = Boolean(state.busy);
@@ -750,7 +764,7 @@
 
   function summarizePage({ fresh }) {
     return runTask(async (signal) => {
-      const page = getPage();
+      const page = sitePage();
       if (!page.text) throw new Error('This page has no readable text to summarize.');
       state.pageContext = { url: location.href, page };
       const print = fingerprint(`${location.href}\n${page.text}`);
@@ -1092,7 +1106,6 @@
   // Home: the opening screen ("How can I help with this page?"). The conversation stays and comes
   // back with "Back to the conversation" or the next message.
   function showHome() {
-    showQuip();
     els.empty.hidden = false;
     els.thread.classList.add('home');
     els.empty.querySelector('.back-to-chat').hidden = !els.thread.querySelector('.msg, .card, .cached');
@@ -1103,15 +1116,16 @@
     els.empty.querySelector('.back-to-chat').hidden = true;
   }
 
-  // A random one-liner from the owl each time the panel opens (Settings can turn these off).
-  let lastQuip = '';
-  function showQuip() {
-    const quip = els.empty.querySelector('.quip');
-    quip.hidden = state.settings.showQuips === false;
-    if (quip.hidden) return;
-    lastQuip = S.pickQuip(lastQuip);
-    quip.textContent = lastQuip;
-  }
+
+
+  // Passive capture saved this page: the owl hops, and says so on hover.
+  S.onCaptured = () => {
+    els.launcher.classList.add('landing');
+    const title = els.launcher.title;
+    els.launcher.title = 'Saved to your library: you read this page.';
+    setTimeout(() => els.launcher.classList.remove('landing'), 600);
+    setTimeout(() => (els.launcher.title = title), 8000);
+  };
 
   // Related notes: saved notes about the same topic as this page (found locally, no model). The
   // reader can bring them into the chat; answers then cite them as [N1]… and keep what the notes
@@ -1123,13 +1137,17 @@
     related.url = location.href;
     related.using = false;
     related.open = false;
+    const description = document.querySelector('meta[name="description"], meta[property="og:description"]');
+    const text = [document.title, document.title, description && description.content, getPage(4000).text].join(' ');
     try {
-      const all = await S.listSnippets();
-      const description = document.querySelector('meta[name="description"], meta[property="og:description"]');
-      const text = [document.title, document.title, description && description.content, getPage(4000).text].join(' ');
-      related.notes = S.relatedNotes(S.buildIndex(all), text, { excludeUrl: location.href }).map((h) => h.note);
+      // By meaning and by words, in the background library index.
+      related.notes = (await sendMessage({ type: 'library:related', text, excludeUrl: location.href })).notes || [];
     } catch {
-      related.notes = [];
+      try {
+        related.notes = S.relatedNotes(S.buildIndex(await S.listSnippets()), text, { excludeUrl: location.href }).map((h) => h.note);
+      } catch {
+        related.notes = [];
+      }
     }
     renderRelated();
   }
@@ -1172,7 +1190,7 @@
         open.addEventListener('click', () => sendMessage({ type: 'open:snippets', id: note.id }));
         return el('li', {}, [el('span', { className: 'n', textContent: `N${i + 1}` }), open, el('small', { textContent: new Date(note.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) })]);
       }));
-      const deeper = el('button', { type: 'button', className: 'link', textContent: 'Ask your notes about this topic →' });
+      const deeper = el('button', { type: 'button', className: 'link', textContent: 'Ask your library about this →' });
       deeper.addEventListener('click', () => sendMessage({ type: 'open:notes', topic: document.title.slice(0, 120) }));
       nodes.push(list, deeper);
     }
@@ -1456,7 +1474,7 @@
         return { title: document.title, url: location.href, text: text.slice(0, maxChars()), truncated: text.length > maxChars() };
       }
     }
-    return getPage();
+    return sitePage();
   }
 
   // Questions like "where is my data stored?" could be about soroagent or about the website:
@@ -1569,7 +1587,6 @@
       els.launcher.classList.add('open');
       renderSiteBar();
       launcherCtl.placePanel();
-      showQuip();
       findRelated();
       if (state.status !== 'ready') connect();
     }

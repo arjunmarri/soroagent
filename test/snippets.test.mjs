@@ -10,3 +10,11 @@ test('the same page matches with or without a #fragment or trailing slash', () =
   assert.notEqual(S.pageKey('https://a.com/search?q=x'), S.pageKey('https://a.com/search?q=y'));
   assert.equal(S.pageKey('not a url'), 'not a url');
 });
+
+test('auto-tags reuse the library vocabulary, whatever their spelling', () => {
+  const library = [{ tags: ['ai-agents', 'llm'] }, { tags: ['ai-agents'] }, { tags: ['cooking'] }];
+  const vocab = S.tagVocabulary(library);
+  assert.deepEqual(vocab.map((v) => v.tag), ['ai-agents', 'cooking', 'llm']);
+  assert.deepEqual(S.canonicalTags(['AI Agents', '#ai_agent', 'LLMs', 'robotics', 'Robotics'], vocab), ['ai-agents', 'llm', 'robotics']);
+  assert.equal(S.normalizeTag('  Machine Learning! '), 'machine-learning');
+});

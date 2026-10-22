@@ -12,17 +12,24 @@
     // Summarize button. Reply: Markdown.
     summarize: {
       system: `{{persona}}`,
-      user: `{{page}}
+      user: `{{context}}
 
-Summarize this GitHub page (a repository, issue, pull request, discussion or file).
-**TL;DR:** one sentence: what it is and its current state.
+{{page}}
 
+Summarize this GitHub page.
+For an issue or pull request:
+**Status:** open, closed or merged, and the state of the discussion in one line.
+**The problem / change:** 1 to 2 sentences from the description.
+**Discussion**
+- 2 to 5 bullets on the key points, decisions and objections, with who said them.
+**Next steps:** what's blocking it or what would move it forward.
+
+For a repository:
+**What it is:** one sentence.
 **Key points**
-- For a repository: what it does, how to install or run it, notable features, language and activity.
-- For an issue or pull request: the problem, the proposed fix, where the discussion landed, and what's still open.
-- 3 to 7 bullets in total.
+- What it does, how to install and run it, notable features, and how active and popular it is.
 
-Add a short **Worth noting** line for breaking changes, security concerns or signs the project is unmaintained.`,
+Keep code, commands, file names and version numbers exactly as written.`,
     },
   });
 })(globalThis);

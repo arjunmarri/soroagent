@@ -12,18 +12,20 @@
     // Summarize button. Reply: Markdown.
     summarize: {
       system: `{{persona}}`,
-      user: `{{page}}
+      user: `{{context}}
+
+{{page}}
 
 Summarize this YouTube video page.
 **TL;DR:** one sentence on what the video is about and who made it.
 
-**What it covers**
-- 3 to 6 bullets from the title, description and chapters (with timestamps when shown).
+**Chapters**
+- If chapters are listed, one line per chapter (keep the timestamps) on what it likely covers. If none are listed, give 3 to 5 bullets on what the description says the video covers.
 
 **What viewers say**
-- 1 to 3 bullets on the comments' main reactions, if comments are shown.
+- 1 to 3 bullets on the main reactions in the loaded comments (most-liked first). If no comments are loaded, say so.
 
-If the page doesn't reveal the video's actual content, add a short **Worth noting** line saying so.`,
+If the page doesn't reveal what the video actually says, add a short **Worth noting** line.`,
     },
   });
 })(globalThis);

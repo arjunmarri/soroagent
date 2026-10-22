@@ -228,7 +228,6 @@ header {
 .empty-mark .owl .glint { animation: none; }
 .empty strong { color: var(--fg); font-size: 16px; font-weight: 650; letter-spacing: -0.015em; }
 .empty-note { max-width: 300px; }
-.quip { margin: 0 0 4px; padding: 6px 12px; max-width: 300px; border-radius: 12px 12px 12px 4px; background: var(--spark-soft); color: var(--fg); font-size: 12.5px; font-style: italic; line-height: 1.45; }
 .suggest { display: grid; gap: 6px; width: 100%; max-width: 300px; margin-top: 12px; }
 .suggest button {
   text-align: left; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg);

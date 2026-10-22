@@ -7,7 +7,7 @@ soroagent works on any page, but a **site profile** makes it smarter on a specif
 - **gather more content by scrolling** (for example, 100 posts from a search page);
 - add **toggles** to the panel (for example, "Verified only" on X).
 
-[`x.js`](x.js) (X) and [`reddit.js`](reddit.js) (Reddit, new and old) are complete examples. [`_template.js`](_template.js) is a minimal starting point.
+[`x.js`](x.js) (X) and [`reddit.js`](reddit.js) (Reddit, new and old) are complete feed examples; Stack Overflow, Hacker News, GitHub, YouTube and Wikipedia show structured `extract()`. [`_template.js`](_template.js) is a minimal starting point.
 
 ## Add a profile for your site
 
@@ -29,6 +29,7 @@ soroagent works on any page, but a **site profile** makes it smarter on a specif
 | `options` | | `[{ id, label, title, default }]` — toggles shown in the panel on this site. |
 | `applyOptions(values)` | | Called with `{ optionId: boolean }` when the page loads and whenever a toggle changes. |
 | `items` | | Treat the page as a list of items. See below. |
+| `extract(document, location)` | | Return `{ title, text }`: the page's structure as text for the model (for example a question with its answers ranked, the accepted one marked). Used by Summarize, Ask and passive capture instead of the generic page text. Return `null` to fall back. See [`stackoverflow.js`](stackoverflow.js), [`hackernews.js`](hackernews.js), [`github.js`](github.js), [`youtube.js`](youtube.js) and [`wikipedia.js`](wikipedia.js). |
 
 ### Prompts
 

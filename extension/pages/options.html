@@ -163,9 +163,6 @@
       <label class="check"><input type="checkbox" id="showLauncher">
         <span>Show the assistant button<small>When off, open it from the toolbar icon, the right-click menu, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.</small></span>
       </label>
-      <label class="check"><input type="checkbox" id="showQuips">
-        <span>Owl one-liners<small>A random bit of internet wisdom each time the panel opens.</small></span>
-      </label>
       <label class="field"><span>"Read more" limit on feeds (posts per page)</span>
         <input type="number" id="readMoreLimit" min="20" max="1000" step="10">
         <small>On X and Reddit, Summarize reads what's loaded and then offers to read more, one batch at a time. It stops for good at this many posts on a page, so it never turns into doom-scrolling.</small>
@@ -186,6 +183,64 @@
       </div>
       <div class="field"><span>Button hidden on these sites</span>
         <div class="sites" id="sites"></div>
+      </div>
+    </section>
+
+    <section id="library">
+      <h2>Your library</h2>
+      <p>soroagent files everything you summarize into a searchable personal library. It grows more useful the longer you use it.</p>
+      <div class="grid">
+        <label class="field"><span>Passive capture</span>
+          <select id="autoCapture">
+            <option value="off">Off: save only what I summarize or save</option>
+            <option value="on">On: also save pages I actually read</option>
+          </select>
+          <small>A page counts as read when you've been active on it for a while and scrolled through at least half. Mail, chat, banking, logins, checkouts, search results and pages with a password box are never captured.</small>
+        </label>
+        <label class="field"><span>Reading time before a page counts (seconds)</span>
+          <input type="number" id="captureMinSeconds" min="15" max="600" step="5">
+        </label>
+      </div>
+      <label class="check"><input type="checkbox" id="captureLabel">
+        <span>Let the AI add a title, summary and tags to captured pages<small>Uses your model (with a cloud API, the page text goes to your provider). Off: pages are saved with their own title and an excerpt, on this computer only.</small></span>
+      </label>
+      <label class="field"><span>Never capture these sites <small>(one per line)</small></span>
+        <textarea id="captureExclude" rows="3" spellcheck="false" placeholder="example.com"></textarea>
+      </label>
+      <label class="check"><input type="checkbox" id="semanticSearch">
+        <span>Search by meaning<small>Finds notes about the same idea even when the words differ. Uses an embedding model: a local one in Ollama if installed (private and free: <code>ollama pull nomic-embed-text</code>), otherwise your OpenAI, Gemini or Mistral key. Vectors stay on this device.</small></span>
+      </label>
+      <div class="row" style="margin-bottom:6px">
+        <span class="muted" id="libraryStatus">Checking…</span>
+        <button class="btn small" type="button" id="reindex">Index now</button>
+      </div>
+    </section>
+
+    <section id="sync">
+      <h2>Sync across browsers</h2>
+      <p>Keep one library in every browser where soroagent is installed (Chrome, Firefox, Edge, Brave, on any computer). soroagent has no servers, so the shared copy lives in <b>your own storage</b>, <b>encrypted with your passphrase</b> before it leaves this browser. Notes, history, research and preferences sync; each browser keeps its own AI connection and keys; stats add up; screenshots stay on each device.</p>
+      <div id="syncOff">
+        <div class="grid">
+          <label class="field"><span>Where to keep the encrypted copy</span>
+            <select id="syncProvider">
+              <option value="webdav">WebDAV (Nextcloud, ownCloud, Synology, Koofr…)</option>
+              <option value="gist">A private GitHub Gist</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid" id="webdavFields">
+          <label class="field"><span>WebDAV folder or file URL</span><input type="url" id="syncUrl" spellcheck="false" placeholder="https://cloud.example.com/remote.php/dav/files/me/soroagent/"></label>
+          <label class="field"><span>Username</span><input type="text" id="syncUser" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="grid">
+          <label class="field"><span id="syncSecretLabel">Password (an app password is best)</span><input type="password" id="syncSecret" autocomplete="off" spellcheck="false"></label>
+          <label class="field"><span>Sync passphrase</span><input type="password" id="syncPassphrase" autocomplete="new-password" spellcheck="false" placeholder="At least 8 characters"><small>Use the same passphrase in every browser. It encrypts your data and is never stored or sent anywhere; if you lose it, the synced copy can't be read (your local data is unaffected).</small></label>
+        </div>
+        <div class="row"><button class="btn primary" type="button" id="syncConnect">Turn on sync</button><span class="muted" id="syncMsg" role="status"></span></div>
+      </div>
+      <div id="syncOn" hidden>
+        <div class="result"><span class="dot ready"></span><div><b id="syncWhere"></b><div class="muted" id="syncInfo"></div></div></div>
+        <div class="row" style="margin-top:10px"><button class="btn small" type="button" id="syncNow">Sync now</button><button class="btn small danger" type="button" id="syncStop">Stop syncing in this browser</button></div>
       </div>
     </section>
 

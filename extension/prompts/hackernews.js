@@ -12,18 +12,26 @@
     // Summarize button. Reply: Markdown.
     summarize: {
       system: `{{persona}}`,
-      user: `{{page}}
+      user: `{{context}}
+
+{{page}}
 
 Summarize this Hacker News page.
+For a story with comments:
 **TL;DR:** one or two sentences on the story and how the discussion received it.
 
 **The story**
-- 2 to 4 bullets on what was posted.
+- 2 to 3 bullets on what was posted.
 
-**The discussion**
-- 3 to 6 bullets: the strongest arguments for and against, first-hand experiences, and useful links or tools mentioned.
+**Discussion consensus**
+- Where most commenters agree, and how strongly.
 
-For a front page or list, give the main topics instead, grouped by theme.`,
+**Main disagreements**
+- 2 to 4 bullets: the strongest opposing viewpoints, with commenter names.
+
+**Worth knowing:** first-hand experiences, tools or links commenters recommend.
+
+For a front page or list: group the stories by theme, with the most-discussed ones first.`,
     },
   });
 })(globalThis);
