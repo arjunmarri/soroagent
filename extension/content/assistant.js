@@ -86,6 +86,7 @@
           <button type="button" role="menuitem" data-cmd="reset-position" hidden>Reset button position</button>
           <button type="button" role="menuitem" data-cmd="hide-site">Hide button on this site</button>
           <button type="button" role="menuitem" data-cmd="feedback">Send feedback</button>
+          <button type="button" role="menuitem" data-cmd="dark">Dark mode for this site</button>
           <button type="button" role="menuitem" data-cmd="settings">Settings</button>
         </div>
       </header>
@@ -94,7 +95,6 @@
         <button class="chip spark" type="button" data-action="wishlist" hidden title="Save this product to your wish list to buy later">${ICONS.heart}<span>Buy later</span></button>
         <button class="chip" type="button" data-action="declutter" title="Hide ads and distractions without changing the page layout">${ICONS.clean}<span>Hide ads</span></button>
         <button class="chip" type="button" data-action="screenshot" title="Screenshot the visible page and keep it in your snippets">${ICONS.camera}<span>Screenshot</span></button>
-        <button class="chip" type="button" data-action="dark" title="Dark mode for this site, with brightness, contrast and sepia">${ICONS.moon}<span>Dark mode</span></button>
         <button class="chip" type="button" data-action="read-later" title="Keep this page in your Read later list">${ICONS.save}<span>Read later</span></button>
         <button class="chip" type="button" data-action="page-history" title="Snippets and screenshots you saved from this page before">${ICONS.history}<span>History</span></button>
       </div>
@@ -453,7 +453,10 @@
     return node;
   }
 
-  const addUserMessage = (text) => append(el('div', { className: 'msg user', textContent: text }));
+  const addUserMessage = (text) => {
+    clearNextSteps();
+    return append(el('div', { className: 'msg user', textContent: text }));
+  };
 
   // Assistant message that renders streamed Markdown at most once per frame.
   function addAssistantMessage(placeholder = 'Reading the page…') {
@@ -785,15 +788,57 @@
       if (record.sources && record.sources.length) append(sourcesCard(record.query, record.sources, 'Sources'));
       return;
     }
-    const research = el('button', { type: 'button', textContent: 'Research this further' });
-    research.addEventListener('click', () => chooseResearch(record));
-    const open = el('button', { type: 'button', textContent: 'Open snippets' });
-    open.addEventListener('click', () => sendMessage({ type: 'open:snippets' }));
-    append(el('div', { className: 'card ok saved' }, [
-      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: record.snippetId ? '✓ Saved to your snippets' : 'Summary kept in your history' })]),
-      el('p', { textContent: 'Research looks this topic up on the web, reads the top sources and writes a cited brief.' }),
-      el('div', { className: 'card-actions' }, [research, open]),
-    ]));
+    state.next = { ...(state.next || {}), record };
+    renderNextSteps();
+  }
+
+  // One small "next steps" card under the latest answer: saved status, Research, and on feeds,
+  // Read more. It's redrawn in place (never stacked), and cleared when a new request starts.
+  function clearNextSteps() {
+    els.thread.querySelectorAll('.next-steps').forEach((n) => n.remove());
+    state.next = null;
+  }
+
+  function renderNextSteps() {
+    els.thread.querySelectorAll('.next-steps').forEach((n) => n.remove());
+    const { record, more } = state.next || {};
+    if (!record && !more) return;
+    const status = el('div', { className: 'next-status' });
+    const actions = el('div', { className: 'next-actions' });
+    const node = el('div', { className: 'next-steps', role: 'group' });
+    node.setAttribute('aria-label', 'Next steps');
+
+    if (record) {
+      status.append(el('span', { className: 'next-check', textContent: '✓' }), el('span', { textContent: record.snippetId ? 'Saved to snippets' : 'Kept in history' }));
+      const open = el('button', { type: 'button', className: 'link', textContent: 'Open' });
+      open.addEventListener('click', () => sendMessage({ type: record.snippetId ? 'open:snippets' : 'open:history', id: record.snippetId || undefined }));
+      status.append(open);
+    }
+    if (more && more.note) status.append(el('span', { className: 'next-note', textContent: more.note }));
+
+    if (more && more.count) {
+      const read = el('button', { type: 'button', className: 'primary', textContent: `Read ${more.count} more`, title: more.hint });
+      read.addEventListener('click', () => {
+        clearNextSteps();
+        readMore();
+      });
+      actions.append(read);
+    }
+    if (record) {
+      const research = el('button', { type: 'button', textContent: 'Research', title: 'Look this up on the web and get a brief with sources' });
+      research.addEventListener('click', () => {
+        clearNextSteps();
+        chooseResearch(record);
+      });
+      actions.append(research);
+    }
+    const dismiss = el('button', { type: 'button', className: 'dismiss', textContent: '×', title: 'Dismiss' });
+    dismiss.setAttribute('aria-label', 'Dismiss');
+    dismiss.addEventListener('click', clearNextSteps);
+    actions.append(dismiss);
+
+    node.append(status, actions);
+    append(node);
   }
 
   function sourcesCard(query, sources, title) {
@@ -927,10 +972,9 @@
   }
 
   // Dark mode for this site: applied by dark.js at page start; this is the switch and the tuning.
+  // The switch lives in the ⋯ menu; its label says what choosing it will do.
   function updateDarkChip() {
-    const chip = els.actions.querySelector('[data-action="dark"]');
-    chip.classList.toggle('active', S.dark.isOn());
-    chip.querySelector('span').textContent = S.dark.isOn() ? 'Light mode' : 'Dark mode';
+    els.menu.querySelector('[data-cmd="dark"]').textContent = S.dark.isOn() ? 'Light mode for this site' : 'Dark mode for this site';
   }
 
   let darkSave = 0;
@@ -1316,35 +1360,19 @@
     if (!site || !feed) return;
     const noun = site.noun || 'items';
     const limit = readMoreLimit();
-    if (feed.done >= limit) {
-      append(card({
-        icon: 'check',
-        kind: 'ok',
-        title: `You've caught up on ${feed.done} ${noun} here.`,
-        body: `That's the limit for this page, so soroagent stops reading more here. Maybe take a break 🦉 (You can change the limit in settings.)`,
-      }));
-      return;
+    let more;
+    if (feed.done >= limit) more = { note: `${feed.done} ${noun} read: that's the limit here. Maybe take a break 🦉` };
+    else if (feed.exhausted) more = { note: `All ${feed.done} ${noun} that loaded` };
+    else {
+      const count = Math.min(site.batchSize || 50, limit - feed.done);
+      more = {
+        count,
+        note: `${noun} 1–${feed.done}`,
+        hint: `Scrolls to load up to ${count} more, summarizes only the new ones, then brings you back. Stops after ${limit} ${noun} on this page.`,
+      };
     }
-    if (feed.exhausted) {
-      append(card({ icon: 'check', kind: 'ok', title: `Summarized ${feed.done} ${noun}: that's everything that loaded.` }));
-      return;
-    }
-    const next = Math.min(site.batchSize || 50, limit - feed.done);
-    const node = card({
-      title: `Summarized ${noun} 1–${feed.done}. Would you like to read more?`,
-      body: `soroagent will scroll to load up to ${next} more, summarize only the new ones, then bring you back to where you are. It stops after ${limit} ${noun} on this page.`,
-      actions: [
-        {
-          label: `Read ${next} more`,
-          onClick: () => {
-            node.remove();
-            readMore();
-          },
-        },
-        { label: 'No thanks', onClick: () => node.remove() },
-      ],
-    });
-    append(node);
+    state.next = { ...(state.next || {}), more };
+    renderNextSteps();
   }
 
   // ---------------------------------------------------------------------------
@@ -1472,7 +1500,6 @@
     if (action === 'summarize') summarize();
     else if (action === 'declutter') toggleDeclutter();
     else if (action === 'screenshot') takeScreenshot();
-    else if (action === 'dark') toggleDark();
     else if (action === 'page-history') showPageHistory();
     else if (action === 'read-later') readLater();
     else if (action === 'wishlist') addToWishlist();
@@ -1534,12 +1561,14 @@
     if (cmd === 'snippets') sendMessage({ type: 'open:snippets' });
     else if (cmd === 'history') sendMessage({ type: 'open:history' });
     else if (cmd === 'stats') sendMessage({ type: 'open:stats' });
+    else if (cmd === 'dark') toggleDark();
     else if (cmd === 'feedback') window.open(S.feedbackUrl('menu'), '_blank', 'noopener');
     else if (cmd === 'settings') sendMessage({ type: 'open:options' });
     else if (cmd === 'clear') {
       state.history = [];
       state.pageContext = null;
       els.thread.querySelectorAll('.msg, .card, .cached').forEach((n) => n.remove());
+      clearNextSteps();
       leaveHome();
       els.empty.hidden = false;
     } else if (cmd === 'reset-position') {

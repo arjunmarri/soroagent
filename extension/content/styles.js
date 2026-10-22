@@ -283,6 +283,20 @@ header {
 .card-actions button:hover { border-color: var(--accent); }
 .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .tag { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+/* Next steps under the latest answer: one compact row, redrawn in place */
+.next-steps { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 6px 8px 6px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 12px; color: var(--fg-muted); }
+.next-status { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.next-check { color: var(--ok); font-weight: 700; }
+.next-note::before { content: "·"; margin-right: 6px; }
+.next-status .link { border: none; background: none; padding: 0; color: var(--accent); font-size: 12px; font-weight: 600; }
+.next-status .link:hover { text-decoration: underline; }
+.next-actions { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+.next-actions button { border: 1px solid var(--border); background: var(--bg); border-radius: 8px; padding: 3px 9px; font-size: 11.5px; font-weight: 550; }
+.next-actions button:hover { border-color: var(--accent); }
+.next-actions .primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.next-actions .primary:hover { background: var(--accent-strong); }
+.next-actions .dismiss { border: none; background: none; color: var(--fg-muted); font-size: 15px; line-height: 1; padding: 2px 5px; }
+.next-actions .dismiss:hover { color: var(--fg); background: var(--bg-hover); }
 .progress { height: 4px; border-radius: 4px; background: var(--border); margin-top: 8px; overflow: hidden; }
 .progress > div { height: 100%; background: linear-gradient(90deg, var(--brand), var(--spark)); width: 0; transition: width 0.2s ease; }
 

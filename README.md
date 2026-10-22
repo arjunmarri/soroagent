@@ -34,7 +34,7 @@ Browsers were built to *fetch* pages, not to help you *understand* them. Your br
 - **Works while you move on.** Summaries run in the background. Switch tabs or leave the page, and the result is waiting when you come back. The toolbar owl counts what finished while you were away.
 
 ### Read feeds without the feed reading you
-On **X** and **Reddit**, soroagent reads only what's already on screen: themes, notable posts and overall sentiment, with every **@handle**, **u/user** and **r/community** linked. Then it *asks* whether you'd like to read more. Each batch needs your yes, is capped in posts, scrolling and time, and after 200 posts (adjustable) it stops offering and suggests a break. Threads get a summary of the post and where the discussion agrees and disagrees. Toggles in the panel give you **Verified only** on X and **Hide ads** on both.
+On **X** and **Reddit**, soroagent reads only what's already on screen: themes, notable posts and overall sentiment, with every **@handle**, **u/user** and **r/community** linked. Then a single small card under the summary offers **Read more** and **Research** together, so the chat stays uncluttered. Each batch needs your yes, is capped in posts, scrolling and time, and after 200 posts (adjustable) it stops offering and suggests a break. Threads get a summary of the post and where the discussion agrees and disagrees. Toggles in the panel give you **Verified only** on X and **Hide ads** on both.
 
 ### Remember what you read
 - **Snippets, automatically.** Every TL;DR is saved with a title, short summary and tags. Re-summarizing the same page updates it instead of duplicating it. Browse by day, site or topic, search everything, and read in a clean reading view.
@@ -50,7 +50,7 @@ On **X** and **Reddit**, soroagent reads only what's already on screen: themes, 
 
 ### Browse calmer
 - **Hide ads** removes ads, sponsored widgets, cookie walls and sticky video players **without shifting the layout**, so nothing jumps while you read. Remember it per site if you like.
-- **Dark mode for any site**, even ones without their own, with brightness, contrast and sepia sliders. Photos and videos keep their real colours, and it's applied before the page paints, so there's no white flash.
+- **Dark mode for any site** (in the panel's **⋯** menu), even ones without their own, with brightness, contrast and sepia sliders. Photos and videos keep their real colours, and it's applied before the page paints, so there's no white flash.
 - **Stats** show exactly where your browsing time goes: per day, per website and per page. Time counts only while a tab is in front and you're active (or a video plays), and stays in your browser for 90 days.
 
 ### Make it yours
@@ -72,12 +72,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.17.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.18.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.17.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.17.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.17.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.17.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.18.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.18.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.18.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.18.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -112,8 +112,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.17.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.17.0.zip)
-- Firefox: [soroagent-firefox-2.17.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.17.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.18.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.18.0.zip)
+- Firefox: [soroagent-firefox-2.18.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.18.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -129,7 +129,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.17.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.18.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
