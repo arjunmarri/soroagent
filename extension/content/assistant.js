@@ -69,13 +69,15 @@
     <section class="panel" role="dialog" aria-label="soroagent" hidden>
       <header>
         <div class="brand"><span class="brand-mark">${OWL_MARK}</span><span class="wordmark">soro<span>agent</span></span></div>
-        <div class="status">
-          <span class="dot" aria-hidden="true"></span>
+        <div class="status" role="status">
+          <span class="dot" title="Not connected"></span>
           <span class="status-text">Not connected</span>
           <span class="where" hidden></span>
           <select class="model" aria-label="Model" hidden></select>
         </div>
         <button class="icon-btn home-btn" type="button" aria-label="Home" title="Home">${ICONS.home}</button>
+        <button class="icon-btn" type="button" data-action="screenshot" aria-label="Screenshot" title="Screenshot: keep what you see in your snippets">${ICONS.camera}</button>
+        <button class="icon-btn" type="button" data-action="page-history" aria-label="History of this page" title="History: what you saved from this page before">${ICONS.history}</button>
         <button class="icon-btn menu-btn" type="button" aria-label="More options" aria-haspopup="menu">${ICONS.more}</button>
         <button class="icon-btn close-btn" type="button" aria-label="Close soroagent">${ICONS.close}</button>
         <div class="menu" role="menu" hidden>
@@ -87,6 +89,7 @@
           <button type="button" role="menuitem" data-cmd="hide-site">Hide button on this site</button>
           <button type="button" role="menuitem" data-cmd="feedback">Send feedback</button>
           <button type="button" role="menuitem" data-cmd="dark">Dark mode for this site</button>
+          <button type="button" role="menuitem" data-cmd="settings" data-model-item hidden>Change model</button>
           <button type="button" role="menuitem" data-cmd="settings">Settings</button>
         </div>
       </header>
@@ -95,8 +98,6 @@
         <button class="chip spark icon-only" type="button" data-action="wishlist" hidden aria-label="Buy later" title="Buy later: add this product to your wish list">${ICONS.heart}</button>
         <button class="chip" type="button" data-action="declutter" aria-pressed="false" title="Hide ads and distractions (the layout stays the same)">${ICONS.clean}<span>Ads</span></button>
         <button class="chip" type="button" data-action="read-later" title="Save this page to read later">${ICONS.save}<span>Save</span></button>
-        <button class="chip icon-only" type="button" data-action="screenshot" aria-label="Screenshot" title="Screenshot: keep what you see in your snippets">${ICONS.camera}</button>
-        <button class="chip icon-only" type="button" data-action="page-history" aria-label="History of this page" title="History: what you saved from this page before">${ICONS.history}</button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="safety" hidden role="alert"></div>
@@ -356,9 +357,15 @@
     state.status = status;
     els.dot.className = `dot ${status}`;
     els.statusText.textContent = text;
+    // Connected: just the green dot (hover it for the model). Otherwise say what's wrong.
     els.statusText.hidden = status === 'ready';
-    els.model.hidden = status !== 'ready';
-    els.where.hidden = status !== 'ready' || !state.cloud;
+    els.model.hidden = true;
+    els.where.hidden = true;
+    els.dot.title = status === 'ready' ? `Connected: ${els.model.title || text}` : text;
+    els.dot.setAttribute('aria-label', els.dot.title);
+    const modelItem = els.menu.querySelector('[data-model-item]');
+    modelItem.hidden = status !== 'ready';
+    modelItem.textContent = status === 'ready' ? `Change model (${text})` : 'Change model';
     updateControls();
   }
 
@@ -1261,7 +1268,7 @@
   async function takeScreenshot() {
     if (capturing) return;
     capturing = true;
-    const chip = els.actions.querySelector('[data-action="screenshot"]');
+    const chip = shadow.querySelector('header [data-action="screenshot"]');
     chip.disabled = true;
     const wasOpen = isOpen();
     host.style.setProperty('display', 'none', 'important');
@@ -1593,6 +1600,8 @@
     }
   });
   shadow.querySelector('.home-btn').addEventListener('click', showHome);
+  shadow.querySelector('header [data-action="screenshot"]').addEventListener('click', takeScreenshot);
+  shadow.querySelector('header [data-action="page-history"]').addEventListener('click', showPageHistory);
   shadow.querySelector('.foot .feedback').href = S.feedbackUrl('panel');
 
   // Clicking a chip would otherwise clear the user's text selection on the page.

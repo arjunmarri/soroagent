@@ -128,10 +128,11 @@ header {
 }
 .brand-mark .owl .eyes, .brand-mark .owl .glint { animation: none; }
 .status {
-  margin-left: auto; min-width: 0; display: flex; align-items: center; gap: 6px;
-  padding: 3px 4px 3px 9px; border-radius: 999px; background: var(--bg-soft);
+  min-width: 0; display: flex; align-items: center; gap: 6px; padding: 0 2px;
 }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--fg-muted); flex: none; }
+/* Everything after the status sits on the right: Home, Screenshot, History, ⋯, close */
+.home-btn { margin-left: auto; }
+.dot { cursor: help; width: 8px; height: 8px; border-radius: 50%; background: var(--fg-muted); flex: none; }
 .dot.ready { background: var(--ok); }
 .dot.connecting { background: var(--warn); animation: pulse 1s ease-in-out infinite; }
 .dot.offline { background: var(--err); }
