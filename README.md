@@ -32,7 +32,7 @@ The first time you open the owl, it says hello (with a joke) and asks you to con
 
 ### Understand any page
 - **Summarize** gives you the page in a clear, scannable format: a one-line TL;DR, then the key points. Ask again while nothing has changed and you get the earlier summary instantly, with **Regenerate** if you want a fresh one.
-- **Ask anything** about the page in a chat. Questions like *"do you save my data in the cloud?"* or *"is this open source?"* get a quick *"soroagent or this website?"* first, then an accurate answer about soroagent itself or about the site. Or  or tap a suggestion on the opening screen: *What are the key points?*, *Explain it simply*, *What should I double-check?*
+- **Ask anything** about the page in a chat. Questions like *"do you save my data in the cloud?"* or *"is this open source?"* get a quick *"soroagent or this website?"* first, then an accurate answer about soroagent itself or about the site. You can also tap a suggestion on the opening screen: *What are the key points?*, *Explain it simply*, *What should I double-check?*
 - **Tuned for the sites you use.** Built-in prompts for X, Reddit, YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon, Stack Overflow and major news sites: thread consensus on Reddit, the accepted answer on Stack Overflow, pros and cons from reviews on Amazon.
 - **Works while you move on.** Summaries run in the background. Switch tabs or leave the page, and the result is waiting when you come back. The toolbar owl counts what finished while you were away.
 
