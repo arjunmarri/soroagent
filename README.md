@@ -2,7 +2,7 @@
 
 <h1 align="center">soroagent</h1>
 
-<p align="center"><b>Your browser, on steroids.</b><br>
+<p align="center"><b>Your browser is your knowledge base.</b><br>
 An AI companion for every web page that turns what you read into knowledge you keep.</p>
 
 <p align="center">Chrome · Edge · Brave · Arc · Firefox &nbsp;|&nbsp; macOS · Windows &nbsp;|&nbsp; Local AI (Ollama, LM Studio…) or your own Claude, OpenAI or Gemini key</p>
