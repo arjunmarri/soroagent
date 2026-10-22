@@ -99,9 +99,11 @@
         <button class="chip" type="button" data-action="page-history" title="Snippets and screenshots you saved from this page before">${ICONS.history}<span>History</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
+      <div class="safety" hidden role="alert"></div>
       <div class="thread" aria-live="polite">
         <div class="empty">
           <span class="empty-mark">${OWL_MARK}</span>
+          <p class="quip" hidden></p>
           <strong>How can I help with this page?</strong>
           <span class="empty-note">Runs on the model served at your local URL. Nothing leaves your machine.</span>
           <div class="suggest" role="group" aria-label="Suggested questions">
@@ -1050,6 +1052,7 @@
   // back with "Back to the conversation" or the next message.
   function showHome() {
     refreshProduct();
+    showQuip();
     els.empty.hidden = false;
     els.thread.classList.add('home');
     els.empty.querySelector('.back-to-chat').hidden = !els.thread.querySelector('.msg, .card, .cached');
@@ -1058,6 +1061,75 @@
   function leaveHome() {
     els.thread.classList.remove('home');
     els.empty.querySelector('.back-to-chat').hidden = true;
+  }
+
+  // A random one-liner from the owl each time the panel opens (Settings can turn these off).
+  let lastQuip = '';
+  function showQuip() {
+    const quip = els.empty.querySelector('.quip');
+    quip.hidden = state.settings.showQuips === false;
+    if (quip.hidden) return;
+    lastQuip = S.pickQuip(lastQuip);
+    quip.textContent = lastQuip;
+  }
+
+  // Safety check: signs of scams, phishing, malware tricks or spam on this page. Strong signs turn
+  // the owl red; opening the panel explains why. It reads the page only; it's not an antivirus.
+  let safety = null;
+  let safetyUrl = '';
+  let safetyDismissed = '';
+  let safetyTimer = 0;
+  const launcherTitle = els.launcher.title;
+
+  function runSafetyCheck() {
+    safetyUrl = location.href;
+    const trusted = (state.settings.trustedSites || []).includes(location.hostname);
+    safety = state.settings.safetyCheck === false || trusted ? null : S.checkPageSafety(document, location);
+    const danger = Boolean(safety && safety.level === 'danger');
+    els.launcher.classList.toggle('danger', danger);
+    els.launcher.title = danger ? 'soroagent: this page shows signs of a scam or malware. Click to see why.' : launcherTitle;
+    renderSafety();
+  }
+  function scheduleSafetyCheck() {
+    safetyUrl = location.href;
+    clearTimeout(safetyTimer);
+    // Scam pages often build themselves after loading; look again a little later too.
+    safetyTimer = setTimeout(() => {
+      runSafetyCheck();
+      safetyTimer = setTimeout(runSafetyCheck, 7000);
+    }, 2500);
+  }
+
+  function renderSafety() {
+    const box = shadow.querySelector('.safety');
+    const show = Boolean(safety && safety.level !== 'ok' && safetyDismissed !== location.href);
+    box.hidden = !show;
+    if (!show) return;
+    const danger = safety.level === 'danger';
+    box.className = `safety ${safety.level}`;
+    const title = el('div', { className: 'safety-title' });
+    setHtml(title, ICONS.alert);
+    title.append(el('span', { textContent: danger ? 'Careful: this page looks unsafe' : 'Be careful on this page' }));
+    const reasons = el('ul', {}, safety.reasons.slice(0, 4).map((r) => el('li', { textContent: r.text })));
+    const actions = el('div', { className: 'safety-actions' });
+    if (danger && history.length > 1) {
+      const back = el('button', { type: 'button', className: 'primary', textContent: 'Go back' });
+      back.addEventListener('click', () => history.back());
+      actions.append(back);
+    }
+    const trust = el('button', { type: 'button', textContent: 'I trust this site' });
+    trust.addEventListener('click', async () => {
+      const sites = new Set(state.settings.trustedSites || []);
+      sites.add(location.hostname);
+      await S.saveSettings({ trustedSites: [...sites] });
+    });
+    const dismiss = el('button', { type: 'button', className: 'quiet', textContent: 'Dismiss' });
+    dismiss.addEventListener('click', () => {
+      safetyDismissed = location.href;
+      renderSafety();
+    });
+    actions.append(trust, dismiss);
+    box.replaceChildren(title, reasons, el('p', { className: 'safety-note', textContent: 'A quick check of what this page shows, not an antivirus. Don\'t enter passwords or card details, or download files, unless you\'re sure.' }), actions);
   }
 
   // Shop product pages: "Buy later" saves the product to the wish list in snippets.
@@ -1080,6 +1152,7 @@
   // Single-page shops change product without reloading; re-check while the panel is open.
   setInterval(() => {
     if (isOpen() && productUrl !== location.href) refreshProduct();
+    if (safetyUrl && safetyUrl !== location.href) scheduleSafetyCheck();
   }, 2000);
 
   async function addToWishlist() {
@@ -1468,6 +1541,8 @@
       renderSiteBar();
       launcherCtl.placePanel();
       refreshProduct();
+      showQuip();
+      renderSafety();
       if (state.status !== 'ready') connect();
     }
     if (focus) els.input.focus({ preventScroll: true });
@@ -1611,6 +1686,7 @@
     const before = state.settings;
     state.settings = { ...S.DEFAULT_SETTINGS, ...(changes.settings.newValue || {}) };
     applySettings();
+    if (before.safetyCheck !== state.settings.safetyCheck || JSON.stringify(before.trustedSites) !== JSON.stringify(state.settings.trustedSites)) runSafetyCheck();
     if (JSON.stringify(before.siteOptions) !== JSON.stringify(state.settings.siteOptions)) {
       applySiteOptions();
       renderSiteBar();
@@ -1634,6 +1710,7 @@
     applySettings();
     applySiteOptions();
     showPendingSummaries();
+    scheduleSafetyCheck();
     // Sites where the reader chose "Always hide": clean up once the page (and its ads) has loaded.
     if ((settings.cleanSites || []).includes(location.hostname)) {
       setTimeout(() => {

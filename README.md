@@ -49,6 +49,7 @@ On **X** and **Reddit**, soroagent reads only what's already on screen: themes, 
 **Research** turns a summary into a starting point. First soroagent asks what to focus on, offering specific topics your model picks out of the summary (or type your own). Then it searches the web (DuckDuckGo, Brave Search or Bing, or your own SearXNG), reads the top sources and writes a brief with numbered citations, saved alongside the snippet. Only the search query leaves your machine; the page you were reading doesn't.
 
 ### Browse calmer
+- **Safety check.** soroagent looks at each page for signs of scams, phishing, malware tricks and spam: fake "your computer is infected" alerts, sign-in pages pretending to be PayPal, Microsoft or your bank, passwords sent to another site, crypto giveaways, fake update downloads, hidden mining scripts, link farms. When the signs are strong, **the owl glows red**; open it to see exactly why, go back, or mark the site as trusted. It's a quick check of the page itself, not an antivirus.
 - **Hide ads** removes ads, sponsored widgets, cookie walls and sticky video players **without shifting the layout**, so nothing jumps while you read. Remember it per site if you like.
 - **Dark mode for any site** (in the panel's **⋯** menu), even ones without their own, with brightness, contrast and sepia sliders. Photos and videos keep their real colours, and it's applied before the page paints, so there's no white flash.
 - **Stats** show exactly where your browsing time goes: per day, per website and per page. Time counts only while a tab is in front and you're active (or a video plays), and stays in your browser for 90 days.
@@ -56,6 +57,7 @@ On **X** and **Reddit**, soroagent reads only what's already on screen: themes, 
 ### Make it yours
 - **Prompts in settings.** Rewrite the system prompt for all websites or for any site, and click **Optimize with AI** to have your own model improve it.
 - **Any model.** A local model (Ollama, LM Studio, llama.cpp, Jan, any OpenAI-compatible server) or your own key for Anthropic Claude, OpenAI, Google Gemini, OpenRouter, Groq, Mistral, DeepSeek or xAI. soroagent recommends the best of your installed local models.
+- **An owl with opinions.** Each time you open it, it greets you with a random one-liner ("Actually, always skip low-quality videos. They fry the brain."). Turn them off in settings if you're all business.
 - **An owl that stays out of the way.** It finds a spot that doesn't cover the page's own buttons, follows your mouse with its eyes, and can be dragged anywhere (it flies to the other side and perches there). **Home** brings back the opening screen; drag the panel's edges or corner to resize it (double-click to reset); <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> opens it from the keyboard. Everything follows your browser's light or dark theme.
 
 ## Who it's for
@@ -72,12 +74,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.18.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.19.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.18.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.18.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.18.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.18.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.19.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.19.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -112,8 +114,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.18.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.18.0.zip)
-- Firefox: [soroagent-firefox-2.18.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.18.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.19.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.0.zip)
+- Firefox: [soroagent-firefox-2.19.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -129,7 +131,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.18.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.19.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 

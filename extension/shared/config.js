@@ -31,6 +31,9 @@
     cleanSites: [], // sites where "Hide ads" is applied automatically
     customPrompts: {}, // system prompts written in settings: { default?: string, x?: string, … }
     autoBackup: true, // save a backup file to Downloads/soroagent/ automatically
+    safetyCheck: true, // check pages for signs of scams, phishing and malware; the owl turns red
+    trustedSites: [], // sites the reader marked "I trust this site"
+    showQuips: true, // a random one-liner when the panel opens
     trackTime: true, // count time on pages for the Stats page (stored only in this browser)
     panelWidth: 400, // panel size in px, set by dragging its edges
     panelHeight: 600,

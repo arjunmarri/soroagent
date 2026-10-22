@@ -74,6 +74,9 @@ svg { width: 18px; height: 18px; flex: none; }
 .launcher:hover { transform: translateY(-2px); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 35%, transparent), 0 10px 24px rgba(0, 0, 0, 0.22); }
 .launcher.open { box-shadow: 0 0 0 2px var(--brand), 0 8px 22px rgba(0, 0, 0, 0.2); }
 .launcher:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand), 0 8px 22px rgba(0, 0, 0, 0.2); }
+.launcher.danger { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.9), 0 0 22px 6px rgba(239, 68, 68, 0.5); animation: danger-glow 1.8s ease-in-out infinite; }
+.launcher.danger:hover, .launcher.danger.open { box-shadow: 0 0 0 3px #ef4444, 0 0 26px 8px rgba(239, 68, 68, 0.6); }
+@keyframes danger-glow { 50% { box-shadow: 0 0 0 3px #ef4444, 0 0 32px 12px rgba(239, 68, 68, 0.7); } }
 .launcher.dragging { transition: none; cursor: grabbing; transform: scale(1.06); }
 .launcher.busy::after {
   content: ""; position: absolute; inset: -1px; border-radius: 50%;
@@ -228,6 +231,7 @@ header {
 .empty-mark .owl .glint { animation: none; }
 .empty strong { color: var(--fg); font-size: 16px; font-weight: 650; letter-spacing: -0.015em; }
 .empty-note { max-width: 300px; }
+.quip { margin: 0 0 4px; padding: 6px 12px; max-width: 300px; border-radius: 12px 12px 12px 4px; background: var(--spark-soft); color: var(--fg); font-size: 12.5px; font-style: italic; line-height: 1.45; }
 .suggest { display: grid; gap: 6px; width: 100%; max-width: 300px; margin-top: 12px; }
 .suggest button {
   text-align: left; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg);
@@ -297,6 +301,21 @@ header {
 .next-actions .primary:hover { background: var(--accent-strong); }
 .next-actions .dismiss { border: none; background: none; color: var(--fg-muted); font-size: 15px; line-height: 1; padding: 2px 5px; }
 .next-actions .dismiss:hover { color: var(--fg); background: var(--bg-hover); }
+/* Safety warning above the conversation */
+.safety { margin: 10px 12px 0; padding: 10px 12px; border-radius: 12px; border: 1px solid; font-size: 12.5px; }
+.safety.danger { border-color: color-mix(in srgb, var(--err) 55%, var(--border)); background: color-mix(in srgb, var(--err) 9%, var(--bg)); }
+.safety.caution { border-color: color-mix(in srgb, var(--spark) 55%, var(--border)); background: var(--spark-soft); }
+.safety-title { display: flex; align-items: center; gap: 6px; font-weight: 650; font-size: 13px; }
+.safety-title svg { width: 16px; height: 16px; }
+.safety.danger .safety-title svg { color: var(--err); }
+.safety.caution .safety-title svg { color: var(--spark); }
+.safety ul { margin: 6px 0 0; padding-left: 18px; }
+.safety li { margin: 2px 0; }
+.safety-note { margin: 6px 0 0; color: var(--fg-muted); font-size: 11.5px; }
+.safety-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.safety-actions button { border: 1px solid var(--border); background: var(--bg); border-radius: 8px; padding: 3px 9px; font-size: 11.5px; font-weight: 550; }
+.safety-actions .primary { background: var(--err); border-color: var(--err); color: #fff; }
+.safety-actions .quiet { border-color: transparent; background: none; color: var(--fg-muted); }
 .progress { height: 4px; border-radius: 4px; background: var(--border); margin-top: 8px; overflow: hidden; }
 .progress > div { height: 100%; background: linear-gradient(90deg, var(--brand), var(--spark)); width: 0; transition: width 0.2s ease; }
 

@@ -6,7 +6,7 @@
   const $ = (id) => document.getElementById(id);
   const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl'];
   const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit'];
-  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup'];
+  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup', 'safetyCheck', 'showQuips'];
 
   let saved = { ...DEFAULT_SETTINGS }; // last saved settings, for fields this page doesn't show
   let hiddenSites = [];
@@ -354,6 +354,12 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     $('result').hidden = true;
   });
 
+  $('forgetTrusted').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const count = (saved.trustedSites || []).length;
+    saved = await S.saveSettings({ trustedSites: [] });
+    e.target.textContent = count ? `Forgot ${count} site${count === 1 ? '' : 's'}` : 'No trusted sites';
+  });
   $('resetPlacements').addEventListener('click', async () => {
     saved = await S.saveSettings({ launcherPlacements: {} });
     renderPlacements();
