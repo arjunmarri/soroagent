@@ -206,4 +206,7 @@
   });
 
   load();
+
+  // "Ask your library": the chat console at the bottom of the page.
+  S.mountLibraryChat({ placeholder: 'Ask your library… (Ctrl/⌘ K)' });
 })();

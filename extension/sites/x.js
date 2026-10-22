@@ -1,5 +1,5 @@
 // Site profile for X (formerly Twitter): reads posts instead of page text, reads more of a feed on
-// request, and adds "Verified only" / "Hide ads" filters. Its prompts are in prompts/x.js.
+// request, and adds a "Verified only" filter. Promoted posts are left out of summaries. Its prompts are in prompts/x.js.
 // A worked example for extension/sites/README.md.
 (function (root) {
   'use strict';
@@ -129,7 +129,7 @@
 
   function passes(post, options) {
     if (options.verifiedOnly && !post.verified) return false;
-    if (options.hidePromoted && post.promoted) return false;
+    if (post.promoted) return false; // ads never go into a summary
     return Boolean(post.text || post.hasMedia);
   }
 
@@ -169,7 +169,7 @@
     return best;
   }
 
-  // Keeps "Verified only" / "Hide ads" applied as X loads more posts.
+  // Keeps "Verified only" applied as X loads more posts.
   let filterOptions = {};
   let observer = null;
   let pending = 0;
@@ -178,7 +178,7 @@
     pending = 0;
     for (const article of document.querySelectorAll(TWEET)) {
       const post = parsePost(article);
-      const hide = (filterOptions.verifiedOnly && !post.verified) || (filterOptions.hidePromoted && post.promoted);
+      const hide = filterOptions.verifiedOnly && !post.verified;
       if (hide) article.setAttribute('data-soroagent-filtered', '');
       else article.removeAttribute('data-soroagent-filtered');
     }
@@ -187,7 +187,7 @@
   function applyOptions(options) {
     filterOptions = { ...options };
     runFilter();
-    const active = filterOptions.verifiedOnly || filterOptions.hidePromoted;
+    const active = filterOptions.verifiedOnly;
     if (active && !observer) {
       observer = new MutationObserver(() => {
         if (!pending) pending = setTimeout(runFilter, 250);
@@ -205,7 +205,6 @@
     matches: (location) => /(^|\.)(x|twitter)\.com$/i.test(location.hostname),
     options: [
       { id: 'verifiedOnly', label: 'Verified only', title: 'Show and analyze only posts from verified accounts', default: false },
-      { id: 'hidePromoted', label: 'Hide ads', title: 'Hide promoted posts', default: false },
     ],
     pageInfo,
     applyOptions,

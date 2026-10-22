@@ -28,7 +28,6 @@
     maxPageChars: 12000,
     researchEngine: 'auto', // 'auto' | 'duckduckgo' | 'brave' | 'searxng'
     searxUrl: '', // e.g. http://127.0.0.1:8888 for a self-hosted SearXNG
-    cleanSites: [], // sites where "Hide ads" is applied automatically
     customPrompts: {}, // system prompts written in settings: { default?: string, x?: string, … }
     autoCapture: 'off', // 'on': save pages you actually read (passive capture)
     captureMinSeconds: 45, // active reading time before a page counts as read

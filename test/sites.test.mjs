@@ -31,8 +31,8 @@ test('siteFor matches X hosts and falls back to the default profile', () => {
 
 test('siteOptionValues merges defaults with saved values', () => {
   const x = S.siteFor(loc('https://x.com/'));
-  assert.deepEqual(S.siteOptionValues(x, {}), { verifiedOnly: false, hidePromoted: false });
-  assert.deepEqual(S.siteOptionValues(x, { siteOptions: { x: { verifiedOnly: true } } }), { verifiedOnly: true, hidePromoted: false });
+  assert.deepEqual(S.siteOptionValues(x, {}), { verifiedOnly: false });
+  assert.deepEqual(S.siteOptionValues(x, { siteOptions: { x: { verifiedOnly: true } } }), { verifiedOnly: true });
 });
 
 test('X page detection', () => {

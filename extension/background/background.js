@@ -374,7 +374,7 @@
       return { ok: true };
     },
     // "Ask your library", optionally starting with a topic.
-    'open:notes': (msg) => ext.tabs.create({ url: ext.runtime.getURL(`pages/notes.html${msg && msg.topic ? `?topic=${encodeURIComponent(String(msg.topic).slice(0, 120))}` : ''}`) }),
+    'open:notes': (msg) => ext.tabs.create({ url: ext.runtime.getURL(`pages/snippets.html${msg && msg.topic ? `?ask=${encodeURIComponent(String(msg.topic).slice(0, 120))}` : '?chat'}`) }),
     'library:search': async (msg) => {
       const res = await library.search(String(msg.query || '').slice(0, 4000), { limit: Math.min(50, Number(msg.limit) || 12), since: Number(msg.since) || 0, excludeUrl: msg.excludeUrl || '' });
       return { ok: true, ...res };

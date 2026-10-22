@@ -28,7 +28,7 @@ test('the Chrome service worker loads the same scripts as Firefox, in order', ()
 });
 
 test('pages only load scripts that exist', () => {
-  for (const page of ['options', 'snippets', 'history', 'stats', 'notes', 'onboard']) {
+  for (const page of ['options', 'snippets', 'history', 'stats', 'onboard']) {
     const html = readFileSync(join(ext, 'pages', `${page}.html`), 'utf8');
     for (const [, src] of html.matchAll(/<script src="([^"]+)"/g)) {
       assert.ok(existsSync(join(ext, 'pages', src)), `${page}.html -> ${src}`);

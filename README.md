@@ -22,7 +22,7 @@ Browsers were built to *fetch* pages, not to help you *understand* them. Your br
 - **Think with what you've read.** Search your library by meaning, chat with it, see related notes on the page you're reading, and turn it into a brief, a decision, a study guide or a draft, every answer cited to your own sources.
 - **One library everywhere.** Sync it, end-to-end encrypted, across every browser where soroagent is installed.
 - **Go deeper on purpose.** When something matters, Research reads the web for you and writes a brief with citations.
-- **Take back your attention.** No doom-scrolling, no clutter, a comfortable dark mode on any site, and an honest view of where your time goes.
+- **Take back your attention.** No doom-scrolling, a comfortable dark mode on any site, and an honest view of where your time goes.
 - **Keep it private.** Run it on a model on your own computer and nothing you read leaves your machine. No accounts, no servers, no analytics.
 
 > **Browsing history, reinvented.** Not *"you visited 214 pages yesterday"* but *"here's what you read, what it said, what you found worth keeping, and where to go deeper."*
@@ -51,7 +51,7 @@ The first time you open the owl, it says hello and asks you to connect an AI rig
 - **Works while you move on.** Summaries run in the background. Switch tabs or leave the page, and the result is waiting when you come back. The toolbar owl counts what finished while you were away.
 
 ### Read feeds without the feed reading you
-On **X** and **Reddit**, soroagent reads only what's already on screen: themes, notable posts and overall sentiment, with every **@handle**, **u/user** and **r/community** linked. Then a single small card under the summary offers **Read more** and **Research** together, so the chat stays uncluttered. Each batch needs your yes, is capped in posts, scrolling and time, and after 200 posts (adjustable) it stops offering and suggests a break. Threads get a summary of the post and where the discussion agrees and disagrees. Toggles in the panel give you **Verified only** on X and **Hide ads** on both.
+On **X** and **Reddit**, soroagent reads only what's already on screen: themes, notable posts and overall sentiment, with every **@handle**, **u/user** and **r/community** linked. Then a single small card under the summary offers **Read more** and **Research** together, so the chat stays uncluttered. Each batch needs your yes, is capped in posts, scrolling and time, and after 200 posts (adjustable) it stops offering and suggests a break. Threads get a summary of the post and where the discussion agrees and disagrees. A **Verified only** toggle on X narrows the feed, and promoted posts are always left out of summaries.
 
 ### Your personal library (an automated archivist)
 soroagent isn't just a chatbot: it's an archivist. Everything is filed, tagged and indexed into a library that gets more valuable the longer you use it.
@@ -69,7 +69,7 @@ soroagent isn't just a chatbot: it's an archivist. Everything is filed, tagged a
 Saving is only the start. soroagent turns your library into knowledge you can use, and every answer keeps **what your sources say** (cited as [S1], [S2]…) apart from **the AI's own interpretation**, so you always know which is which.
 
 - **Retrieval when it matters.** Reading about AI agents, and you saved three related articles last month? The panel shows *"📚 3 of your saved notes relate to this page"*. **Use in chat** brings them into the conversation; answers then cite them as [N1], [N2]… alongside the page. Matching happens in your own library index, by meaning and by words.
-- **Ask your library: chat with everything you've read.** A conversation across your whole library (with follow-up questions), over the past week, month, 3 months or all time:
+- **Ask your library: chat with everything you've read.** A chat console sits at the bottom of the snippets and summary history pages (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), so you ask right where your notes are. It's a conversation with follow-up questions, over the past week, month, 3 months or all time, and with a note open, **About this note** focuses the question on it:
   - *What have I learned about this topic over the past month?*
   - *Where do my saved sources disagree?*
   - *What evidence supports this argument?*
@@ -85,7 +85,6 @@ Use Chrome at work and Firefox at home? Turn on **sync** and every browser where
 **Research** turns a summary into a starting point. First soroagent asks what to focus on, offering specific topics your model picks out of the summary (or type your own). Then it searches the web (DuckDuckGo, Brave Search or Bing, or your own SearXNG), reads the top sources and writes a brief with numbered citations, saved alongside the snippet. Only the search query leaves your machine; the page you were reading doesn't.
 
 ### Browse calmer
-- **Ads** hides ads, sponsored widgets, cookie walls and sticky video players **without shifting the layout**, so nothing jumps while you read. Remember it per site if you like.
 - **Dark mode for any site** (in the panel's **⋯** menu), even ones without their own, with brightness, contrast and sepia sliders. Photos and videos keep their real colours, and it's applied before the page paints, so there's no white flash.
 - **Stats** show exactly where your browsing time goes: per day, per website and per page. Time counts only while a tab is in front and you're active (or a video plays), and stays in your browser for 90 days.
 
@@ -107,12 +106,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.22.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.23.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.22.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.22.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.22.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.22.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.23.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.23.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.23.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.23.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -147,8 +146,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.22.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.22.0.zip)
-- Firefox: [soroagent-firefox-2.22.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.22.0.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.23.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.23.0.zip)
+- Firefox: [soroagent-firefox-2.23.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.23.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -164,7 +163,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.22.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.23.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -178,7 +177,7 @@ On first install the settings page opens and tests the connection to `http://127
 | Toolbar owl | Click to open soroagent on the current page. A number on it means summaries finished while you were away. Right-click for **Summary history**, **Saved snippets**, **Browsing stats**, **Send feedback** and **Settings**. |
 | Feedback | **Share feedback** at the bottom of the panel (or in its ⋯ menu) opens a quick feedback page on soroagent.com. Only the version and browser are passed along. |
 
-**Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, research), or search everything. **Read later** and **Screenshots** have sections of their own, and things you create in **Ask your library** are marked *Created*, and pages saved by passive capture are marked *Read*. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
+**Snippets** are built for reading. The list shows each snippet's title, a one-line summary, the site and the time. Group it by **Day**, **Site** or **Topic**, filter by kind (summaries, research), or search everything. **Read later** and **Screenshots** have sections of their own, and things you create in the **Ask your library** console are marked *Created*, and pages saved by passive capture are marked *Read*. Click one to read it in a comfortable reading view, with the full summary, its tags, and its research brief and sources if any. **Research this further** is right there. You can also copy, delete, and export to Markdown or JSON from **More**.
 
 **Your data carries over to every update.** Snippets, summary history and settings live in the browser's storage for soroagent. The Chrome build has a fixed extension ID (`jomghmmgdlajfonjihmagbhomimadpcg`), so a newer version loaded from any folder keeps the same storage, and stored data is upgraded automatically when the format changes. soroagent also saves an automatic backup to `Downloads/soroagent/soroagent-backup.json` (a few minutes after changes, at most every 30 minutes; turn it off in **Settings → Backup & restore**). After a fresh install, it looks for that file in the browser's download history and the welcome page offers **Restore my data**: in Chrome it reads the file directly when *Allow access to file URLs* is on for soroagent (on `chrome://extensions`), otherwise a file picker opens in Downloads. Restoring never overwrites anything you already have. To move to another browser or computer, copy the file over and use **Restore from backup**. API keys are never included in backups.
 
@@ -239,11 +238,11 @@ Profiles in [`extension/sites/`](extension/sites) give soroagent site-specific b
 extension/
   manifest.json        base manifest; the build writes per-browser variants
   background/          sw.js (Chrome entry) · background.js (routing, menus, Origin rewrite) · llm.js (Ollama, OpenAI-compatible and Anthropic client) · recommend.js (local model ranking) · secrets.js (encrypted API keys) · jobs.js (background summaries, auto-filing) · library.js (search by meaning and words) · sync.js (encrypted sync across browsers) · research.js · autobackup.js
-  content/             assistant.js (panel and tasks) · launcher.js (button placement, dragging) · extract.js (readable text) · declutter.js (Ads) · dark.js (dark mode) · timetrack.js (Stats) · capture.js (passive capture) · faq.js (questions about soroagent) · styles.js
+  content/             assistant.js (panel and tasks) · launcher.js (button placement, dragging) · extract.js (readable text) · dark.js (dark mode) · timetrack.js (Stats) · capture.js (passive capture) · faq.js (questions about soroagent) · styles.js
   prompts/             prompt texts: default.js, site and popular-site prompts, _template.js, samples/ and the fine-tuning guide
   sites/               site profiles: x.js, reddit.js, stackoverflow.js, hackernews.js, github.js, youtube.js, wikipedia.js, _template.js and a README
   shared/              config.js (settings) · prompts.js · markdown.js (safe renderer) · snippets.js · knowledge.js (finding related notes) · stats.js · backup.js · ask.js
-  pages/               settings, snippets (the library), Ask your library, summary history, stats and first-run setup pages
+  pages/               settings, snippets (the library), summary history, stats, first-run setup · libchat.js (the Ask your library console)
   icons/               generated by scripts/make-icons.mjs
 scripts/build.mjs      copies extension/ to dist/<browser>/ with the right manifest; --zip packs it
 test/                  node:test unit tests (LLM client, prompts and parsers, Markdown, manifest wiring)

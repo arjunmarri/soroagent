@@ -161,7 +161,8 @@
     };
   }
 
-  const keep = (item, options) => (!options.hidePromoted || !item.promoted) && Boolean(item.id) && Boolean(item.title || item.text);
+  // Promoted posts (ads) never go into a summary.
+  const keep = (item) => !item.promoted && Boolean(item.id) && Boolean(item.title || item.text);
 
   /** Items in the page now: posts on feeds; the post and its comments on a thread. */
   function visibleItems(doc, options = {}) {
@@ -189,39 +190,11 @@
     }, null).item;
   }
 
-  // "Hide ads": keep promoted posts hidden as Reddit loads more.
-  let filterOptions = {};
-  let observer = null;
-  let pending = 0;
-  function runFilter() {
-    pending = 0;
-    for (const el of document.querySelectorAll(`${NEW_POST}, ${NEW_AD}, ${OLD_POST}`)) {
-      const promoted = el.matches(NEW_AD) || el.hasAttribute('promoted') || el.classList.contains('promoted');
-      if (filterOptions.hidePromoted && promoted) el.setAttribute('data-soroagent-filtered', '');
-      else el.removeAttribute('data-soroagent-filtered');
-    }
-  }
-  function applyOptions(options) {
-    filterOptions = { ...options };
-    runFilter();
-    if (filterOptions.hidePromoted && !observer) {
-      observer = new MutationObserver(() => {
-        if (!pending) pending = setTimeout(runFilter, 250);
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    } else if (!filterOptions.hidePromoted && observer) {
-      observer.disconnect();
-      observer = null;
-    }
-  }
-
   soroagent.registerSite({
     id: 'reddit',
     name: 'Reddit',
     matches: (location) => /(^|\.)reddit\.com$/i.test(location.hostname),
-    options: [{ id: 'hidePromoted', label: 'Hide ads', title: 'Hide promoted posts', default: false }],
     pageInfo,
-    applyOptions,
     items: {
       noun: 'posts',
       batchSize: 50,

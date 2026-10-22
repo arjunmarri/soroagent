@@ -24,7 +24,6 @@
     more: svg('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
     summarize: svg('<path d="M4 6h16M4 12h16M4 18h10"/>'),
     save: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
-    clean: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5.5 0 9 5 10 7a17 17 0 0 1-3 3.8M6.3 6.3C3.9 7.9 2.5 10.4 2 12c1 2 4.5 7 10 7 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
     history: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
     chat: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'),
     home: svg('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'),
@@ -95,7 +94,6 @@
       </header>
       <div class="actions">
         <button class="chip" type="button" data-action="summarize" title="A short summary of this page">${ICONS.summarize}<span>Summarize</span></button>
-        <button class="chip" type="button" data-action="declutter" aria-pressed="false" title="Hide ads and distractions (the layout stays the same)">${ICONS.clean}<span>Ads</span></button>
         <button class="chip" type="button" data-action="read-later" title="Save this page to read later">${ICONS.save}<span>Save</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
@@ -118,7 +116,6 @@
         <textarea rows="1" placeholder="Ask about this page…" aria-label="Ask about this page"></textarea>
         <button class="send" type="submit" aria-label="Send">${ICONS.send}</button>
       </form>
-      <footer class="foot"><a class="feedback" target="_blank" rel="noopener">${ICONS.chat}<span>Share feedback</span></a><span class="foot-note">What could be better?</span></footer>
     </section>`);
   shadow.append(...ui.childNodes);
   document.documentElement.append(host);
@@ -162,7 +159,6 @@
     }
   }
   adoptStyles(document, S.PAGE_CSS);
-  adoptStyles(document, S.DECLUTTER_CSS);
   S.dark.markHost(); // flip our own UI back if dark mode is already on
 
   // ---------------------------------------------------------------------------
@@ -989,45 +985,6 @@
     });
   }
 
-  // Hide ads: keeps the layout; can be remembered per site.
-  function updateDeclutterChip() {
-    const chip = els.actions.querySelector('[data-action="declutter"]');
-    const on = S.declutter.isActive();
-    chip.classList.toggle('active', on);
-    chip.setAttribute('aria-pressed', String(on));
-    chip.title = on ? 'Ads are hidden. Click to show them again.' : 'Hide ads and distractions (the layout stays the same)';
-  }
-
-  function toggleDeclutter() {
-    const host = location.hostname;
-    if (S.declutter.isActive()) {
-      S.declutter.showAds();
-      updateDeclutterChip();
-      append(card({ title: 'Ads and distractions are back.' }));
-      return;
-    }
-    const count = S.declutter.hideAds();
-    updateDeclutterChip();
-    const remembered = (state.settings.cleanSites || []).includes(host);
-    const always = el('button', { type: 'button', textContent: remembered ? `Stop hiding automatically on ${host}` : `Always hide on ${host}` });
-    always.addEventListener('click', async () => {
-      const sites = new Set(state.settings.cleanSites || []);
-      if (sites.has(host)) sites.delete(host);
-      else sites.add(host);
-      await S.saveSettings({ cleanSites: [...sites] });
-      always.textContent = sites.has(host) ? `Stop hiding automatically on ${host}` : `Always hide on ${host}`;
-    });
-    const undo = el('button', { type: 'button', textContent: 'Show them again' });
-    undo.addEventListener('click', () => {
-      if (S.declutter.isActive()) toggleDeclutter();
-    });
-    append(el('div', { className: 'card ok' }, [
-      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: count ? `Hid ${count} ad${count === 1 ? '' : 's'} and distraction${count === 1 ? '' : 's'}.` : 'No ads found right now. New ones will be hidden as they load.' })]),
-      el('p', { textContent: 'The page layout stays exactly the same; only the clutter is gone.' }),
-      el('div', { className: 'card-actions' }, [undo, always]),
-    ]));
-  }
-
   // Dark mode for this site: applied by dark.js at page start; this is the switch and the tuning.
   // The switch lives in the ⋯ menu; its label says what choosing it will do.
   function updateDarkChip() {
@@ -1618,7 +1575,6 @@
     if (!chip) return;
     const action = chip.dataset.action;
     if (action === 'summarize') summarize();
-    else if (action === 'declutter') toggleDeclutter();
     else if (action === 'screenshot') takeScreenshot();
     else if (action === 'page-history') showPageHistory();
     else if (action === 'read-later') readLater();
@@ -1637,7 +1593,6 @@
   shadow.querySelector('.home-btn').addEventListener('click', showHome);
   shadow.querySelector('header [data-action="screenshot"]').addEventListener('click', takeScreenshot);
   shadow.querySelector('header [data-action="page-history"]').addEventListener('click', showPageHistory);
-  shadow.querySelector('.foot .feedback').href = S.feedbackUrl('panel');
 
   // Clicking a chip would otherwise clear the user's text selection on the page.
   els.actions.addEventListener('mousedown', (e) => e.preventDefault());
@@ -1755,13 +1710,6 @@
     applySettings();
     applySiteOptions();
     showPendingSummaries();
-    // Sites where the reader chose "Always hide": clean up once the page (and its ads) has loaded.
-    if ((settings.cleanSites || []).includes(location.hostname)) {
-      setTimeout(() => {
-        S.declutter.hideAds();
-        updateDeclutterChip();
-      }, 1200);
-    }
   });
   updateControls();
   updateDarkChip();

@@ -342,7 +342,7 @@ header {
 .cached { font-size: 12px; color: var(--fg-muted); display: flex; align-items: center; gap: 8px; }
 .cached button { border: none; background: none; color: var(--accent); padding: 0; font-size: 12px; text-decoration: underline; }
 
-.composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px 6px; border-top: 1px solid var(--border); }
+.composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--border); }
 .composer textarea {
   flex: 1; resize: none; min-height: 38px; max-height: 140px; padding: 8px 12px;
   border: 1px solid var(--border); border-radius: 12px; background: var(--bg-soft); outline: none;
@@ -355,11 +355,6 @@ header {
 .send:hover:not(:disabled) { background: var(--accent-strong); }
 .send.stop { background: var(--spark); color: #1a1205; }
 
-.foot { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px 8px; font-size: 11.5px; color: var(--fg-muted); }
-.foot .feedback { display: inline-flex; align-items: center; gap: 5px; color: var(--fg-muted); text-decoration: none; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
-.foot .feedback svg { width: 13px; height: 13px; color: var(--spark); }
-.foot .feedback:hover { color: var(--accent); background: var(--accent-soft); }
-.foot-note { opacity: 0.75; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: 0.35; } }
