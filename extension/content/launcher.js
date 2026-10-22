@@ -102,6 +102,7 @@
       if (launcher.hidden || !current) {
         Object.assign(style, { top: 'auto', bottom: '20px', left: narrow ? '12px' : 'auto', right: narrow ? '12px' : `${EDGE}px` });
         style.height = `min(${panelHeight()}px, calc(100vh - 40px))`;
+        markFreeEdges(narrow);
         return;
       }
       const gap = 12;
@@ -112,6 +113,14 @@
       style.bottom = below ? 'auto' : `${window.innerHeight - current.top + gap}px`;
       style.left = narrow ? '12px' : current.side === 'left' ? `${EDGE}px` : 'auto';
       style.right = narrow ? '12px' : current.side === 'right' ? `${EDGE}px` : 'auto';
+      markFreeEdges(narrow);
+    }
+
+    // The edges that aren't pinned (away from the screen side and from the button) can be dragged
+    // to resize the panel: data-edge-x is 'left' | 'right' | '' (none on narrow screens), data-edge-y 'top' | 'bottom'.
+    function markFreeEdges(narrow) {
+      panel.dataset.edgeX = narrow ? '' : panel.style.right !== 'auto' ? 'left' : 'right';
+      panel.dataset.edgeY = panel.style.top === 'auto' ? 'top' : 'bottom';
     }
 
     // ---------------------------------------------------------------------------

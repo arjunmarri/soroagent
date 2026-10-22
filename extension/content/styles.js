@@ -147,9 +147,29 @@ header {
   display: grid; place-items: center; color: var(--fg-muted); flex: none;
 }
 .icon-btn:hover { background: var(--bg-hover); color: var(--fg); }
-.size-btns { display: flex; flex: none; }
-.size-btn { width: 30px; font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.02em; }
-.size-btn:disabled { opacity: 0.35; cursor: default; background: transparent; }
+.panel.resizing { transition: none; user-select: none; }
+
+/* Resize handles on the panel's free edges (set by launcher.js as data-edge-x / data-edge-y) */
+.resize { position: absolute; z-index: 4; touch-action: none; outline: none; }
+.resize-x { top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+.resize-y { left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+.resize-xy { width: 16px; height: 16px; }
+.panel[data-edge-x="left"] .resize-x { left: -3px; }
+.panel[data-edge-x="right"] .resize-x { right: -3px; }
+.panel[data-edge-x=""] .resize-x, .panel[data-edge-x=""] .resize-xy { display: none; }
+.panel[data-edge-y="top"] .resize-y { top: -3px; }
+.panel[data-edge-y="bottom"] .resize-y { bottom: -3px; }
+.panel[data-edge-y="top"][data-edge-x="left"] .resize-xy { top: -3px; left: -3px; cursor: nwse-resize; }
+.panel[data-edge-y="top"][data-edge-x="right"] .resize-xy { top: -3px; right: -3px; cursor: nesw-resize; }
+.panel[data-edge-y="bottom"][data-edge-x="left"] .resize-xy { bottom: -3px; left: -3px; cursor: nesw-resize; }
+.panel[data-edge-y="bottom"][data-edge-x="right"] .resize-xy { bottom: -3px; right: -3px; cursor: nwse-resize; }
+/* A soft green line shows the edge you're about to drag */
+.resize-x::after, .resize-y::after { content: ""; position: absolute; border-radius: 2px; background: var(--brand); opacity: 0; transition: opacity .12s ease; }
+.resize-x::after { top: 30%; bottom: 30%; left: 3px; width: 2px; }
+.resize-y::after { left: 30%; right: 30%; top: 3px; height: 2px; }
+.resize:hover::after, .resize:focus-visible::after, .panel.resizing .resize::after { opacity: 0.9; }
+.resize-xy::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--spark); opacity: 0; transition: opacity .12s ease; }
+.resize-xy:hover::after, .resize-xy:focus-visible::after { opacity: 0.9; }
 .status { overflow: hidden; }
 
 /* Snippets saved from this page */

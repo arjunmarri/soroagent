@@ -76,10 +76,6 @@
           <select class="model" aria-label="Model" hidden></select>
         </div>
         <button class="icon-btn home-btn" type="button" aria-label="Home" title="Home">${ICONS.home}</button>
-        <div class="size-btns">
-          <button class="icon-btn size-btn" type="button" data-size="-1" aria-label="Make soroagent smaller" title="Smaller">--</button>
-          <button class="icon-btn size-btn" type="button" data-size="1" aria-label="Make soroagent bigger" title="Bigger">++</button>
-        </div>
         <button class="icon-btn menu-btn" type="button" aria-label="More options" aria-haspopup="menu">${ICONS.more}</button>
         <button class="icon-btn close-btn" type="button" aria-label="Close soroagent">${ICONS.close}</button>
         <div class="menu" role="menu" hidden>
@@ -195,33 +191,81 @@
     panel: els.panel,
     settings: () => state.settings,
     save: (patch) => S.saveSettings(patch),
-    panelHeight: () => PANEL_SIZES[panelSize()].height,
+    panelHeight: () => panelDims().height,
   });
 
-  // Panel size, changed with ++ / --; the same for every site.
-  const PANEL_SIZES = [
-    { width: 400, height: 600 },
-    { width: 520, height: 720 },
-    { width: 680, height: 860 },
-    { width: 880, height: 1100 },
-  ];
-  const panelSize = () => Math.max(0, Math.min(PANEL_SIZES.length - 1, Number(state.settings.panelSize) || 0));
+  // Panel size: drag its free edges (or corner) to resize; remembered for every site.
+  // Double-click a handle to go back to the default size.
+  const PANEL_DEFAULT = { width: 400, height: 600 };
+  const PANEL_MIN = { width: 320, height: 320 };
+  const panelDims = () => ({
+    width: Math.max(PANEL_MIN.width, Number(state.settings.panelWidth) || PANEL_DEFAULT.width),
+    height: Math.max(PANEL_MIN.height, Number(state.settings.panelHeight) || PANEL_DEFAULT.height),
+  });
   function applyPanelSize() {
-    const size = panelSize();
-    els.panel.style.setProperty('--panel-w', `${PANEL_SIZES[size].width}px`);
-    for (const button of shadow.querySelectorAll('.size-btn')) {
-      button.disabled = size + Number(button.dataset.size) < 0 || size + Number(button.dataset.size) >= PANEL_SIZES.length;
-    }
+    els.panel.style.setProperty('--panel-w', `${panelDims().width}px`);
     launcherCtl.placePanel();
   }
-  shadow.querySelector('.size-btns').addEventListener('click', (e) => {
-    const button = e.target.closest('.size-btn');
-    if (!button || button.disabled) return;
-    const next = Math.max(0, Math.min(PANEL_SIZES.length - 1, panelSize() + Number(button.dataset.size)));
-    state.settings = { ...state.settings, panelSize: next };
-    applyPanelSize();
-    S.saveSettings({ panelSize: next });
-  });
+
+  for (const axis of ['x', 'y', 'xy']) {
+    const handle = el('div', { className: `resize resize-${axis}`, tabIndex: 0, title: 'Drag to resize · double-click to reset' });
+    handle.setAttribute('role', 'separator');
+    handle.setAttribute('aria-label', axis === 'x' ? 'Resize width' : axis === 'y' ? 'Resize height' : 'Resize');
+    els.panel.append(handle);
+
+    let drag = null;
+    const resize = (dx, dy) => {
+      const rect = els.panel.getBoundingClientRect();
+      const { edgeX, edgeY } = els.panel.dataset;
+      // How far the panel can grow before it would leave the window.
+      const maxW = edgeX === 'left' ? rect.right - 8 : window.innerWidth - rect.left - 8;
+      const maxH = edgeY === 'top' ? rect.bottom - 8 : window.innerHeight - rect.top - 8;
+      const start = drag || { width: rect.width, height: rect.height };
+      const width = axis === 'y' || !edgeX ? start.width : Math.round(Math.min(maxW, Math.max(PANEL_MIN.width, start.width + (edgeX === 'left' ? -dx : dx))));
+      const height = axis === 'x' ? start.height : Math.round(Math.min(maxH, Math.max(PANEL_MIN.height, start.height + (edgeY === 'top' ? -dy : dy))));
+      els.panel.style.setProperty('--panel-w', `${width}px`);
+      els.panel.style.height = `${height}px`;
+      return { width, height };
+    };
+    const save = (size) => {
+      state.settings = { ...state.settings, panelWidth: size.width, panelHeight: size.height };
+      S.saveSettings({ panelWidth: size.width, panelHeight: size.height });
+    };
+
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      const rect = els.panel.getBoundingClientRect();
+      drag = { x: e.clientX, y: e.clientY, width: rect.width, height: rect.height, size: null };
+      handle.setPointerCapture(e.pointerId);
+      els.panel.classList.add('resizing');
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (drag) drag.size = resize(e.clientX - drag.x, e.clientY - drag.y);
+    });
+    const end = () => {
+      if (!drag) return;
+      const size = drag.size;
+      drag = null;
+      els.panel.classList.remove('resizing');
+      if (size) save(size);
+    };
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+    handle.addEventListener('dblclick', () => {
+      state.settings = { ...state.settings, panelWidth: PANEL_DEFAULT.width, panelHeight: PANEL_DEFAULT.height };
+      S.saveSettings({ panelWidth: PANEL_DEFAULT.width, panelHeight: PANEL_DEFAULT.height });
+      applyPanelSize();
+    });
+    // Keyboard: arrow keys resize in 24px steps.
+    handle.addEventListener('keydown', (e) => {
+      const step = { ArrowLeft: [-24, 0], ArrowRight: [24, 0], ArrowUp: [0, -24], ArrowDown: [0, 24] }[e.key];
+      if (!step) return;
+      e.preventDefault();
+      // Same as dragging the handle by one step in that direction.
+      save(resize(step[0], step[1]));
+    });
+  }
 
   const siteOptions = () => S.siteOptionValues(state.site, state.settings);
   const pageInfo = () => (state.site.pageInfo ? state.site.pageInfo(location) : { type: 'page', label: '', context: '' });

@@ -32,7 +32,8 @@
     customPrompts: {}, // system prompts written in settings: { default?: string, x?: string, … }
     autoBackup: true, // save a backup file to Downloads/soroagent/ automatically
     trackTime: true, // count time on pages for the Stats page (stored only in this browser)
-    panelSize: 0, // 0 (default) … 3 (largest), changed with the panel's ++ / -- buttons
+    panelWidth: 400, // panel size in px, set by dragging its edges
+    panelHeight: 600,
     darkSites: {}, // sites shown in dark mode: { [hostname]: { brightness, contrast, sepia } }
     readMoreLimit: 200, // feeds: "Read more" stops for good after this many posts on a page
     allowThinking: false,
