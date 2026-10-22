@@ -42,18 +42,9 @@ test('restoring never overwrites existing items and keeps the current local key'
   assert.deepEqual(Object.keys(updates).sort(), ['settings', 'snippet:b', 'summary:1']);
   assert.equal(updates['summary:1'].seen, true);
   assert.deepEqual(updates.settings, { model: 'restored', apiKey: 'k' });
-  assert.deepEqual(counts, { snippets: 1, summaries: 1, statsDays: 0, settings: true });
+  assert.deepEqual(counts, { snippets: 1, summaries: 1, settings: true });
   assert.equal(S.planRestore(backup, all, { includeSettings: false }).updates.settings, undefined);
   assert.throws(() => S.planRestore({ format: 'nope' }, all), /not a soroagent backup/);
-});
-
-test('browsing stats are backed up and restored by whole days, never overwriting', () => {
-  const day = { hosts: { 'a.com': 1000 }, pages: {} };
-  const backup = S.buildBackup({ 'stats:2026-10-21': day, 'stats:2026-10-22': day }, '2.16.0');
-  assert.deepEqual(Object.keys(backup.stats), ['2026-10-21', '2026-10-22']);
-  const { updates, counts } = S.planRestore(backup, { 'stats:2026-10-22': { hosts: { 'b.com': 5 }, pages: {} } }, { includeSettings: false });
-  assert.deepEqual(Object.keys(updates), ['stats:2026-10-21']);
-  assert.equal(counts.statsDays, 1);
 });
 
 test('only snippets, summaries and settings trigger an automatic backup', () => {
@@ -69,12 +60,19 @@ test('backup file paths become file URLs on every platform', () => {
   assert.ok(!new RegExp(S.BACKUP_FILE_PATTERN).test('/x/soroagent-backup.json/other.txt'));
 });
 
-test('the retired wish list becomes read-later pages, nothing is lost', () => {
-  const all = { meta: { schemaVersion: 2 }, 'snippet:w': { id: 'w', kind: 'wishlist', source: 'wishlist', title: 'Owl lamp', url: 'https://shop/x', price: '$19', image: 'https://img', text: '' } };
+test('retired features keep your pages and drop their own data', () => {
+  const all = {
+    meta: { schemaVersion: 2 },
+    'snippet:w': { id: 'w', kind: 'wishlist', source: 'wishlist', title: 'Owl lamp', url: 'https://shop/x', price: '$19', image: 'https://img', text: '' },
+    'snippet:r': { id: 'r', kind: 'readlater', source: 'readlater', title: 'Long read', url: 'https://a/', readAt: '2026-10-01', text: '' },
+    'stats:2026-10-20': { hosts: {}, pages: {} },
+    'xstats:dev:2026-10-20': { hosts: {}, pages: {} },
+  };
   const updates = S.planMigrations(all);
-  assert.equal(updates['snippet:w'].kind, 'readlater');
-  assert.equal(updates['snippet:w'].title, 'Owl lamp');
+  assert.equal(updates['snippet:w'].kind, 'page', 'wish list → read later → saved page');
   assert.equal(updates['snippet:w'].summary, '$19');
-  assert.equal(updates['snippet:w'].image, undefined);
-  assert.equal(updates.meta.schemaVersion, 3);
+  assert.equal(updates['snippet:r'].kind, 'page');
+  assert.equal(updates['snippet:r'].readAt, undefined);
+  assert.equal(updates.meta.schemaVersion, 4);
+  assert.deepEqual(S.planRemovals(all).sort(), ['stats:2026-10-20', 'xstats:dev:2026-10-20']);
 });

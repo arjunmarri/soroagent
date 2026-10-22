@@ -28,7 +28,7 @@ test('the Chrome service worker loads the same scripts as Firefox, in order', ()
 });
 
 test('pages only load scripts that exist', () => {
-  for (const page of ['options', 'snippets', 'history', 'stats', 'onboard']) {
+  for (const page of ['options', 'snippets', 'history', 'onboard']) {
     const html = readFileSync(join(ext, 'pages', `${page}.html`), 'utf8');
     for (const [, src] of html.matchAll(/<script src="([^"]+)"/g)) {
       assert.ok(existsSync(join(ext, 'pages', src)), `${page}.html -> ${src}`);
@@ -46,12 +46,6 @@ test('content scripts load the site registry before the site profiles and the as
   assert.ok(js.includes('prompts/x.js'), 'site prompt files are loaded');
   assert.ok(!js.some((f) => f.includes('_template')), 'templates are not loaded');
   assert.equal(js.at(-1), 'content/assistant.js');
-});
-
-test('dark mode loads on its own at document_start so pages never flash white', () => {
-  const dark = manifest.content_scripts.find((script) => script.js.includes('content/dark.js'));
-  assert.equal(dark.run_at, 'document_start');
-  assert.deepEqual(dark.js, ['content/dark.js']);
 });
 
 test('pages that build prompts load every prompt file', () => {

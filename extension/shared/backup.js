@@ -6,9 +6,10 @@
   'use strict';
 
   const soroagent = (root.soroagent = root.soroagent || {});
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 4;
   const FORMAT = 'soroagent-backup';
-  const DATA_PREFIXES = ['snippet:', 'summary:', 'stats:'];
+  // Data from retired features, deleted on upgrade: browsing-time stats (this browser's and synced).
+  const RETIRED_PREFIXES = ['stats:', 'xstats:'];
   // The automatic backup, relative to the browser's Downloads folder (overwritten each time).
   const BACKUP_FILE = 'soroagent/soroagent-backup.json';
   const BACKUP_FILE_PATTERN = 'soroagent-backup[^/\\\\]*\\.json$';
@@ -36,7 +37,21 @@
       }
       return updates;
     },
+    // v4: "Read later" was retired; those pages become ordinary saved pages (nothing is lost).
+    4: (all) => {
+      const updates = {};
+      for (const [key, value] of Object.entries(all)) {
+        if (key.startsWith('snippet:') && value && value.kind === 'readlater') {
+          const { readAt, ...rest } = value;
+          updates[key] = { ...rest, kind: 'page', source: 'page' };
+        }
+      }
+      return updates;
+    },
   };
+
+  /** Pure: keys of retired features to delete. */
+  const planRemovals = (all) => Object.keys(all).filter((k) => RETIRED_PREFIXES.some((p) => k.startsWith(p)));
 
   /** Pure: the storage updates needed to bring `all` (a storage dump) to the current schema. */
   function planMigrations(all) {
@@ -55,12 +70,15 @@
   }
 
   async function migrate(storage) {
-    const updates = planMigrations(await storage.get(null));
+    const all = await storage.get(null);
+    const updates = planMigrations(all);
+    const removals = planRemovals(all);
     if (Object.keys(updates).length) await storage.set(updates);
-    return Object.keys(updates).length;
+    if (removals.length) await storage.remove(removals);
+    return Object.keys(updates).length + removals.length;
   }
 
-  /** True when storage changes touch data worth backing up (stats alone don't trigger a backup). */
+  /** True when storage changes touch data worth backing up. */
   function isBackupWorthy(changes) {
     return Object.keys(changes).some((k) => k === 'settings' || k.startsWith('snippet:') || k.startsWith('summary:'));
   }
@@ -84,7 +102,6 @@
       settings,
       snippets: pick('snippet:'),
       summaries: pick('summary:').filter((s) => s.status !== 'running'),
-      stats: Object.fromEntries(Object.keys(all).filter((k) => k.startsWith('stats:')).map((k) => [k.slice(6), all[k]])),
     };
   }
 
@@ -95,7 +112,7 @@
   function planRestore(backup, all, { includeSettings = true } = {}) {
     if (!backup || backup.format !== FORMAT) throw new Error('This file is not a soroagent backup.');
     const updates = {};
-    const counts = { snippets: 0, summaries: 0, statsDays: 0, settings: false };
+    const counts = { snippets: 0, summaries: 0, settings: false };
     for (const snippet of backup.snippets || []) {
       if (snippet && snippet.id && typeof snippet.text === 'string' && !all[`snippet:${snippet.id}`]) {
         updates[`snippet:${snippet.id}`] = snippet;
@@ -108,13 +125,6 @@
         counts.summaries++;
       }
     }
-    // Browsing stats: whole days that aren't here yet.
-    for (const [day, record] of Object.entries(backup.stats || {})) {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(day) && record && record.hosts && !all[`stats:${day}`]) {
-        updates[`stats:${day}`] = record;
-        counts.statsDays++;
-      }
-    }
     if (includeSettings && backup.settings) {
       updates.settings = { ...(all.settings || {}), ...backup.settings, apiKey: (all.settings || {}).apiKey || '' };
       counts.settings = true;
@@ -122,5 +132,5 @@
     return { updates, counts };
   }
 
-  Object.assign(soroagent, { SCHEMA_VERSION, DATA_PREFIXES, BACKUP_FILE, BACKUP_FILE_PATTERN, isBackupWorthy, fileUrl, planMigrations, migrate, buildBackup, planRestore });
+  Object.assign(soroagent, { SCHEMA_VERSION, BACKUP_FILE, BACKUP_FILE_PATTERN, isBackupWorthy, fileUrl, planMigrations, planRemovals, migrate, buildBackup, planRestore });
 })(globalThis);

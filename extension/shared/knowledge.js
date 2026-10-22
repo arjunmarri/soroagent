@@ -7,7 +7,7 @@
   const soroagent = (root.soroagent = root.soroagent || {});
 
   // Notes worth searching: everything except screenshots (pictures, no text).
-  const SEARCHABLE = new Set(['summary', 'research', 'readlater', 'selection', 'page', 'deliverable', 'read']);
+  const SEARCHABLE = new Set(['summary', 'research', 'selection', 'page', 'deliverable', 'read']);
   const kindOf = (s) => s.kind || (s.source === 'selection' ? 'selection' : s.source === 'summary' ? 'summary' : 'page');
 
   const STOP = new Set(('a about above after again against all also am an and any are as at be because been before being below between both but by can could did do does doing down during each few for from further had has have having he her here hers him his how i if in into is it its itself just me more most my no nor not now of off on once only or other our out over own same she should so some such than that the their them then there these they this those through to too under until up very was we were what when where which while who whom why will with would you your yours yourself '
@@ -128,7 +128,7 @@
     notes.forEach((n, i) => {
       if (used >= total) return;
       const kind = kindOf(n);
-      const label = kind === 'readlater' ? (n.readAt ? 'saved to read later, read' : 'saved to read later, NOT read yet') : kind === 'read' ? `read for ${Math.max(1, Math.round((n.readSeconds || 60) / 60))} min` : kind;
+      const label = kind === 'read' ? `read for ${Math.max(1, Math.round((n.readSeconds || 60) / 60))} min` : kind === 'page' ? 'saved page' : kind;
       const body = soroagent.stripThinking ? soroagent.stripThinking(n.text || '') : String(n.text || '');
       const research = n.research && n.research.text ? `\nResearch on it: ${String(n.research.text).slice(0, 600)}` : '';
       const text = `${n.summary ? `${n.summary}\n` : ''}${body}${research}`.replace(/\n{3,}/g, '\n\n').trim().slice(0, Math.min(perNote, total - used));

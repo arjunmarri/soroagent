@@ -51,9 +51,6 @@
     .related-notes small { color: var(--fg-muted); }
     .kind.read { background: var(--accent-soft); color: var(--accent); }
     .kind.deliverable { background: var(--spark-soft); color: var(--spark-fg); }
-    .kind.readlater { background: var(--spark-soft); color: var(--spark-fg); }
-    .is-read { color: var(--fg-muted); }
-    .card.read .card-title { color: var(--fg-muted); font-weight: 550; }
 
     /* Research: pick a topic first */
     .topics { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
@@ -113,7 +110,7 @@
 <main>
   <header>
     <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Snippets <span class="muted" id="count"></span></span></div>
-    <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="stats.html">Stats</a><a class="btn small" href="options.html">Settings</a></div>
+    <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="options.html">Settings</a></div>
   </header>
   <p class="library-line" id="libraryLine"></p>
   <div class="toolbar">
@@ -130,7 +127,6 @@
       <button type="button" data-kind="research" aria-pressed="false">Research</button>
     </div>
     <div class="segmented" role="group" aria-label="Sections">
-      <button type="button" data-kind="readlater" aria-pressed="false">Read later <span id="laterCount"></span></button>
       <button type="button" data-kind="screenshot" aria-pressed="false">Screenshots <span id="shotCount"></span></button>
     </div>
     <details class="more">
@@ -150,7 +146,7 @@
     <article class="reader" id="reader" aria-live="polite"><div class="reader-empty">Select a snippet to read it here.</div></article>
   </div>
 </main>
-<footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a> · <a class="feedback-link" href="https://soroagent.com/feedback" target="_blank" rel="noopener">Share feedback</a></footer>
+<footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroagent.com" target="_blank" rel="noopener">soroagent.com</a> · <a class="feedback-link" href="https://soroagent.com/feedback" target="_blank" rel="noopener">Share feedback</a></footer>
 <script src="../shared/config.js"></script>
 <script src="../shared/markdown.js"></script>
 <script src="../shared/prompts.js"></script>

@@ -1,4 +1,4 @@
-// Automatic backup: soroagent's data (snippets, summary history, stats, settings; never API keys)
+// Automatic backup: soroagent's data (snippets, summary history and settings; never API keys)
 // is saved as a JSON file in the Downloads folder, overwriting the previous one, a couple of
 // minutes after it changes (at most every 30 minutes) and on browser start if it's been a day.
 // After a fresh install, the browser's download history tells us where that file is, so the

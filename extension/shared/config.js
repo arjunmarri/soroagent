@@ -36,11 +36,8 @@
     semanticSearch: true, // search the library by meaning when an embedding model is available
     autoBackup: true, // save a backup file to Downloads/soroagent/ automatically
     onboarded: false, // set once the first-run setup connects (or for installs from before it existed)
-    trackTime: true, // count time on pages for the Stats page (stored only in this browser)
     panelWidth: 400, // panel size in px, set by dragging its edges
     panelHeight: 600,
-    darkSites: {}, // sites shown in dark mode: { [hostname]: { brightness, contrast, sepia } }
-    readMoreLimit: 200, // feeds: "Read more" stops for good after this many posts on a page
     allowThinking: false,
     showLauncher: true,
     launcherPosition: 'auto', // 'auto' | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
@@ -236,7 +233,6 @@
   Object.assign(soroagent, {
     safeUrl,
     ext,
-    FEEDBACK_URL: feedbackBase(),
     feedbackUrl,
     DEFAULT_SETTINGS,
     PROVIDER_PRESETS,

@@ -8,7 +8,7 @@ const day = (d) => `2026-10-${String(d).padStart(2, '0')}T10:00:00.000Z`;
 const NOTES = [
   { id: 'a1', kind: 'summary', title: 'How AI agents use tools', summary: 'Agents call tools in a loop with planning and memory.', tags: ['ai-agents', 'llm'], text: 'AI agents plan, call tools, observe results and keep memory. Tool use and planning loops matter.', url: 'https://blog.example/agents-tools', createdAt: day(20) },
   { id: 'a2', kind: 'summary', title: 'Multi-agent systems: when do agents beat a single model?', summary: 'Multi-agent setups help for parallel research but cost more tokens.', tags: ['ai-agents'], text: 'Agents coordinating via an orchestrator. Evaluation of agent reliability and planning.', url: 'https://news.example/multi-agent', createdAt: day(15) },
-  { id: 'a3', kind: 'readlater', title: 'Agent memory architectures', summary: 'Long-term memory for LLM agents.', tags: [], text: '', url: 'https://papers.example/agent-memory', createdAt: day(2) },
+  { id: 'a3', kind: 'page', title: 'Agent memory architectures', summary: 'Long-term memory for LLM agents.', tags: [], text: '', url: 'https://papers.example/agent-memory', createdAt: day(2) },
   { id: 'b1', kind: 'summary', title: 'Sourdough starter basics', summary: 'Feed the starter flour and water daily.', tags: ['baking'], text: 'Hydration, flour, fermentation and oven spring.', url: 'https://food.example/sourdough', createdAt: day(18) },
   { id: 'b2', kind: 'summary', title: 'Marathon training plan', summary: 'Long runs, tempo runs and tapering.', tags: ['running'], text: 'Weekly mileage, recovery and race pace.', url: 'https://run.example/plan', createdAt: day(10) },
   { id: 's1', kind: 'screenshot', title: 'AI agents screenshot', url: 'https://x.example', createdAt: day(1), image: 'data:' },
@@ -38,10 +38,10 @@ test('the page you are on is never "related" to itself, and time ranges apply', 
   assert.deepEqual(recent.map((h) => h.note.id).sort(), ['a1', 'a2'], 'the Oct 2 note is outside "since Oct 14"');
 });
 
-test('notes are numbered for citation with date, site and whether they were read', () => {
+test('notes are numbered for citation with date, site and kind', () => {
   const block = S.formatNotes([NOTES[0], NOTES[2]]);
   assert.match(block, /^\[S1\] How AI agents use tools \(saved 2026-10-20, blog\.example, summary\)/);
-  assert.match(block, /\[S2\] Agent memory architectures \(saved 2026-10-02, papers\.example, saved to read later, NOT read yet\)/);
+  assert.match(block, /\[S2\] Agent memory architectures \(saved 2026-10-02, papers\.example, saved page\)/);
   assert.match(S.formatNotes([NOTES[0]], { prefix: 'N' }), /^\[N1\]/);
   assert.ok(S.formatNotes(NOTES.slice(0, 5), { total: 300 }).length < 600, 'long note sets are capped');
 });

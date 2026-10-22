@@ -237,13 +237,7 @@
   const announceKeysChanged = () => ext.storage.local.set({ keysVersion: Date.now() });
 
   const S = globalThis.soroagent;
-  let statsQueue = Promise.resolve();
   let labelQueue = Promise.resolve();
-  // Browsing time is kept for STATS_KEEP_DAYS days.
-  ext.storage.local.get(null).then((all) => {
-    const old = S.expiredStatsKeys(Object.keys(all));
-    if (old.length) return ext.storage.local.remove(old);
-  }).catch(() => {});
 
   // ---------------------------------------------------------------------------
   // The library index: semantic + keyword search over everything saved (library.js)
@@ -304,6 +298,21 @@
     }
   });
 
+  // ---------------------------------------------------------------------------
+  // Markdown folder sync (mdexport.js): Obsidian/Logseq-ready .md files in a folder on disk
+  // ---------------------------------------------------------------------------
+
+  const markdown = S.createMarkdownExport({ ext });
+  let markdownTimer = 0;
+  const exportSoon = (delay = 5000) => {
+    clearTimeout(markdownTimer);
+    markdownTimer = setTimeout(() => markdown.exportNow().catch(() => {}), delay);
+  };
+  markdown.getConfig().then((cfg) => cfg && exportSoon(6000)).catch(() => {});
+  ext.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && Object.keys(changes).some((k) => k.startsWith('snippet:'))) markdown.getConfig().then((cfg) => cfg && exportSoon()).catch(() => {});
+  });
+
   const handlers = {
     // Only extension pages may test unsaved values: overrides can redirect a key to another URL.
     'llm:status': (msg, sender) => getStatus(fromExtensionPage(sender) ? msg.overrides || {} : {}),
@@ -362,10 +371,6 @@
       requireExtensionPage(sender);
       return { ok: true, state: await S.backupNow() };
     },
-    'backup:find': async (msg, sender) => {
-      requireExtensionPage(sender);
-      return { ok: true, file: await S.findBackupFile() };
-    },
     'backup:show': async (msg, sender) => {
       requireExtensionPage(sender);
       const state = (await ext.storage.local.get('backupState')).backupState;
@@ -385,14 +390,14 @@
       embedTarget = { at: 0, value: null };
       return { ok: true, ...(await library.indexNow()) };
     },
-    // Passive capture: the AI adds a title, summary and tags to a captured page, reusing the
+    // Saved and captured pages: the AI adds a title, summary and tags, reusing the
     // library's tags. One at a time, so a burst of reading doesn't flood the model.
     'capture:label': (msg, sender) => {
       if (!sender.tab || fromExtensionPage(sender) || !Array.isArray(msg.messages)) return { ok: true };
       labelQueue = labelQueue.then(async () => {
         const key = `snippet:${msg.id}`;
         const note = (await ext.storage.local.get(key))[key];
-        if (!note || note.kind !== 'read' || note.labeled) return;
+        if (!note || !['read', 'page'].includes(note.kind) || note.labeled) return;
         const vocabulary = S.tagVocabulary(await S.listSnippets(), 40);
         const messages = msg.messages.slice(0, 3).map((m) => ({ role: m.role === 'system' ? 'system' : 'user', content: String(m.content).slice(0, 12000) }));
         if (vocabulary.length) messages[messages.length - 1].content += `\n\nTags already in the user's library: ${vocabulary.map((v) => v.tag).join(', ')}.\nReuse these tags whenever they fit; add a new tag only for a genuinely new topic.`;
@@ -401,6 +406,22 @@
         await S.updateSnippet(note.id, { title: meta.title || note.title, summary: meta.summary || note.summary, tags: S.canonicalTags(meta.tags, vocabulary), labeled: true });
       }).catch((err) => console.warn('[soroagent] Could not label a captured page:', err));
       return { ok: true };
+    },
+    'md:status': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, ...(await markdown.status()) };
+    },
+    'md:enable': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, ...(await markdown.enable({ mode: msg.mode === 'downloads' ? 'downloads' : 'folder', folderName: String(msg.folderName || '').slice(0, 120) })) };
+    },
+    'md:now': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return { ok: true, ...(await markdown.exportNow()) };
+    },
+    'md:disable': async (msg, sender) => {
+      requireExtensionPage(sender);
+      return markdown.disable();
     },
     'sync:status': async (msg, sender) => {
       requireExtensionPage(sender);
@@ -420,23 +441,6 @@
       requireExtensionPage(sender);
       ext.alarms.clear(SYNC_ALARM);
       return sync.disconnect();
-    },
-    'open:stats': () => ext.tabs.create({ url: ext.runtime.getURL('pages/stats.html') }),
-    // Time on a page, from content/timetrack.js. Writes are queued so reports never overwrite each other.
-    'stats:add': (msg, sender) => {
-      if (!sender.tab || fromExtensionPage(sender) || !/^https?:/.test(String(msg.url || ''))) return { ok: true };
-      const key = `${S.STATS_PREFIX}${S.statsDayKey()}`;
-      statsQueue = statsQueue.then(async () => {
-        const day = (await ext.storage.local.get(key))[key];
-        await ext.storage.local.set({ [key]: S.addTime(day, msg) });
-      }).catch((err) => console.warn('[soroagent] Could not save browsing time:', err));
-      return { ok: true };
-    },
-    'stats:clear': async (msg, sender) => {
-      requireExtensionPage(sender);
-      const keys = Object.keys(await ext.storage.local.get(null)).filter((k) => k.startsWith(S.STATS_PREFIX) || k.startsWith('xstats:'));
-      await ext.storage.local.remove(keys);
-      return { ok: true, removed: keys.length };
     },
     'open:history': () => ext.tabs.create({ url: ext.runtime.getURL('pages/history.html') }),
     'summary:find': async (msg) => ({ ok: true, record: await jobs.find(msg.url, msg.fingerprint) }),
@@ -493,7 +497,6 @@
     { id: 'soroagent-open-history', title: 'Summary history', open: () => handlers['open:history']() },
     { id: 'soroagent-open-snippets', title: 'Saved snippets', open: () => handlers['open:snippets']({}) },
     { id: 'soroagent-open-notes', title: 'Ask your library', open: () => handlers['open:notes']({}) },
-    { id: 'soroagent-open-stats', title: 'Browsing stats', open: () => handlers['open:stats']() },
     { id: 'soroagent-feedback', title: 'Send feedback', open: () => ext.tabs.create({ url: S.feedbackUrl('toolbar') }) },
     { id: 'soroagent-open-settings', title: 'Settings', open: () => ext.runtime.openOptionsPage() },
   ];

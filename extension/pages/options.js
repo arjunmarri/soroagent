@@ -5,8 +5,8 @@
   const { ext, DEFAULT_SETTINGS, PROVIDER_PRESETS, CLOUD_PROVIDERS } = S;
   const $ = (id) => document.getElementById(id);
   const TEXT_FIELDS = ['baseUrl', 'provider', 'apiKey', 'launcherPosition', 'cloudProvider', 'customBaseUrl', 'researchEngine', 'searxUrl', 'autoCapture'];
-  const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'readMoreLimit', 'captureMinSeconds'];
-  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'trackTime', 'autoBackup', 'captureLabel', 'semanticSearch'];
+  const NUMBER_FIELDS = ['temperature', 'contextWindow', 'maxPageChars', 'captureMinSeconds'];
+  const CHECK_FIELDS = ['allowThinking', 'showLauncher', 'autoBackup', 'captureLabel', 'semanticSearch'];
 
   let saved = { ...DEFAULT_SETTINGS }; // last saved settings, for fields this page doesn't show
   let hiddenSites = [];
@@ -175,6 +175,60 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     }
   }
   // ---------------------------------------------------------------------------
+  // Markdown folder (Obsidian, Logseq): Chrome-family browsers write to a folder you pick;
+  // Firefox writes to Downloads/soroagent/notes/.
+  // ---------------------------------------------------------------------------
+
+  const canPickFolder = typeof window.showDirectoryPicker === 'function';
+  if (!canPickFolder) $('mdChoose').textContent = 'Write to Downloads/soroagent/notes';
+  async function showMarkdown() {
+    const st = await ext.runtime.sendMessage({ type: 'md:status' }).catch(() => null);
+    const cfg = st && st.config;
+    $('mdOff').hidden = Boolean(cfg);
+    $('mdOn').hidden = !cfg;
+    if (!cfg) return;
+    const where = cfg.mode === 'downloads' ? `Downloads/${S.MARKDOWN_DOWNLOADS_FOLDER}` : `the “${cfg.folderName || 'chosen'}” folder`;
+    $('mdAllow').hidden = st.code !== 'permission';
+    $('mdInfo').textContent = st.error
+      ? `Writing to ${where}: ${st.error}`
+      : `Writing to ${where} · ${st.files || 0} notes${st.lastExport ? ` · updated ${ago(st.lastExport)}` : ''}${st.skipped ? ` · ${st.skipped} edited in the folder, left as they are` : ''}`;
+  }
+  $('mdChoose').addEventListener('click', async () => {
+    try {
+      if (canPickFolder) {
+        const dir = await window.showDirectoryPicker({ id: 'soroagent-notes', mode: 'readwrite' });
+        if ((await dir.requestPermission({ mode: 'readwrite' })) !== 'granted') throw new Error('Permission to write to the folder was not given.');
+        await S.markdownHandleStore().set(dir);
+        $('mdMsg').textContent = 'Writing your notes…';
+        const res = await ext.runtime.sendMessage({ type: 'md:enable', mode: 'folder', folderName: dir.name });
+        if (res && res.ok === false) throw new Error(res.error);
+      } else {
+        $('mdMsg').textContent = 'Writing your notes…';
+        const res = await ext.runtime.sendMessage({ type: 'md:enable', mode: 'downloads' });
+        if (res && res.ok === false) throw new Error(res.error);
+      }
+      $('mdMsg').textContent = '';
+    } catch (err) {
+      if (err.name !== 'AbortError') $('mdMsg').textContent = `Couldn't set up the folder: ${err.message}`;
+    }
+    showMarkdown();
+  });
+  $('mdAllow').addEventListener('click', async () => {
+    const dir = await S.markdownHandleStore().get();
+    if (dir && (await dir.requestPermission({ mode: 'readwrite' })) === 'granted') await ext.runtime.sendMessage({ type: 'md:now' }).catch(() => {});
+    showMarkdown();
+  });
+  $('mdNow').addEventListener('click', async () => {
+    $('mdInfo').textContent = 'Writing…';
+    await ext.runtime.sendMessage({ type: 'md:now' }).catch(() => {});
+    showMarkdown();
+  });
+  $('mdStop').addEventListener('click', async () => {
+    await ext.runtime.sendMessage({ type: 'md:disable' });
+    showMarkdown();
+  });
+
+  // ---------------------------------------------------------------------------
   // Sync across browsers
   // ---------------------------------------------------------------------------
 
@@ -236,6 +290,7 @@ Rewrite it to get better results on this website. Keep the intent and every rule
   });
   showSyncFields();
   showSync();
+  showMarkdown();
 
   $('reindex').addEventListener('click', async () => {
     $('libraryStatus').textContent = 'Indexing…';
@@ -457,7 +512,6 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     await S.migrate(ext.storage.local);
     if (counts.settings) fillForm(await S.getSettings());
     const parts = [`${counts.snippets} snippet${counts.snippets === 1 ? '' : 's'}`, `${counts.summaries} summar${counts.summaries === 1 ? 'y' : 'ies'}`];
-    if (counts.statsDays) parts.push(`${counts.statsDays} day${counts.statsDays === 1 ? '' : 's'} of stats`);
     return `Restored ${parts.join(', ')}${counts.settings ? ' and your settings' : ''}. Anything you already had was kept.`;
   }
 
@@ -514,7 +568,7 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     if (!offer) return;
     $('restoreOffer').hidden = false;
     const name = offer.path.split(/[\\/]/).slice(-2).join('/');
-    $('restoreOfferText').textContent = `A backup from ${when(offer.at)} is in your Downloads folder (${name}). Restore your snippets, history, stats and settings in one click.`;
+    $('restoreOfferText').textContent = `A backup from ${when(offer.at)} is in your Downloads folder (${name}). Restore your snippets, history and settings in one click.`;
     $('restoreOfferGo').onclick = async () => {
       $('restoreOfferHint').hidden = false;
       $('restoreOfferHint').textContent = 'Restoring… If a file picker opens, choose soroagent-backup.json in Downloads/soroagent.';

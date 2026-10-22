@@ -3,8 +3,7 @@
 // has no servers, so the shared copy lives in the user's own storage (a WebDAV folder or a private
 // GitHub Gist), end-to-end encrypted with their passphrase (PBKDF2 → AES-GCM) before it leaves the
 // browser. Notes and history merge item by item (newest wins; deletions carry over); preferences
-// sync but each browser keeps its own AI connection and keys; stats add up across browsers;
-// screenshots stay local (too big). The merge and crypto are pure/portable and unit tested.
+// sync but each browser keeps its own AI connection and keys; screenshots stay local (too big). The merge and crypto are pure/portable and unit tested.
 (function (root) {
   'use strict';
 
@@ -33,10 +32,9 @@
    * shared document.
    */
   function mergeSync(local, remote, { deviceId, deviceName = '', knownKeys = [], settingsTime = 0, now = Date.now() }) {
-    const doc = remote && remote.format === FORMAT ? JSON.parse(JSON.stringify(remote)) : { format: FORMAT, v: 1, items: {}, tombstones: {}, settings: null, stats: {}, devices: {} };
+    const doc = remote && remote.format === FORMAT ? JSON.parse(JSON.stringify(remote)) : { format: FORMAT, v: 1, items: {}, tombstones: {}, settings: null, devices: {} };
     doc.items = doc.items || {};
     doc.tombstones = doc.tombstones || {};
-    doc.stats = doc.stats || {};
     doc.devices = doc.devices || {};
     const updates = {};
     const removals = [];
@@ -71,16 +69,6 @@
     else if ((doc.settings._t || 0) > settingsTime) {
       const { _t, ...shared } = doc.settings;
       updates.settings = { ...localSettings, ...syncableSettings(shared), updatedAt: _t };
-    }
-
-    // Stats: each browser publishes its own days; others are kept here as "xstats:<device>:<day>".
-    doc.stats[deviceId] = Object.fromEntries(Object.keys(local).filter((k) => k.startsWith('stats:')).map((k) => [k.slice(6), local[k]]));
-    for (const [device, days] of Object.entries(doc.stats)) {
-      if (device === deviceId) continue;
-      for (const [day, record] of Object.entries(days || {})) {
-        const key = `xstats:${device}:${day}`;
-        if (JSON.stringify(local[key]) !== JSON.stringify(record)) updates[key] = record;
-      }
     }
 
     // Old tombstones are forgotten.
@@ -218,7 +206,7 @@
 
   /** Pure: whether two shared documents differ in content (not just in sync timestamps). */
   function docChanged(before, after) {
-    const strip = (d) => (d ? { items: d.items, tombstones: d.tombstones, settings: d.settings, stats: d.stats, devices: Object.keys(d.devices || {}).sort() } : null);
+    const strip = (d) => (d ? { items: d.items, tombstones: d.tombstones, settings: d.settings, devices: Object.keys(d.devices || {}).sort() } : null);
     return JSON.stringify(strip(before)) !== JSON.stringify(strip(after));
   }
 
@@ -351,7 +339,6 @@
   Object.assign(soroagent, {
     createSync,
     docChanged,
-    SYNC_FILE_NAME: FILE_NAME,
     isSyncedKey,
     syncableSettings,
     mergeSync,

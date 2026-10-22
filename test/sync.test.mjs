@@ -64,14 +64,6 @@ test('preferences sync, but each browser keeps its own AI connection', () => {
   assert.deepEqual(res.updates.settings.darkSites, { 'a.com': {} }, 'shared preference arrives');
 });
 
-test('stats from other browsers arrive separately, so they add up', () => {
-  const day = { hosts: { 'a.com': 1000 }, pages: {} };
-  const doc = S.mergeSync({ 'stats:2026-10-22': day }, null, { deviceId: 'A' }).doc;
-  const res = S.mergeSync({ 'stats:2026-10-22': { hosts: { 'b.com': 5 }, pages: {} } }, doc, { deviceId: 'B' });
-  assert.deepEqual(res.updates['xstats:A:2026-10-22'], day);
-  assert.equal(res.updates['stats:2026-10-22'], undefined, "B's own stats are untouched");
-});
-
 test('the shared copy is encrypted; a wrong passphrase cannot read it', async () => {
   const salt = S.newSyncSalt();
   const key = await S.deriveSyncKey('correct horse battery', salt);

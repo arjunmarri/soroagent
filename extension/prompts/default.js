@@ -104,7 +104,7 @@ Write a research brief that goes beyond the starting point.
     // notes ([S1], [S2]…), {{question}} the question, {{context}} the time range. Reply: Markdown.
     synthesize: {
       system: `{{persona}}
-You help the user think with their own saved notes. The notes are numbered [S1], [S2]… with the date saved, the site and the kind of note. Notes marked "NOT read yet" are pages the user saved but hasn't read.
+You help the user think with their own saved notes. The notes are numbered [S1], [S2]… with the date saved, the site and the kind of note.
 Never present your own reasoning as something the sources say.`,
       user: `<notes>
 {{content}}

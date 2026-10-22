@@ -14,7 +14,7 @@
 
   const svg = (body, fill = 'none') =>
     `<svg viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
-  // The soroagent owl: a monochrome outline — always there, quietly watching.
+  // The soroagent owl (shared/brand.js).
   // The soroagent owl (extension/shared/brand.js). No baked-in background: the button's
   // background follows the browser's light or dark theme.
   const OWL = S.BRAND.owlSvg({ frame: 'circle', background: false });
@@ -27,7 +27,6 @@
     history: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
     chat: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'),
     home: svg('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'),
-    moon: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
     camera: svg('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
     research: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8 11h6M11 8v6"/>'),
     send: svg('<path d="M12 19V5M5 12l7-7 7 7"/>'),
@@ -82,19 +81,17 @@
           <button type="button" role="menuitem" data-cmd="history">Summary history</button>
           <button type="button" role="menuitem" data-cmd="notes">Ask your library</button>
           <button type="button" role="menuitem" data-cmd="snippets">Saved snippets</button>
-          <button type="button" role="menuitem" data-cmd="stats">Browsing stats</button>
           <button type="button" role="menuitem" data-cmd="clear">Clear conversation</button>
           <button type="button" role="menuitem" data-cmd="reset-position" hidden>Reset button position</button>
           <button type="button" role="menuitem" data-cmd="hide-site">Hide button on this site</button>
           <button type="button" role="menuitem" data-cmd="feedback">Send feedback</button>
-          <button type="button" role="menuitem" data-cmd="dark">Dark mode for this site</button>
           <button type="button" role="menuitem" data-cmd="settings" data-model-item hidden>Change model</button>
           <button type="button" role="menuitem" data-cmd="settings">Settings</button>
         </div>
       </header>
       <div class="actions">
         <button class="chip" type="button" data-action="summarize" title="A short summary of this page">${ICONS.summarize}<span>Summarize</span></button>
-        <button class="chip" type="button" data-action="read-later" title="Save this page to read later">${ICONS.save}<span>Save</span></button>
+        <button class="chip" type="button" data-action="save" title="Save this page to your library">${ICONS.save}<span>Save</span></button>
       </div>
       <div class="site-bar" hidden><span class="site-label"></span></div>
       <div class="related" hidden></div>
@@ -159,7 +156,6 @@
     }
   }
   adoptStyles(document, S.PAGE_CSS);
-  S.dark.markHost(); // flip our own UI back if dark mode is already on
 
   // ---------------------------------------------------------------------------
   // State
@@ -985,80 +981,6 @@
     });
   }
 
-  // Dark mode for this site: applied by dark.js at page start; this is the switch and the tuning.
-  // The switch lives in the ⋯ menu; its label says what choosing it will do.
-  function updateDarkChip() {
-    els.menu.querySelector('[data-cmd="dark"]').textContent = S.dark.isOn() ? 'Light mode for this site' : 'Dark mode for this site';
-  }
-
-  let darkSave = 0;
-  function saveDark(options) {
-    clearTimeout(darkSave);
-    darkSave = setTimeout(async () => {
-      const sites = { ...((await S.getSettings()).darkSites || {}) };
-      if (options) sites[location.hostname] = options;
-      else delete sites[location.hostname];
-      await S.saveSettings({ darkSites: sites });
-    }, options ? 250 : 0);
-  }
-
-  function darkCard() {
-    const host = location.hostname;
-    const sliders = el('div', { className: 'sliders' });
-    const inputs = {};
-    const rows = [
-      ['brightness', 'Brightness', 50, 150, '%'],
-      ['contrast', 'Contrast', 50, 150, '%'],
-      ['sepia', 'Sepia (warmer)', 0, 100, '%'],
-    ];
-    const current = S.dark.options();
-    for (const [key, label, min, max, unit] of rows) {
-      const value = el('output', { textContent: `${current[key]}${unit}` });
-      const input = el('input', { type: 'range', min: String(min), max: String(max), step: '5', value: String(current[key]) });
-      input.setAttribute('aria-label', label);
-      input.addEventListener('input', () => {
-        value.textContent = `${input.value}${unit}`;
-        const options = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, Number(i.value)]));
-        S.dark.apply(options); // live in this tab; saved for the site a moment later
-        saveDark(options);
-      });
-      inputs[key] = input;
-      sliders.append(el('label', {}, [el('span', { textContent: label }), input, value]));
-    }
-    const reset = el('button', { type: 'button', textContent: 'Reset' });
-    reset.addEventListener('click', () => {
-      for (const [key, input] of Object.entries(inputs)) {
-        input.value = String(S.DARK_DEFAULTS[key]);
-        input.dispatchEvent(new Event('input'));
-      }
-    });
-    const off = el('button', { type: 'button', textContent: 'Turn off' });
-    off.addEventListener('click', () => {
-      if (S.dark.isOn()) toggleDark();
-    });
-    return el('div', { className: 'card ok dark-card' }, [
-      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: `Dark mode is on for ${host}` })]),
-      el('p', { textContent: 'Photos and videos keep their colours. It stays on for this site until you turn it off.' }),
-      sliders,
-      el('div', { className: 'card-actions' }, [reset, off]),
-    ]);
-  }
-
-  function toggleDark() {
-    if (S.dark.isOn()) {
-      S.dark.apply(null);
-      saveDark(null);
-      els.thread.querySelectorAll('.dark-card').forEach((n) => n.remove());
-      append(card({ title: `Dark mode is off for ${location.hostname}.` }));
-      return;
-    }
-    const saved = (state.settings.darkSites || {})[location.hostname];
-    const options = S.normalizeDark(saved || S.DARK_DEFAULTS);
-    S.dark.apply(options);
-    saveDark(options);
-    append(darkCard());
-  }
-  S.dark.onChange(() => updateDarkChip());
 
   // Home: the opening screen ("How can I help with this page?"). The conversation stays and comes
   // back with "Back to the conversation" or the next message.
@@ -1075,12 +997,10 @@
 
 
 
-  // Passive capture saved this page: the owl hops, and says so on hover.
+  // Passive capture saved this page: the owl says so on hover.
   S.onCaptured = () => {
-    els.launcher.classList.add('landing');
     const title = els.launcher.title;
     els.launcher.title = 'Saved to your library: you read this page.';
-    setTimeout(() => els.launcher.classList.remove('landing'), 600);
     setTimeout(() => (els.launcher.title = title), 8000);
   };
 
@@ -1154,13 +1074,14 @@
     bar.replaceChildren(...nodes);
   }
 
-  // Read later: keep this page in the Read later list (once per page).
-  async function readLater() {
-    const done = (title, body) => append(card({ kind: 'ok', icon: 'save', title, body, actions: [{ label: 'Open Read later', onClick: () => sendMessage({ type: 'open:snippets', view: 'readlater' }) }] }));
+  // Save: the page itself goes into the library as a snippet (once per page), with its text for
+  // search and a short excerpt; the AI adds a title, summary and tags when a model is connected.
+  async function savePage() {
+    const open = (id) => ({ label: 'Open in snippets', onClick: () => sendMessage({ type: 'open:snippets', id }) });
     try {
-      const saved = (await S.snippetsForPage(location.href)).find((s) => s.kind === 'readlater');
+      const saved = (await S.snippetsForPage(location.href)).find((s) => s.kind !== 'screenshot');
       if (saved) {
-        done('Already in your Read later list.', `Saved ${new Date(saved.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}.`);
+        append(card({ kind: 'ok', icon: 'save', title: 'Already in your library.', body: saved.title, actions: [open(saved.id)] }));
         return;
       }
       // The page's own description, else its first real paragraph, else the start of its text.
@@ -1170,21 +1091,32 @@
         .filter((p) => !p.closest('table, aside, figure, nav, header, footer, [role="note"], [role="complementary"]'))
         .map((p) => p.textContent.trim())
         .find((t) => t.length > 100 && /[.!?]["”’)]?(\s|$)/.test(t));
-      const page = getPage(2000);
+      const page = sitePage(8000);
       const full = ((description && description.content) || paragraph || page.text.replace(/^#.*$/m, '') || '')
         .replace(/\[\d+\]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
-      const excerpt = full.length > 280 ? `${full.slice(0, 280).replace(/\s+\S*$/, '')}…` : full;
-      await S.addSnippet({ kind: 'readlater', source: 'readlater', title: page.title || document.title || location.hostname, pageTitle: page.title || document.title, url: location.href, summary: excerpt });
-      done('Saved to Read later.', 'Find it any time under Read later in your snippets.');
+      const snippet = await S.addSnippet({
+        kind: 'page',
+        source: 'page',
+        title: page.title || document.title || location.hostname,
+        pageTitle: document.title,
+        url: location.href,
+        summary: full.length > 280 ? `${full.slice(0, 280).replace(/\s+\S*$/, '')}…` : full,
+        text: page.text,
+      });
+      if (state.status === 'ready') {
+        const messages = S.buildMessages('save', S.pageVars({ title: document.title, url: location.href, text: page.text.slice(0, 5000) }), sitePrompts());
+        sendMessage({ type: 'capture:label', id: snippet.id, messages }).catch(() => {});
+      }
+      append(card({ kind: 'ok', icon: 'save', title: 'Saved to your library.', body: state.status === 'ready' ? 'Your AI is adding a title, summary and tags.' : snippet.title, actions: [open(snippet.id)] }));
     } catch (err) {
       showError(err, '', false);
     }
   }
 
   // History: everything saved from this exact page before (summaries, selections, screenshots).
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot', readlater: 'Later' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Shot', read: 'Read' };
   async function showPageHistory() {
     let items = [];
     try {
@@ -1302,10 +1234,8 @@
     if (seen.length) sendMessage({ type: 'summary:seen', ids: seen }).catch(() => {});
   }
 
-  // Feeds (X, Reddit): Summarize reads only what's already loaded, then offers "Read more".
-  // Reading more is always the reader's choice, one bounded batch at a time, and stops for good at a
-  // per-page limit, so it can't turn into doom-scrolling.
-  const readMoreLimit = () => Math.max(20, Number(state.settings.readMoreLimit) || 200);
+  // Feeds (X, Reddit): Summarize reads only what's already loaded, then offers "Read more", one
+  // batch at a time, and only when the reader asks.
 
   function inViewport(site, item) {
     const target = site.element(item);
@@ -1360,8 +1290,7 @@
     const info = pageInfo();
     const options = siteOptions();
     const noun = site.noun || 'items';
-    const target = Math.min(site.batchSize || 50, readMoreLimit() - feed.done);
-    if (target <= 0) return offerReadMore();
+    const target = site.batchSize || 50;
 
     return runTask(async (signal) => {
       addUserMessage(`Read ${target} more ${noun}`);
@@ -1402,18 +1331,10 @@
     const feed = state.feed;
     if (!site || !feed) return;
     const noun = site.noun || 'items';
-    const limit = readMoreLimit();
-    let more;
-    if (feed.done >= limit) more = { note: `${feed.done} ${noun} read: that's the limit here. Maybe take a break 🦉` };
-    else if (feed.exhausted) more = { note: `All ${feed.done} ${noun} that loaded` };
-    else {
-      const count = Math.min(site.batchSize || 50, limit - feed.done);
-      more = {
-        count,
-        note: `${noun} 1–${feed.done}`,
-        hint: `Scrolls to load up to ${count} more, summarizes only the new ones, then brings you back. Stops after ${limit} ${noun} on this page.`,
-      };
-    }
+    const count = site.batchSize || 50;
+    const more = feed.exhausted
+      ? { note: `All ${feed.done} ${noun} that loaded` }
+      : { count, note: `${noun} 1–${feed.done}`, hint: `Scrolls to load up to ${count} more, summarizes only the new ones, then brings you back.` };
     state.next = { ...(state.next || {}), more };
     renderNextSteps();
   }
@@ -1450,7 +1371,7 @@
           label: 'soroagent 🦉',
           onClick: () => {
             node.remove();
-            const answer = S.ownAnswer(topic, { cloud: state.cloud, providerLabel: els.where.textContent, autoBackup: state.settings.autoBackup, trackTime: state.settings.trackTime });
+            const answer = S.ownAnswer(topic, { cloud: state.cloud, providerLabel: els.where.textContent, autoBackup: state.settings.autoBackup, autoCapture: state.settings.autoCapture });
             addAssistantMessage().finish(answer);
             state.history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
           },
@@ -1577,7 +1498,7 @@
     if (action === 'summarize') summarize();
     else if (action === 'screenshot') takeScreenshot();
     else if (action === 'page-history') showPageHistory();
-    else if (action === 'read-later') readLater();
+    else if (action === 'save') savePage();
   });
 
   // Suggested questions on the empty screen.
@@ -1635,9 +1556,7 @@
     els.menu.hidden = true;
     if (cmd === 'snippets') sendMessage({ type: 'open:snippets' });
     else if (cmd === 'history') sendMessage({ type: 'open:history' });
-    else if (cmd === 'stats') sendMessage({ type: 'open:stats' });
     else if (cmd === 'notes') sendMessage({ type: 'open:notes' });
-    else if (cmd === 'dark') toggleDark();
     else if (cmd === 'feedback') window.open(S.feedbackUrl('menu'), '_blank', 'noopener');
     else if (cmd === 'settings') sendMessage({ type: 'open:options' });
     else if (cmd === 'clear') {
@@ -1712,5 +1631,4 @@
     showPendingSummaries();
   });
   updateControls();
-  updateDarkChip();
 })();

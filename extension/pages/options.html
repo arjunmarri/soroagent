@@ -69,7 +69,7 @@
   </div>
   <header>
     <div class="brand"><picture><source srcset="../icons/dark/icon-48.png" media="(prefers-color-scheme: dark)"><img src="../icons/icon-48.png" alt=""></picture><span class="wordmark">soro<span>agent</span></span><span class="crumb">Settings</span></div>
-    <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="snippets.html">Saved snippets</a><a class="btn small" href="stats.html">Stats</a></div>
+    <div class="row"><a class="btn small" href="history.html">Summary history</a><a class="btn small" href="snippets.html">Saved snippets</a></div>
   </header>
 
   <form id="form">
@@ -163,10 +163,6 @@
       <label class="check"><input type="checkbox" id="showLauncher">
         <span>Show the assistant button<small>When off, open it from the toolbar icon, the right-click menu, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.</small></span>
       </label>
-      <label class="field"><span>"Read more" limit on feeds (posts per page)</span>
-        <input type="number" id="readMoreLimit" min="20" max="1000" step="10">
-        <small>On X and Reddit, Summarize reads what's loaded and then offers to read more, one batch at a time. It stops for good at this many posts on a page, so it never turns into doom-scrolling.</small>
-      </label>
       <label class="field"><span>Button position</span>
         <select id="launcherPosition">
           <option value="auto">Automatic — find a spot that doesn't cover the page's buttons</option>
@@ -207,6 +203,19 @@
       <label class="field"><span>Never capture these sites <small>(one per line)</small></span>
         <textarea id="captureExclude" rows="3" spellcheck="false" placeholder="example.com"></textarea>
       </label>
+      <div class="field"><span>Markdown folder (Obsidian, Logseq…)</span>
+        <small>Keep a clean <code>.md</code> file with YAML frontmatter (title, source, tags, dates) for every note in a folder on your computer, such as your Obsidian vault or Logseq <code>pages</code> folder. New and changed notes are written automatically; files you edit there are never overwritten.</small>
+        <div class="row" style="margin-top:6px" id="mdOff">
+          <button class="btn small" type="button" id="mdChoose">Choose a folder…</button>
+          <span class="muted" id="mdMsg"></span>
+        </div>
+        <div class="row" style="margin-top:6px" id="mdOn" hidden>
+          <span id="mdInfo"></span>
+          <button class="btn small" type="button" id="mdNow">Write now</button>
+          <button class="btn small" type="button" id="mdAllow" hidden>Allow access again</button>
+          <button class="btn small danger" type="button" id="mdStop">Stop</button>
+        </div>
+      </div>
       <label class="check"><input type="checkbox" id="semanticSearch">
         <span>Search by meaning<small>Finds notes about the same idea even when the words differ. Uses an embedding model: a local one in Ollama if installed (private and free: <code>ollama pull nomic-embed-text</code>), otherwise your OpenAI, Gemini or Mistral key. Vectors stay on this device.</small></span>
       </label>
@@ -218,7 +227,7 @@
 
     <section id="sync">
       <h2>Sync across browsers</h2>
-      <p>Keep one library in every browser where soroagent is installed (Chrome, Firefox, Edge, Brave, on any computer). soroagent has no servers, so the shared copy lives in <b>your own storage</b>, <b>encrypted with your passphrase</b> before it leaves this browser. Notes, history, research and preferences sync; each browser keeps its own AI connection and keys; stats add up; screenshots stay on each device.</p>
+      <p>Keep one library in every browser where soroagent is installed (Chrome, Firefox, Edge, Brave, on any computer). soroagent has no servers, so the shared copy lives in <b>your own storage</b>, <b>encrypted with your passphrase</b> before it leaves this browser. Notes, history, research and preferences sync; each browser keeps its own AI connection and keys; screenshots stay on each device.</p>
       <div id="syncOff">
         <div class="grid">
           <label class="field"><span>Where to keep the encrypted copy</span>
@@ -242,14 +251,6 @@
         <div class="result"><span class="dot ready"></span><div><b id="syncWhere"></b><div class="muted" id="syncInfo"></div></div></div>
         <div class="row" style="margin-top:10px"><button class="btn small" type="button" id="syncNow">Sync now</button><button class="btn small danger" type="button" id="syncStop">Stop syncing in this browser</button></div>
       </div>
-    </section>
-
-    <section id="stats">
-      <h2>Stats</h2>
-      <p>soroagent can count the time you spend on each page and website, so the <a href="stats.html">Stats</a> page can show exactly where your browsing time goes. It only counts while a tab is in front and you're active (or a video is playing). The numbers never leave this browser and are kept for 90 days.</p>
-      <label class="check"><input type="checkbox" id="trackTime">
-        <span>Track time on pages<small>Turn off to stop counting. Existing stats stay until you clear them on the Stats page.</small></span>
-      </label>
     </section>
 
     <section id="prompts">
@@ -293,7 +294,7 @@
 
     <section>
       <h2>Backup &amp; restore</h2>
-      <p>Everything soroagent keeps (snippets, read-later pages, screenshots, summary history, stats and settings) stays on this computer and carries over to every new version automatically. API keys are never included in backups.</p>
+      <p>Everything soroagent keeps (snippets, screenshots, summary history and settings) stays on this computer and carries over to every new version automatically. API keys are never included in backups.</p>
       <label class="check"><input type="checkbox" id="autoBackup">
         <span>Back up automatically to my Downloads folder<small>soroagent keeps <code>Downloads/soroagent/soroagent-backup.json</code> up to date (a few minutes after changes, at most every 30 minutes). If you ever reinstall soroagent, it finds this file and offers to restore it.</small></span>
       </label>
@@ -341,7 +342,7 @@
     </div>
   </form>
 </main>
-<footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroai.com" target="_blank" rel="noopener">soroai.com</a> · <a class="feedback-link" href="https://soroagent.com/feedback" target="_blank" rel="noopener">Share feedback</a></footer>
+<footer class="site-foot">tech is art<span class="spark">.</span> © 2026 <a href="https://soroagent.com" target="_blank" rel="noopener">soroagent.com</a> · <a class="feedback-link" href="https://soroagent.com/feedback" target="_blank" rel="noopener">Share feedback</a></footer>
 <script src="../shared/config.js"></script>
 <script src="../shared/markdown.js"></script>
 <script src="../shared/prompts.js"></script>
@@ -358,6 +359,7 @@
 <script src="../prompts/youtube.js"></script>
 <script src="../shared/ask.js"></script>
 <script src="../shared/backup.js"></script>
+<script src="../background/mdexport.js"></script>
 <script src="options.js"></script>
 </body>
 </html>

@@ -25,18 +25,23 @@
   }
 
   /**
-   * Markdown answer about soroagent. ctx: { cloud, providerLabel, autoBackup, trackTime }.
+   * Markdown answer about soroagent. ctx: { cloud, providerLabel, autoBackup, autoCapture }.
    */
   function ownAnswer(topic, ctx = {}) {
     const model = ctx.cloud
       ? `**Your AI model:** you're using **${ctx.providerLabel || 'a cloud AI'}** with your own key. When you summarize, ask or research, the page text and your question go to ${ctx.providerLabel || 'that provider'} to get an answer, and their privacy policy applies. Nothing goes to soroagent.`
       : '**Your AI model:** you\'re using a model on your own computer, so page text and your questions never leave this machine.';
-    const local = `Everything soroagent keeps (snippets, read-later pages, screenshots, summary history${ctx.trackTime === false ? '' : ', browsing stats'} and settings) is stored **in this browser on your computer**.${ctx.autoBackup === false ? '' : ' A backup copy is also kept in your Downloads folder (`Downloads/soroagent/`).'} There are **no soroagent accounts, servers or cloud storage**.`;
+    const local = [
+      'Everything soroagent keeps (your snippets, screenshots, summary history and settings) is stored **in this browser on your computer**.',
+      ctx.autoBackup === false ? '' : 'A backup copy is also kept in your Downloads folder (`Downloads/soroagent/`).',
+      ctx.autoCapture === 'on' ? 'Passive capture is on, so pages you actually read are saved too (never mail, chat, banking, logins or checkouts).' : '',
+      'There are **no soroagent accounts, servers or cloud storage**. Sync across browsers and the Markdown folder export are optional, and only go where you point them.',
+    ].filter(Boolean).join(' ');
     switch (topic) {
       case 'opensource':
         return [
           '**About soroagent:** its code is on GitHub at [github.com/arjunmarri/soroagent](https://github.com/arjunmarri/soroagent), so anyone can read every line of what it does.',
-          'Yes, it\'s **open source under the MIT license**: free to use, change and share. It\'s made by [soroai.com](https://soroai.com), and contributions are welcome.',
+          'Yes, it\'s **open source under the MIT license**: free to use, change and share. It\'s made by [soroagent.com](https://soroagent.com), and contributions are welcome.',
         ].join('\n\n');
       case 'keys':
         return [
@@ -47,7 +52,6 @@
       case 'tracking':
         return [
           '**Tracking:** soroagent has **no analytics, no tracking and no ads**. It doesn\'t report what you browse to anyone.',
-          `The Stats page counts your time on pages${ctx.trackTime === false ? ' (it\'s turned off right now)' : ''}, but those numbers stay in this browser for 90 days, and you can turn it off or clear it in Settings.`,
           model,
         ].join('\n\n');
       default:

@@ -43,9 +43,9 @@
   let ranked = null; // { query, ids: [...], mode }
   const relatedCache = new Map(); // snippet id -> related notes
 
-  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot', readlater: 'Read later', deliverable: 'Created', read: 'Read' };
+  const KIND_LABEL = { summary: 'Summary', selection: 'Selection', page: 'Page', research: 'Research', screenshot: 'Screenshot', deliverable: 'Created', read: 'Read' };
   // Kinds with a section of their own, kept out of the text views.
-  const SECTIONS = ['screenshot', 'readlater'];
+  const SECTIONS = ['screenshot'];
   const topicPicks = new Map(); // snippet id -> { status: 'loading' | 'ready' | 'error', topics, error, draft }
   if (!['all', 'summary', 'research', ...SECTIONS].includes(prefs.kind)) prefs.kind = 'all'; // e.g. the old Selections view
   const kindOf = (s) => s.kind || (s.source === 'selection' ? 'selection' : s.source === 'summary' ? 'summary' : 'page');
@@ -69,7 +69,7 @@
 
   function matches(s, query) {
     const kind = kindOf(s);
-    // Screenshots and Read later have their own sections and stay out of the text views.
+    // Screenshots have their own section and stay out of the text views.
     if (SECTIONS.includes(prefs.kind) || SECTIONS.includes(kind)) {
       if (prefs.kind !== kind) return false;
     }
@@ -98,7 +98,7 @@
     const kind = kindOf(s);
     const host = hostOf(s.url);
     const summary = s.summary || plain(s.text).slice(0, 220);
-    const card = el('button', { type: 'button', className: `card${s.readAt ? ' read' : ''}` }, [
+    const card = el('button', { type: 'button', className: 'card' }, [
       el('div', { className: 'card-title', textContent: s.title || s.pageTitle || 'Untitled' }),
       summary ? el('div', { className: 'card-summary', textContent: summary }) : '',
       el('div', { className: 'meta' }, [
@@ -106,7 +106,6 @@
         host ? siteBadge(host) : '',
         el('span', { textContent: when(s.createdAt, { hour: 'numeric', minute: '2-digit', ...(prefs.group === 'day' ? {} : { day: 'numeric', month: 'short' }) }) }),
         s.research ? el('span', { className: 'has-research', textContent: '· researched' }) : '',
-        s.readAt ? el('span', { className: 'is-read', textContent: '· read' }) : '',
       ]),
     ]);
     card.setAttribute('aria-current', String(s.id === selectedId));
@@ -154,8 +153,6 @@
         className: 'empty',
         textContent: prefs.kind === 'screenshot'
           ? 'No screenshots yet. Use Screenshot in the soroagent panel (or right-click a page) to take one.'
-          : prefs.kind === 'readlater'
-          ? 'Nothing to read later. Click Read later in the soroagent panel to keep a page for later.'
           : snippets.some((s) => !SECTIONS.includes(kindOf(s)))
           ? libraryMode === 'words' && $('search').value.trim()
             ? 'Nothing uses those words. To also find notes by meaning (the same idea in other words), install a free embedding model: ollama pull nomic-embed-text'
@@ -223,10 +220,6 @@
 
     if (kind === 'screenshot') {
       renderShotReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Screenshot' })]);
-      return;
-    }
-    if (kind === 'readlater') {
-      renderLaterReader(s, reader, [back, meta, el('h1', { textContent: s.title || s.pageTitle || 'Untitled' })]);
       return;
     }
 
@@ -317,24 +310,6 @@
       selectedId = '';
     });
     actions.append(remove);
-    nodes.push(actions);
-    reader.replaceChildren(...nodes);
-  }
-
-  function renderLaterReader(s, reader, nodes) {
-    if (s.summary) nodes.push(el('div', { className: 'prose' }, [el('p', { textContent: s.summary })]));
-    nodes.push(el('p', { className: 'muted', textContent: s.readAt ? `Marked as read ${when(s.readAt, { dateStyle: 'medium', timeStyle: 'short' })}.` : 'Saved to read later.' }));
-    const actions = el('div', { className: 'reader-actions' });
-    const open = el('a', { className: 'btn primary', href: S.safeUrl(s.url), target: '_blank', rel: 'noopener', textContent: 'Open page ↗' });
-    open.addEventListener('click', () => !s.readAt && S.updateSnippet(s.id, { readAt: new Date().toISOString() }));
-    const mark = el('button', { type: 'button', className: 'btn', textContent: s.readAt ? 'Mark as unread' : 'Mark as read' });
-    mark.addEventListener('click', () => S.updateSnippet(s.id, { readAt: s.readAt ? '' : new Date().toISOString() }));
-    const remove = el('button', { type: 'button', className: 'btn danger', textContent: 'Remove' });
-    remove.addEventListener('click', async () => {
-      await deleteSnippets([s.id]);
-      selectedId = '';
-    });
-    actions.append(open, mark, remove);
     nodes.push(actions);
     reader.replaceChildren(...nodes);
   }
@@ -490,10 +465,8 @@
     const query = $('search').value.trim().toLowerCase();
     const visible = snippets.filter((s) => matches(s, query));
     const shots = snippets.filter((s) => kindOf(s) === 'screenshot').length;
-    const later = snippets.filter((s) => kindOf(s) === 'readlater' && !s.readAt).length;
     $('count').textContent = snippets.length ? `(${snippets.length})` : '';
     $('shotCount').textContent = shots ? `(${shots})` : '';
-    $('laterCount').textContent = later ? `(${later})` : '';
     for (const b of document.querySelectorAll('[data-group]')) b.setAttribute('aria-pressed', String(b.dataset.group === prefs.group));
     for (const b of document.querySelectorAll('[data-kind]')) b.setAttribute('aria-pressed', String(b.dataset.kind === prefs.kind));
     renderFilters();

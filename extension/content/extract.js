@@ -79,10 +79,5 @@
     return { title: doc.title, url: doc.location ? doc.location.href : '', ...truncate(text, maxChars) };
   }
 
-  function currentSelection(doc = document) {
-    const selection = doc.getSelection();
-    return selection ? squash(selection.toString()) : '';
-  }
-
-  Object.assign(soroagent, { extractPage, currentSelection });
+  Object.assign(soroagent, { extractPage });
 })(globalThis);
