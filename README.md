@@ -11,20 +11,13 @@ An AI companion for every web page that turns what you read into knowledge you k
 
 ## Why soroagent exists
 
-We read more online than ever, and keep almost none of it.
-
-Browsers were built to *fetch* pages, not to help you *understand* them. Your browsing history is a list of URLs and timestamps: it remembers **where you went**, not **what you learned**. Interesting articles get "saved for later" and never opened again. Tabs pile up. Feeds are designed to keep you scrolling, and ads and pop-ups compete for the attention you came to spend on the content.
-
 **soroagent changes what a browser is for.** It sits quietly beside every page, an owl in the corner, and turns browsing from consumption into learning:
 
-- **Understand faster.** A summary of any page, thread or feed in seconds, and answers to your questions about it.
+- **Understand faster.** A summary of any page, thread or feed in seconds, and answers to your questions about it. This will improve productivity.
 - **Remember automatically.** Every summary is filed into your personal library with a title, summary and consistent tags. Turn on passive capture and the pages you actually read are filed too, so your history becomes a record of ideas, facts and sources rather than links.
-- **Think with what you've read.** Search your library by meaning, chat with it, see related notes on the page you're reading, and turn it into a brief, a decision, a study guide or a draft, every answer cited to your own sources.
 - **One library everywhere.** Sync it, end-to-end encrypted, across every browser where soroagent is installed.
 - **Go deeper on purpose.** When something matters, Research reads the web for you and writes a brief with citations.
-- **Take back your attention.** No doom-scrolling, a comfortable dark mode on any site, and an honest view of where your time goes.
 - **Keep it private.** Run it on a model on your own computer and nothing you read leaves your machine. No accounts, no servers, no analytics.
-
 > **Browsing history, reinvented.** Not *"you visited 214 pages yesterday"* but *"here's what you read, what it said, what you found worth keeping, and where to go deeper."*
 
 ## What it does
