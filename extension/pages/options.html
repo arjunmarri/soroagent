@@ -227,11 +227,12 @@
 
     <section id="sync">
       <h2>Sync across browsers</h2>
-      <p>Keep one library in every browser where soroagent is installed (Chrome, Firefox, Edge, Brave, on any computer). soroagent has no servers, so the shared copy lives in <b>your own storage</b>, <b>encrypted with your passphrase</b> before it leaves this browser. Notes, history, research and preferences sync; each browser keeps its own AI connection and keys; screenshots stay on each device.</p>
+      <p>Keep one library in every browser where soroagent is installed (Chrome, Firefox, Edge, Brave, on any computer). soroagent has no servers, so the shared copy lives in <b>your own Google Drive</b> (in a hidden folder only soroagent can see), <b>encrypted with your passphrase</b> before it leaves this browser. Notes, history, research and preferences sync; each browser keeps its own AI connection and keys; screenshots stay on each device.</p>
       <div id="syncOff">
         <div class="grid">
           <label class="field"><span>Where to keep the encrypted copy</span>
             <select id="syncProvider">
+              <option value="gdrive">Google Drive (easiest)</option>
               <option value="webdav">WebDAV (Nextcloud, ownCloud, Synology, Koofr…)</option>
               <option value="gist">A private GitHub Gist</option>
             </select>
@@ -242,14 +243,14 @@
           <label class="field"><span>Username</span><input type="text" id="syncUser" autocomplete="off" spellcheck="false"></label>
         </div>
         <div class="grid">
-          <label class="field"><span id="syncSecretLabel">Password (an app password is best)</span><input type="password" id="syncSecret" autocomplete="off" spellcheck="false"></label>
+          <label class="field" id="syncSecretField"><span id="syncSecretLabel">Password (an app password is best)</span><input type="password" id="syncSecret" autocomplete="off" spellcheck="false"></label>
           <label class="field"><span>Sync passphrase</span><input type="password" id="syncPassphrase" autocomplete="new-password" spellcheck="false" placeholder="At least 8 characters"><small>Use the same passphrase in every browser. It encrypts your data and is never stored or sent anywhere; if you lose it, the synced copy can't be read (your local data is unaffected).</small></label>
         </div>
         <div class="row"><button class="btn primary" type="button" id="syncConnect">Turn on sync</button><span class="muted" id="syncMsg" role="status"></span></div>
       </div>
       <div id="syncOn" hidden>
         <div class="result"><span class="dot ready"></span><div><b id="syncWhere"></b><div class="muted" id="syncInfo"></div></div></div>
-        <div class="row" style="margin-top:10px"><button class="btn small" type="button" id="syncNow">Sync now</button><button class="btn small danger" type="button" id="syncStop">Stop syncing in this browser</button></div>
+        <div class="row" style="margin-top:10px"><button class="btn small primary" type="button" id="syncReconnect" hidden>Connect Google Drive again</button><button class="btn small" type="button" id="syncNow">Sync now</button><button class="btn small danger" type="button" id="syncStop">Stop syncing in this browser</button></div>
       </div>
     </section>
 
@@ -360,6 +361,7 @@
 <script src="../shared/ask.js"></script>
 <script src="../shared/backup.js"></script>
 <script src="../background/mdexport.js"></script>
+<script src="../background/sync.js"></script>
 <script src="options.js"></script>
 </body>
 </html>

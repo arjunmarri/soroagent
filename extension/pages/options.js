@@ -236,9 +236,13 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
     return s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleString();
   };
+  const google = S.createGoogleAuth(ext);
   function showSyncFields() {
-    const gist = $('syncProvider').value === 'gist';
-    $('webdavFields').hidden = gist;
+    const provider = $('syncProvider').value;
+    const gist = provider === 'gist';
+    $('webdavFields').hidden = provider !== 'webdav';
+    $('syncSecretField').hidden = provider === 'gdrive';
+    $('syncConnect').textContent = provider === 'gdrive' ? 'Connect Google Drive' : 'Turn on sync';
     $('syncSecretLabel').textContent = gist ? 'GitHub token (with the "gist" permission)' : 'Password (an app password is best)';
   }
   async function showSync() {
@@ -247,7 +251,8 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     $('syncOff').hidden = on;
     $('syncOn').hidden = !on;
     if (!on) return;
-    $('syncWhere').textContent = `Syncing with ${st.provider === 'gist' ? 'a private GitHub Gist' : st.url}`;
+    $('syncWhere').textContent = `Syncing with ${st.provider === 'gdrive' ? 'your Google Drive' : st.provider === 'gist' ? 'a private GitHub Gist' : st.url}`;
+    $('syncReconnect').hidden = !(st.provider === 'gdrive' && st.code === 'auth');
     const others = Object.entries(st.devices || {}).filter(([id]) => id !== st.deviceId).map(([, d]) => d.name);
     $('syncInfo').textContent = [
       st.lastSync ? `Last synced ${ago(st.lastSync)}` : 'Not synced yet',
@@ -258,11 +263,26 @@ Rewrite it to get better results on this website. Keep the intent and every rule
   }
   $('syncProvider').addEventListener('change', showSyncFields);
   $('syncConnect').addEventListener('click', async () => {
+    const provider = $('syncProvider').value;
+    if (provider === 'gdrive' && $('syncPassphrase').value.length < 8) {
+      $('syncMsg').textContent = 'Choose a passphrase of at least 8 characters, and use the same one in every browser.';
+      return;
+    }
     $('syncConnect').disabled = true;
-    $('syncMsg').textContent = 'Connecting…';
+    $('syncMsg').textContent = provider === 'gdrive' ? 'Sign in to Google in the window that opened…' : 'Connecting…';
+    if (provider === 'gdrive') {
+      try {
+        await google.getToken(false, true);
+      } catch (err) {
+        $('syncConnect').disabled = false;
+        $('syncMsg').textContent = /did not approve|cancel|closed/i.test(err.message) ? 'Google sign-in was closed.' : err.message;
+        return;
+      }
+      $('syncMsg').textContent = 'Connecting…';
+    }
     const res = await ext.runtime.sendMessage({
       type: 'sync:connect',
-      provider: $('syncProvider').value,
+      provider,
       url: $('syncUrl').value,
       user: $('syncUser').value,
       secret: $('syncSecret').value,
@@ -276,6 +296,17 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     $('syncSecret').value = '';
     $('syncPassphrase').value = '';
     $('syncMsg').textContent = '';
+    showSync();
+  });
+  $('syncReconnect').addEventListener('click', async () => {
+    try {
+      await google.getToken(false, true);
+    } catch (err) {
+      $('syncInfo').textContent = err.message;
+      return;
+    }
+    $('syncInfo').textContent = 'Syncing…';
+    await ext.runtime.sendMessage({ type: 'sync:now' }).catch(() => {});
     showSync();
   });
   $('syncNow').addEventListener('click', async () => {

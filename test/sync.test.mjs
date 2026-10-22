@@ -7,7 +7,7 @@ const S = await load('background/sync.js');
 const note = (id, t, extra = {}) => ({ id, kind: 'summary', title: id, text: id, createdAt: t, ...extra });
 
 // Two browsers, each with its own storage, sharing one encrypted file.
-function browser(deviceId) {
+function browser(deviceId, google) {
   const store = {};
   const ext = { storage: { local: {
     get: async (k) => (k === null || k === undefined ? { ...store } : typeof k === 'string' ? (k in store ? { [k]: store[k] } : {}) : Object.fromEntries(k.filter((x) => x in store).map((x) => [x, store[x]]))),
@@ -18,7 +18,7 @@ function browser(deviceId) {
   const secrets = { getAll: async () => ({ ...secretsMap }), set: async (p, v) => (secretsMap[p] = v), remove: async (p) => delete secretsMap[p] };
   let saved = null;
   const keys = { get: async () => saved, set: async (v) => (saved = v), clear: async () => (saved = null) };
-  return { store, sync: S.createSync({ ext, secrets, keys }), deviceId };
+  return { store, sync: S.createSync({ ext, secrets, keys, ...(google ? { google } : {}) }), deviceId };
 }
 
 // A WebDAV server in memory, with ETags.
@@ -107,4 +107,101 @@ test('a WebDAV conflict is merged and retried, never overwritten', async () => {
   const second = await remote.read();
   await remote.write({ format: 'soroagent-sync-encrypted', v: 1 }, second.version);
   await assert.rejects(remote.write({ format: 'soroagent-sync-encrypted', v: 1 }, second.version), (err) => err.code === 'conflict', 'a stale version is a conflict');
+});
+
+// Google Drive's appDataFolder in memory: files with ids and versions, bearer tokens checked.
+function driveServer(validTokens) {
+  const files = new Map();
+  let next = 1;
+  const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  return {
+    files,
+    async handler(url, init = {}) {
+      const u = new URL(url);
+      if (!validTokens.has(String(init.headers.Authorization).replace('Bearer ', ''))) return json(401, { error: 'invalid' });
+      const method = init.method || 'GET';
+      const id = (u.pathname.match(/\/files\/([^/]+)$/) || [])[1];
+      if (method === 'GET' && u.pathname === '/drive/v3/files') {
+        assert.equal(u.searchParams.get('spaces'), 'appDataFolder');
+        return json(200, { files: [...files.entries()].map(([fid, f]) => ({ id: fid, version: String(f.version) })) });
+      }
+      if (method === 'GET' && id) {
+        const f = files.get(id);
+        if (!f) return json(404, {});
+        return u.searchParams.get('alt') === 'media' ? new Response(f.content) : json(200, { id, version: String(f.version) });
+      }
+      if (method === 'POST') {
+        assert.match(init.headers['Content-Type'], /multipart\/related/);
+        assert.match(init.body, /"parents":\["appDataFolder"\]/);
+        const content = init.body.split('\r\n\r\n')[2].split('\r\n--')[0];
+        const fid = `f${next++}`;
+        files.set(fid, { content, version: 1 });
+        return json(200, { id: fid, version: '1' });
+      }
+      if (method === 'PATCH') {
+        const f = files.get(id);
+        f.content = init.body;
+        f.version += 1;
+        return json(200, { id, version: String(f.version) });
+      }
+      return json(400, {});
+    },
+  };
+}
+
+test('two browsers converge through Google Drive; an expired token is renewed once', async () => {
+  const tokens = new Set(['t1']);
+  const drive = driveServer(tokens);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => drive.handler(url, init);
+  let renewals = 0;
+  const google = { getToken: async (force) => (force ? (renewals++, tokens.add('t2'), 't2') : 't1'), forget: async () => {} };
+  try {
+    const A = browser('A', google);
+    const B = browser('B', google);
+    A.store['snippet:a'] = note('a', '2026-10-20T00:00:00Z');
+    B.store['snippet:b'] = note('b', '2026-10-21T00:00:00Z');
+    await A.sync.connect({ provider: 'gdrive', passphrase: 'owl passphrase' });
+    tokens.delete('t1'); // the hour is up
+    await B.sync.connect({ provider: 'gdrive', passphrase: 'owl passphrase' });
+    await A.sync.syncNow();
+    assert.ok(A.store['snippet:b'] && B.store['snippet:a'], 'both browsers have both notes');
+    assert.equal(drive.files.size, 1, 'one sync file');
+    assert.doesNotMatch([...drive.files.values()][0].content, /"title":"a"/, 'Google only sees ciphertext');
+    assert.ok(renewals >= 1);
+    assert.equal((await A.sync.status()).provider, 'gdrive');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('Google Drive: lost access is reported so Settings can offer to reconnect', async () => {
+  const drive = driveServer(new Set());
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => drive.handler(url, init);
+  try {
+    const remote = S.driveRemote({ getToken: async () => 'revoked' });
+    await assert.rejects(remote.read(), (err) => err.code === 'auth');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('Google sign-in: URL, redirect and token parsing', () => {
+  const url = new URL(S.googleAuthUrl({ redirectUri: 'https://abc.chromiumapp.org/', interactive: false }));
+  assert.equal(url.origin, 'https://accounts.google.com');
+  assert.equal(url.searchParams.get('client_id'), S.GOOGLE_CLIENT_ID);
+  assert.equal(url.searchParams.get('scope'), 'https://www.googleapis.com/auth/drive.appdata');
+  assert.equal(url.searchParams.get('response_type'), 'token');
+  assert.equal(url.searchParams.get('prompt'), 'none');
+  assert.equal(new URL(S.googleAuthUrl({ redirectUri: 'x', interactive: true })).searchParams.get('prompt'), null);
+
+  assert.equal(S.googleRedirectUri('https://jomghmmgdlajfonjihmagbhomimadpcg.chromiumapp.org/', false), 'https://jomghmmgdlajfonjihmagbhomimadpcg.chromiumapp.org/');
+  assert.equal(S.googleRedirectUri('https://2cc4144500e90330e1a3d0c39bbd9cc2e7ce6aeb.extensions.allizom.org/', true), 'http://127.0.0.1/mozoauth2/2cc4144500e90330e1a3d0c39bbd9cc2e7ce6aeb');
+
+  const t = S.parseGoogleRedirect('https://abc.chromiumapp.org/#access_token=ya29.x&token_type=Bearer&expires_in=3599&scope=https://www.googleapis.com/auth/drive.appdata', 1000);
+  assert.deepEqual(t, { token: 'ya29.x', expiresAt: 1000 + 3599000 });
+  assert.throws(() => S.parseGoogleRedirect('https://abc.chromiumapp.org/#error=access_denied'), /not allowed/);
+  assert.throws(() => S.parseGoogleRedirect('https://abc.chromiumapp.org/?error=interaction_required'), /interaction_required/);
+  assert.throws(() => S.parseGoogleRedirect('https://abc.chromiumapp.org/#access_token=x&scope=email'), /own folder/);
 });

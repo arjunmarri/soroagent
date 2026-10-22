@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { root } from './helpers.mjs';
 import { expandScripts } from '../scripts/manifest-utils.mjs';
 
@@ -83,4 +84,14 @@ test('only http(s) links are made clickable', async () => {
   const { safeUrl } = context.soroagent;
   assert.equal(safeUrl('https://a.com/x'), 'https://a.com/x');
   for (const bad of ['javascript:alert(1)', 'JaVaScRiPt:alert(1)', 'data:text/html,<b>x', '', undefined]) assert.equal(safeUrl(bad), '#');
+});
+
+test('Google Drive sync can sign in (identity), and its redirect matches the pinned Chrome ID', () => {
+  assert.ok(manifest.permissions.includes('identity'));
+  const key = readFileSync(join(root, 'keys/chrome-public-key.txt'), 'utf8').trim();
+  const hash = createHash('sha256').update(Buffer.from(key, 'base64')).digest('hex').slice(0, 32);
+  const id = [...hash].map((c) => String.fromCharCode(97 + parseInt(c, 16))).join('');
+  // Registered in Google Cloud as an authorized redirect URI; changing the key breaks sign-in.
+  assert.equal(id, 'jomghmmgdlajfonjihmagbhomimadpcg');
+  assert.equal(createHash('sha1').update(manifest.browser_specific_settings.gecko.id).digest('hex'), '2cc4144500e90330e1a3d0c39bbd9cc2e7ce6aeb');
 });

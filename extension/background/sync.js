@@ -1,7 +1,7 @@
 // Sync across browsers: one library in every browser where soroagent is installed (Chrome,
 // Firefox, Edge, Brave… on any computer). Browsers can't share an extension's storage and soroagent
-// has no servers, so the shared copy lives in the user's own storage (a WebDAV folder or a private
-// GitHub Gist), end-to-end encrypted with their passphrase (PBKDF2 → AES-GCM) before it leaves the
+// has no servers, so the shared copy lives in the user's own storage (their Google Drive, a WebDAV
+// folder or a private GitHub Gist), end-to-end encrypted with their passphrase (PBKDF2 → AES-GCM) before it leaves the
 // browser. Notes and history merge item by item (newest wins; deletions carry over); preferences
 // sync but each browser keeps its own AI connection and keys; screenshots stay local (too big). The merge and crypto are pure/portable and unit tested.
 (function (root) {
@@ -13,6 +13,11 @@
   const FILE_NAME = 'soroagent-sync.json';
   const GIST_DESCRIPTION = 'soroagent sync (end-to-end encrypted)';
   const TOMBSTONE_DAYS = 120;
+  // Google Drive: soroagent's OAuth client (a public identifier, not a secret) and its only scope,
+  // a hidden per-app folder in the user's Drive that soroagent can see and nothing else.
+  const GOOGLE_CLIENT_ID = '991479969577-mpl1gaq4ku16jpn9fivc63pcvnsceg1j.apps.googleusercontent.com';
+  const GOOGLE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+  const PROVIDERS = ['gdrive', 'webdav', 'gist'];
   // Settings that belong to one browser: how it reaches its AI, and where its owl sits.
   const LOCAL_ONLY_SETTINGS = new Set(['source', 'baseUrl', 'provider', 'apiKey', 'cloudProvider', 'cloudModels', 'model', 'customBaseUrl', 'onboarded', 'modelTipSeen', 'launcherPlacements', 'panelWidth', 'panelHeight', 'updatedAt']);
 
@@ -204,6 +209,119 @@
     };
   }
 
+  // Google Drive: one file in the app's hidden folder (appDataFolder). getToken(force) returns an
+  // access token; on a 401 it's asked once for a fresh one.
+  function driveRemote({ getToken }, fetchImpl = root.fetch.bind(root)) {
+    const api = 'https://www.googleapis.com';
+    let fileId = '';
+    const call = async (url, init = {}, raw = false) => {
+      let res;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const token = await getToken(attempt > 0);
+        res = await fetchImpl(`${api}${url}`, { ...init, headers: { Authorization: `Bearer ${token}`, ...(init.headers || {}) }, cache: 'no-store', credentials: 'omit' });
+        if (res.status !== 401) break;
+      }
+      if (res.status === 401 || res.status === 403) throw Object.assign(new Error('Google Drive needs you to connect again.'), { code: 'auth' });
+      if (!res.ok) throw new Error(`Google Drive error ${res.status}.`);
+      return raw ? res : res.json();
+    };
+    const meta = async () => {
+      if (fileId) return call(`/drive/v3/files/${fileId}?fields=id,version`).catch((err) => (/ 404\./.test(err.message) ? ((fileId = ''), null) : Promise.reject(err)));
+      const q = encodeURIComponent(`name = '${FILE_NAME}' and trashed = false`);
+      const { files = [] } = await call(`/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,version)&orderBy=createdTime&pageSize=1`);
+      if (files[0]) fileId = files[0].id;
+      return files[0] || null;
+    };
+    return {
+      label: 'Google Drive',
+      async read() {
+        const m = await meta();
+        if (!m) return { envelope: null, version: '' };
+        const res = await call(`/drive/v3/files/${m.id}?alt=media`, {}, true);
+        return { envelope: JSON.parse(await res.text()), version: String(m.version || '') };
+      },
+      async write(envelope, version) {
+        const body = JSON.stringify(envelope);
+        if (!fileId) {
+          const boundary = `soroagent${Date.now()}`;
+          const multipart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] })}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${boundary}--`;
+          const created = await call('/upload/drive/v3/files?uploadType=multipart&fields=id,version', { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body: multipart });
+          fileId = created.id;
+          return String(created.version || '');
+        }
+        // Drive has no conditional writes: check nobody saved since we read.
+        if (version) {
+          const current = await meta();
+          if (!current || String(current.version) !== version) throw Object.assign(new Error('Changed by another browser meanwhile.'), { code: 'conflict' });
+        }
+        const saved = await call(`/upload/drive/v3/files/${fileId}?uploadType=media&fields=id,version`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+        return String(saved.version || '');
+      },
+    };
+  }
+
+  /** Pure: the Google sign-in URL. */
+  function googleAuthUrl({ redirectUri, interactive, clientId = GOOGLE_CLIENT_ID }) {
+    const params = new URLSearchParams({ client_id: clientId, response_type: 'token', redirect_uri: redirectUri, scope: GOOGLE_SCOPE, include_granted_scopes: 'true' });
+    if (!interactive) params.set('prompt', 'none');
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+  }
+
+  /** Pure: the token from the URL Google redirects back to (or throws with Google's error). */
+  function parseGoogleRedirect(url, now = Date.now()) {
+    const hash = new URLSearchParams(String(url || '').split('#')[1] || '');
+    const query = new URLSearchParams((String(url || '').split('#')[0].split('?')[1]) || '');
+    const error = hash.get('error') || query.get('error');
+    if (error) throw Object.assign(new Error(error === 'access_denied' ? 'Google Drive access was not allowed.' : `Google sign-in failed (${error}).`), { code: 'auth' });
+    const token = hash.get('access_token');
+    if (!token) throw Object.assign(new Error('Google sign-in did not finish.'), { code: 'auth' });
+    if (hash.get('scope') && !hash.get('scope').split(' ').includes(GOOGLE_SCOPE)) throw Object.assign(new Error('Allow soroagent to use its own folder in your Google Drive.'), { code: 'auth' });
+    return { token, expiresAt: now + (Number(hash.get('expires_in')) || 3600) * 1000 };
+  }
+
+  /** Pure: where Google sends the user back. Firefox's own domain isn't accepted by Google, so it uses its loopback form. */
+  function googleRedirectUri(identityRedirect, firefox) {
+    if (!firefox) return identityRedirect;
+    const sub = new URL(identityRedirect).hostname.split('.')[0];
+    return `http://127.0.0.1/mozoauth2/${sub}`;
+  }
+
+  // Google access tokens last about an hour; this keeps one (in memory and session storage, never on
+  // disk) and renews it quietly through the browser's sign-in. The sign-in window itself opens from
+  // the Settings page (getToken(false, true)); the background worker then finds the token in session storage.
+  function googleAuth(ext) {
+    let cached = null;
+    const firefox = typeof root.browser !== 'undefined' && /Firefox\//.test((root.navigator && root.navigator.userAgent) || '');
+    const session = ext.storage && ext.storage.session;
+    async function signIn(interactive) {
+      if (!ext.identity || !ext.identity.launchWebAuthFlow) throw new Error('This browser can\'t sign in to Google from an extension.');
+      const redirectUri = googleRedirectUri(ext.identity.getRedirectURL(), firefox);
+      const back = await ext.identity.launchWebAuthFlow({ url: googleAuthUrl({ redirectUri, interactive }), interactive });
+      cached = parseGoogleRedirect(back);
+      if (session) await session.set({ googleToken: cached }).catch(() => {});
+      return cached.token;
+    }
+    async function getToken(force = false, interactive = false) {
+      if (!force && !interactive) {
+        if (!cached && session) cached = (await session.get('googleToken').catch(() => ({}))).googleToken || null;
+        if (cached && cached.expiresAt > Date.now() + 60000) return cached.token;
+      }
+      try {
+        return await signIn(interactive);
+      } catch (err) {
+        if (interactive) throw err;
+        throw Object.assign(new Error('Google Drive needs you to connect again.'), { code: 'auth' });
+      }
+    }
+    async function forget() {
+      const token = cached && cached.token;
+      cached = null;
+      if (session) await session.remove('googleToken').catch(() => {});
+      if (token) await root.fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST', credentials: 'omit' }).catch(() => {});
+    }
+    return { getToken, forget };
+  }
+
   /** Pure: whether two shared documents differ in content (not just in sync timestamps). */
   function docChanged(before, after) {
     const strip = (d) => (d ? { items: d.items, tombstones: d.tombstones, settings: d.settings, devices: Object.keys(d.devices || {}).sort() } : null);
@@ -243,22 +361,26 @@
     return `${browser} on ${os}`;
   }
 
-  function createSync({ ext, secrets, keys = keyStore() }) {
+  function createSync({ ext, secrets, keys = keyStore(), google = googleAuth(ext) }) {
     let running = null;
     let quietUntil = 0; // our own storage writes don't trigger another sync
 
     const getConfig = async () => (await ext.storage.local.get('syncConfig')).syncConfig || null;
     const getState = async () => (await ext.storage.local.get('syncState')).syncState || {};
     const secretFor = async (cfg) => (await secrets.getAll())[`sync:${cfg.provider}`] || '';
-    const remoteFor = (cfg, secret) => (cfg.provider === 'gist' ? gistRemote({ secret, gistId: cfg.gistId }) : webdavRemote({ url: cfg.url, user: cfg.user, secret }));
+    const remoteFor = (cfg, secret) => {
+      if (cfg.provider === 'gdrive') return driveRemote({ getToken: (force) => google.getToken(force) });
+      return cfg.provider === 'gist' ? gistRemote({ secret, gistId: cfg.gistId }) : webdavRemote({ url: cfg.url, user: cfg.user, secret });
+    };
 
     /** Sets sync up (or joins an existing sync file). The passphrase is checked against the file. */
     async function connect({ provider, url = '', user = '', secret, passphrase }) {
-      if (!['webdav', 'gist'].includes(provider)) throw new Error('Choose WebDAV or GitHub Gist.');
+      if (!PROVIDERS.includes(provider)) throw new Error('Choose where to keep the encrypted copy.');
       if (provider === 'webdav' && !/^https:\/\//i.test(url) && !/^http:\/\/(localhost|127\.0\.0\.1)(:|\/)/i.test(url)) throw new Error('Use an https:// WebDAV address.');
-      if (!secret) throw new Error(provider === 'gist' ? 'Paste a GitHub token with the "gist" permission.' : 'Enter the WebDAV password (an app password is best).');
+      if (provider !== 'gdrive' && !secret) throw new Error(provider === 'gist' ? 'Paste a GitHub token with the "gist" permission.' : 'Enter the WebDAV password (an app password is best).');
       if (!passphrase || passphrase.length < 8) throw new Error('Choose a passphrase of at least 8 characters, and use the same one in every browser.');
       const previous = await getConfig();
+      if (provider === 'gdrive') await google.getToken(); // signed in by the Settings page just before
       const cfg = { provider, url: url.trim(), user: user.trim(), gistId: '', deviceId: (previous && previous.deviceId) || crypto.randomUUID(), deviceName: browserName() };
       const remote = remoteFor(cfg, secret);
       const { envelope } = await remote.read();
@@ -266,7 +388,7 @@
       const key = await deriveKey(passphrase, salt);
       if (envelope) await open(envelope, key); // throws on a wrong passphrase
       await keys.set({ key, salt });
-      await secrets.set(`sync:${provider}`, secret);
+      if (provider !== 'gdrive') await secrets.set(`sync:${provider}`, secret);
       await ext.storage.local.set({ syncConfig: { ...cfg, gistId: remote.gistId || '' }, syncState: { knownKeys: [], joined: Boolean(envelope) } });
       return syncNow();
     }
@@ -298,6 +420,7 @@
             throw err;
           }
           const state = {
+            code: '',
             knownKeys: res.knownKeys,
             lastSync: new Date().toISOString(),
             error: '',
@@ -311,7 +434,7 @@
         throw new Error('Other browsers kept saving at the same time. Try again in a moment.');
       })().catch(async (err) => {
         const st = await getState();
-        await ext.storage.local.set({ syncState: { ...st, error: err.message || String(err), failedAt: new Date().toISOString() } });
+        await ext.storage.local.set({ syncState: { ...st, error: err.message || String(err), code: err.code || '', failedAt: new Date().toISOString() } });
         throw err;
       }).finally(() => {
         running = null;
@@ -321,7 +444,8 @@
 
     async function disconnect() {
       const cfg = await getConfig();
-      if (cfg) await secrets.remove(`sync:${cfg.provider}`);
+      if (cfg && cfg.provider === 'gdrive') await google.forget();
+      else if (cfg) await secrets.remove(`sync:${cfg.provider}`);
       await keys.clear().catch(() => {});
       await ext.storage.local.remove(['syncConfig', 'syncState']);
       return { ok: true };
@@ -348,5 +472,11 @@
     openSync: open,
     webdavRemote,
     gistRemote,
+    driveRemote,
+    googleAuthUrl,
+    parseGoogleRedirect,
+    googleRedirectUri,
+    GOOGLE_CLIENT_ID,
+    createGoogleAuth: googleAuth,
   });
 })(globalThis);
