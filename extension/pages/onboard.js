@@ -1,5 +1,5 @@
-// First-run setup: pick a cloud AI and paste its key, or use a local model. Runs as its own tab
-// after install and embedded (an iframe) in the panel, where it keeps the key away from the web
+// First-run setup. After install (its own tab): 1. sync across browsers through Google Drive, or
+// skip; 2. pick a cloud AI and paste its key, or use a local model. Embedded (an iframe) in the panel, where it keeps the key away from the web
 // page: keystrokes in this frame belong to soroagent, not to the site.
 (function () {
   'use strict';
@@ -137,6 +137,53 @@
     }
   });
 
+  // Step 1 (the install tab only): offer sync. Skipping is one click; Settings can turn it on later.
+  function showAiStep(numbered = true) {
+    $('sync').hidden = true;
+    $('cloud').hidden = false;
+    $('keyNote').hidden = false;
+    $('aiStep').hidden = !numbered;
+    $('key').focus();
+  }
+  async function offerSync() {
+    $('sync').hidden = false;
+    $('cloud').hidden = true;
+    $('keyNote').hidden = true;
+    const st = await ext.runtime.sendMessage({ type: 'sync:status' }).catch(() => null);
+    if (st && st.on) showAiStep(false); // already syncing (set up in Settings first)
+  }
+  $('syncSkip').addEventListener('click', () => {
+    status('');
+    showAiStep();
+  });
+  $('syncConnect').addEventListener('click', async () => {
+    const passphrase = $('syncPass').value;
+    if (passphrase.length < 8) {
+      status('Choose a passphrase of at least 8 characters (or the one you already use in your other browser).', 'err');
+      $('syncPass').focus();
+      return;
+    }
+    $('syncConnect').disabled = true;
+    status('Sign in to Google in the window that opened…');
+    try {
+      await S.createGoogleAuth(ext).getToken(false, true);
+      status('Connecting…');
+      const res = await ext.runtime.sendMessage({ type: 'sync:connect', provider: 'gdrive', passphrase });
+      if (!res || res.ok === false) throw new Error((res && res.error) || 'Could not connect.');
+      $('syncPass').value = '';
+      const others = Object.keys(res.devices || {}).length - 1;
+      status(others > 0 ? `Sync is on. Your library from ${others === 1 ? 'your other browser' : `${others} other browsers`} is here now${res.received ? ` (${res.received} notes)` : ''}.` : 'Sync is on. Install soroagent in your other browsers and connect with the same passphrase.', 'ok');
+      showAiStep();
+    } catch (err) {
+      status(/did not approve|cancel|closed/i.test(err.message) ? 'Google sign-in was closed. Try again, or skip for now.' : err.message, 'err');
+    } finally {
+      $('syncConnect').disabled = false;
+    }
+  });
+  $('syncPass').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('syncConnect').click();
+  });
+
   // In the panel, tell the frame's parent (soroagent's content script) how tall to be.
   function reportHeight() {
     if (!embedded) return;
@@ -146,5 +193,6 @@
 
   renderProviders();
   renderGuide();
+  if (!embedded) offerSync();
   reportHeight();
 })();

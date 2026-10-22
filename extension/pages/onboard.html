@@ -23,7 +23,8 @@
     [hidden] { display: none !important; }
     html, body { margin: 0; background: var(--bg); color: var(--fg); }
     body { font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    body.tab { background: var(--bg-soft); }
+    body.tab { background: var(--bg-soft); min-height: 100vh; overflow: auto; }
+    html:has(body.tab) { background: var(--bg-soft); }
     body.tab main { max-width: 520px; margin: 48px auto; padding: 26px 28px; background: var(--bg); border: 1px solid var(--border); border-radius: 18px; position: relative; overflow: hidden; }
     body.tab main::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--brand), var(--spark)); }
     body.embed main { padding: 2px 2px 4px; }
@@ -62,6 +63,19 @@
     .status.err { color: var(--err); }
     .status.ok { color: var(--ok); font-weight: 600; }
     .fine { margin-top: 10px; color: var(--fg-muted); font-size: 11.5px; }
+    .step { margin: 0 0 4px; color: var(--fg-muted); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    #sync h2 { font-size: 15px; margin: 0 0 6px; letter-spacing: -0.01em; }
+    #sync > p { margin: 0 0 10px; }
+    .access { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); }
+    .access h3 { font-size: 12.5px; margin: 0 0 6px; }
+    .access ul { margin: 0; padding-left: 0; list-style: none; }
+    .access li { margin: 3px 0; padding-left: 20px; position: relative; }
+    .access li::before { position: absolute; left: 0; font-weight: 700; }
+    .access li.yes::before { content: "✓"; color: var(--ok); }
+    .access li.no::before { content: "✕"; color: var(--err); }
+    #syncPass { display: block; width: 100%; }
+    .field-hint { margin: 4px 0 0; color: var(--fg-muted); font-size: 11.5px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
   </style>
 </head>
 <body>
@@ -74,7 +88,30 @@
     </div>
   </div>
 
+  <section id="sync" hidden>
+    <p class="step">Step 1 of 2</p>
+    <h2>Use soroagent in more than one browser or computer?</h2>
+    <p>Sync keeps one library (your saved snippets, summaries and research) in every browser where you install soroagent: Chrome, Firefox, Edge or Brave, on any computer.</p>
+    <div class="access">
+      <h3>What soroagent asks Google for</h3>
+      <ul>
+        <li class="yes">Its <b>own private folder</b> in your Google Drive, used only to store your soroagent library. The folder is hidden and only soroagent can see it.</li>
+        <li class="yes">Everything in it is <b>encrypted with your passphrase</b> first, so not even Google can read it.</li>
+        <li class="no">It <b>can't</b> see, open or change any of your other Drive files, and it gets no access to your email, contacts, photos or anything else in your Google account.</li>
+      </ul>
+    </div>
+    <label class="title" for="syncPass">Sync passphrase</label>
+    <input id="syncPass" type="password" autocomplete="new-password" spellcheck="false" placeholder="At least 8 characters">
+    <p class="field-hint">Already use soroagent in another browser? Enter the same passphrase you chose there. soroagent never stores or sends it, so keep it somewhere safe.</p>
+    <div class="actions">
+      <button class="btn primary" id="syncConnect" type="button">Connect Google Drive</button>
+      <button class="link" id="syncSkip" type="button">Skip, keep it in this browser only</button>
+    </div>
+    <p class="fine">You can turn sync on or off any time in Settings → Sync across browsers.</p>
+  </section>
+
   <section id="cloud">
+    <p class="step" id="aiStep" hidden>Step 2 of 2</p>
     <label class="title" id="providerLabel">1. Pick an AI to power me</label>
     <div class="providers" id="providers" role="group" aria-labelledby="providerLabel"></div>
     <label class="title" for="key">2. Paste your API key</label>
@@ -107,9 +144,10 @@
   </section>
 
   <div class="status" id="status" role="status" aria-live="polite"></div>
-  <p class="fine">🔒 Your key is encrypted and stays in this browser. soroagent only sends it to the AI you picked. This box is part of soroagent, so the website you're on can't see what you type.</p>
+  <p class="fine" id="keyNote">🔒 Your key is encrypted and stays in this browser. soroagent only sends it to the AI you picked. This box is part of soroagent, so the website you're on can't see what you type.</p>
 </main>
 <script src="../shared/config.js"></script>
+<script src="../background/sync.js"></script>
 <script src="onboard.js"></script>
 </body>
 </html>

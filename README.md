@@ -79,7 +79,7 @@ Answers come in two parts, **From your sources** (every claim cited [S1], [S2]�
   ```
 
   New and changed notes are written automatically (renamed when their title changes) and deleted notes are removed. Files you edit in your vault are never overwritten. Chrome, Edge, Brave and Arc write to the folder you pick; Firefox writes to `Downloads/soroagent/notes/`.
-- **Sync across browsers.** Every browser where soroagent is installed can share one library, on any computer. There are no soroagent servers, so the shared copy lives in **your own storage**: click **Connect Google Drive**, sign in, and pick a passphrase; do the same in your other browsers. It goes in a hidden folder in your Drive that only soroagent can see (soroagent can't see your other files). A WebDAV folder (Nextcloud, ownCloud, Synology, Koofr…) or a private GitHub Gist also work. It's **end-to-end encrypted** with your passphrase before it leaves the browser. Notes merge one by one (the newest wins; deletions carry over); each browser keeps its own AI connection and keys; screenshots stay local.
+- **Sync across browsers.** Every browser where soroagent is installed can share one library, on any computer. There are no soroagent servers, so the shared copy lives in **your own storage**: the first-run setup offers it (or Settings → Sync): click **Connect Google Drive**, sign in, and pick a passphrase; do the same in your other browsers. Skipping keeps everything in that browser. It goes in a hidden folder in your Drive that only soroagent can see (soroagent can't see your other files). A WebDAV folder (Nextcloud, ownCloud, Synology, Koofr…) or a private GitHub Gist also work. It's **end-to-end encrypted** with your passphrase before it leaves the browser. Notes merge one by one (the newest wins; deletions carry over); each browser keeps its own AI connection and keys; screenshots stay local.
 - **Backups and restore.** A backup file in `Downloads/soroagent/` is kept up to date automatically. After a reinstall, soroagent finds it and restores everything in one click. Snippets also export as Markdown or JSON.
 
 ### Make it yours
@@ -98,12 +98,12 @@ Answers come in two parts, **From your sources** (every claim cited [S1], [S2]�
 
 ## Download
 
-Current version: **v2.25.0**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.26.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.25.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.25.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.25.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.25.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.26.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.26.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.26.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.26.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows.
 
