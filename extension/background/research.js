@@ -125,11 +125,37 @@
       .join('\n\n');
   }
 
+  /**
+   * Pure: true for http(s) URLs on the public internet. Search results pointing at this computer
+   * or the local network (routers, NAS, intranet) are never fetched, so their contents can't end
+   * up in a prompt.
+   */
+  function isPublicUrl(url) {
+    let u;
+    try {
+      u = new URL(url);
+    } catch {
+      return false;
+    }
+    if (!/^https?:$/.test(u.protocol) || u.username || u.password) return false;
+    const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    if (!host.includes('.') && !host.includes(':')) return false; // "localhost", "router", "nas"
+    if (/(^|\.)(localhost|local|lan|home|internal|intranet|corp|home\.arpa)$/.test(host)) return false;
+    const v4 = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+    if (v4) {
+      const [a, b] = [Number(v4[1]), Number(v4[2])];
+      return !(a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224);
+    }
+    if (host.includes(':')) return !/^(::1?$|::ffff:|f[cd][0-9a-f]{0,2}:|fe[89ab][0-9a-f]?:)/.test(host);
+    return true;
+  }
+
   // ---------------------------------------------------------------------------
   // Network (background worker only)
   // ---------------------------------------------------------------------------
 
-  async function fetchText(url, { timeoutMs = 9000, maxBytes = 1500000, signal } = {}) {
+  async function fetchText(url, { timeoutMs = 9000, maxBytes = 1500000, signal, publicOnly = false } = {}) {
+    if (publicOnly && !isPublicUrl(url)) throw new Error('Not a public web address.');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const onAbort = () => controller.abort();
@@ -138,6 +164,8 @@
       // No cookies: research never acts as the user on other sites.
       const res = await root.fetch(url, { credentials: 'omit', redirect: 'follow', signal: controller.signal, headers: { Accept: 'text/html,application/json;q=0.9,*/*;q=0.5' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // A public page that redirected into the local network is not read.
+      if (publicOnly && res.url && !isPublicUrl(res.url)) throw new Error('Redirected to a private address.');
       const type = res.headers.get('content-type') || '';
       if (!/html|json|text\/plain/i.test(type)) throw new Error(`Not a web page (${type || 'unknown type'})`);
       const text = await res.text();
@@ -185,13 +213,13 @@
   async function gatherSources(query, { count = 5, engine, searxUrl, signal, onStatus } = {}) {
     if (onStatus) onStatus(`Searching the web for “${query}”…`);
     const { engine: used, results: all } = await searchWeb(query, { engine, searxUrl, signal });
-    const results = all.slice(0, count + 3);
+    const results = all.filter((r) => isPublicUrl(r.url)).slice(0, count + 3);
     if (!results.length) throw Object.assign(new Error(`No web results for “${query}”.`), { hint: 'Try Research again with a different snippet.' });
     if (onStatus) onStatus(`Reading ${Math.min(count, results.length)} sources from ${used}…`);
     const read = await Promise.all(
       results.map(async (r) => {
         try {
-          const page = htmlToText(await fetchText(r.url, { signal }));
+          const page = htmlToText(await fetchText(r.url, { signal, publicOnly: true }));
           return page.text.length > 200 ? { ...r, title: r.title || page.title, text: page.text } : null;
         } catch {
           return null;
@@ -205,5 +233,5 @@
     return final;
   }
 
-  Object.assign(soroagent, { parseDuckDuckGoLite, parseBrave, parseBing, parseSearx, htmlToText, formatSources, decodeEntities, searchWeb, gatherSources });
+  Object.assign(soroagent, { isPublicUrl, parseDuckDuckGoLite, parseBrave, parseBing, parseSearx, htmlToText, formatSources, decodeEntities, searchWeb, gatherSources });
 })(globalThis);

@@ -31,6 +31,7 @@
     cleanSites: [], // sites where "Hide ads" is applied automatically
     customPrompts: {}, // system prompts written in settings: { default?: string, x?: string, … }
     autoBackup: true, // save a backup file to Downloads/soroagent/ automatically
+    onboarded: false, // set once the first-run setup connects (or for installs from before it existed)
     safetyCheck: true, // check pages for signs of scams, phishing and malware; the owl turns red
     trustedSites: [], // sites the reader marked "I trust this site"
     showQuips: true, // a random one-liner when the panel opens
@@ -227,7 +228,11 @@
     return 'https://soroagent.com/feedback';
   }
 
+  /** Only http(s) links are made clickable; anything else (javascript:, data:…) becomes "#". */
+  const safeUrl = (url) => (/^https?:\/\//i.test(String(url || '')) ? String(url) : '#');
+
   Object.assign(soroagent, {
+    safeUrl,
     ext,
     FEEDBACK_URL: feedbackBase(),
     feedbackUrl,

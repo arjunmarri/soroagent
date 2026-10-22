@@ -48,3 +48,10 @@ test('stats older than 90 days expire', () => {
   const keys = ['stats:2026-07-23', 'stats:2026-07-24', 'stats:2026-10-22', 'snippet:x'];
   assert.deepEqual(S.expiredStatsKeys(keys, new Date(2026, 9, 22)), ['stats:2026-07-23']);
 });
+
+test('stats never keep tokens from page addresses', () => {
+  assert.equal(S.statsUrl('https://www.youtube.com/watch?v=abc&t=42&si=tracking'), 'https://www.youtube.com/watch?v=abc');
+  assert.equal(S.statsUrl('https://site.com/reset-password?token=SECRET#step2'), 'https://site.com/reset-password');
+  assert.equal(S.statsUrl('https://user:pw@site.com/a/'), 'https://site.com/a');
+  assert.equal(S.statsUrl('not a url'), '');
+});

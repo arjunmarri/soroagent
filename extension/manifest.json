@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "soroagent",
   "short_name": "soroagent",
-  "version": "2.19.3",
+  "version": "2.20.0",
   "description": "AI assistant for any web page, powered by your local LLM (Ollama, LM Studio…) or your own API key (Claude, OpenAI, Gemini…). Summarize, ask and save.",
   "permissions": [
     "storage",
@@ -60,6 +60,7 @@
         "shared/prompts.js",
         "prompts/*.js",
         "shared/snippets.js",
+        "shared/stats.js",
         "content/timetrack.js",
         "sites/registry.js",
         "sites/*.js",
@@ -71,6 +72,7 @@
         "content/product.js",
         "content/safety.js",
         "content/quips.js",
+        "content/faq.js",
         "content/assistant.js"
       ],
       "run_at": "document_idle"
@@ -113,5 +115,16 @@
         ]
       }
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pages/onboard.html"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ]
 }

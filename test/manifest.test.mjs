@@ -80,3 +80,13 @@ test('the shared settings script loads cleanly on an extension page', async () =
   assert.ok(context.soroagent && context.soroagent.ext, 'config.js finished and exported ext');
   assert.match(links[0].href, /^https:\/\/soroagent\.com\/feedback\?v=9\.9\.9&browser=chrome&from=stats$/);
 });
+
+test('only http(s) links are made clickable', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const context = { chrome: { runtime: {}, storage: {} } };
+  context.globalThis = context;
+  runInNewContext(readFileSync(join(ext, 'shared/config.js'), 'utf8'), context);
+  const { safeUrl } = context.soroagent;
+  assert.equal(safeUrl('https://a.com/x'), 'https://a.com/x');
+  for (const bad of ['javascript:alert(1)', 'JaVaScRiPt:alert(1)', 'data:text/html,<b>x', '', undefined]) assert.equal(safeUrl(bad), '#');
+});

@@ -161,7 +161,7 @@
     const pages = stats.pages.filter((p) => !siteFilter || p.host === siteFilter);
     const shown = showAllPages ? pages.slice(0, 300) : pages.slice(0, 25);
     const pageRows = shown.map((page) => el('div', { className: 'page-row' }, [
-      el('a', { href: page.url, target: '_blank', rel: 'noopener noreferrer', textContent: page.title || page.url, title: page.url }),
+      el('a', { href: S.safeUrl(page.url), target: '_blank', rel: 'noopener noreferrer', textContent: page.title || page.url, title: page.url }),
       el('span', { className: 'time', textContent: formatDuration(page.ms) }),
       el('small', { textContent: page.url.replace(/^https?:\/\/(www\.)?/, '') }),
     ]));

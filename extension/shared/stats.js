@@ -20,6 +20,24 @@
     }
   };
 
+  // Query parameters that identify content (a video, a search, a page) rather than a person.
+  const KEEP_PARAMS = new Set(['v', 'q', 'query', 'search', 's', 'id', 'p', 'page', 'list', 'tab', 'category', 'lang', 'hl']);
+
+  /**
+   * Pure: the address stats are kept under: no #fragment, no login details, and only harmless
+   * query parameters, so tokens in links (password resets, sessions, invites) are never stored.
+   */
+  function statsUrl(url) {
+    try {
+      const u = new URL(url);
+      const kept = [...u.searchParams].filter(([k]) => KEEP_PARAMS.has(k.toLowerCase()));
+      const query = kept.length ? `?${new URLSearchParams(kept)}` : '';
+      return `${u.protocol}//${u.host}${u.pathname.replace(/\/+$/, '')}${query}`;
+    } catch {
+      return '';
+    }
+  }
+
   /** Pure: a day's record with `ms` more on `url`. Keeps the busiest pages when there are many. */
   function addTime(day, { url, title, ms }) {
     const host = hostOf(url);
@@ -85,5 +103,5 @@
     return keys.filter((k) => k.startsWith(STATS_PREFIX) && k.slice(STATS_PREFIX.length) < cut);
   }
 
-  Object.assign(soroagent, { STATS_PREFIX, STATS_KEEP_DAYS: KEEP_DAYS, statsDayKey: dayKey, addTime, summarizeStats, formatDuration, expiredStatsKeys });
+  Object.assign(soroagent, { statsUrl, STATS_PREFIX, STATS_KEEP_DAYS: KEEP_DAYS, statsDayKey: dayKey, addTime, summarizeStats, formatDuration, expiredStatsKeys });
 })(globalThis);

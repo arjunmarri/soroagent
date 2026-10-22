@@ -400,14 +400,50 @@
         return;
       }
       fillModelSelect(status.models, status.model, state.recommended);
+      finishOnboarding();
       const via = status.cloud ? status.providerLabel : status.api === 'ollama' ? 'Ollama' : 'OpenAI-compatible API';
       els.model.title = `${status.model} via ${via} at ${status.baseUrl}`;
       setStatus('ready', status.model);
       maybeSuggestModels(status);
     } catch (err) {
       setStatus('offline', 'Offline');
-      showError(err, err.hint, true);
+      // First run: a friendly setup right in the chat instead of an error.
+      if (!state.settings.onboarded) showOnboarding();
+      else showError(err, err.hint, true);
     }
+  }
+
+  // First-run setup in the chat. The key box is soroagent's own page in a frame, so the website
+  // can't read what's typed into it (it could see keystrokes typed straight into the panel).
+  const WELCOMES = [
+    'Hoo\'s there? I\'m soroagent. I read the internet so you don\'t have to.',
+    'Hi! I\'m an owl with a reading habit. Give me an AI key and I\'ll summarize anything.',
+    'Welcome! I turn walls of text into three bullet points. Your brain says thanks in advance.',
+    'Hello, human. I come in peace, and I come with summaries.',
+  ];
+  function showOnboarding() {
+    if (els.thread.querySelector('.onboarding')) return;
+    const frame = el('iframe', { className: 'onboard-frame', src: `${ext.runtime.getURL('pages/onboard.html')}?embed`, title: 'Connect soroagent to an AI' });
+    frame.setAttribute('allow', '');
+    const node = el('div', { className: 'card onboarding' }, [
+      el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: WELCOMES[Math.floor(Math.random() * WELCOMES.length)] })]),
+      el('p', { textContent: 'To get started, connect me to an AI. Paste a key from Claude, ChatGPT, Gemini and others, or use a free model on your computer. Stuck? Click "How do I get a key?".' }),
+      frame,
+    ]);
+    // The frame reports its height so it never needs its own scrollbar.
+    const onMessage = (e) => {
+      if (e.source !== frame.contentWindow || !e.data || typeof e.data.soroagentOnboardHeight !== 'number') return;
+      frame.style.height = `${Math.min(900, Math.max(120, e.data.soroagentOnboardHeight))}px`;
+    };
+    window.addEventListener('message', onMessage);
+    node.addEventListener('soroagent-remove', () => window.removeEventListener('message', onMessage));
+    append(node);
+  }
+  function finishOnboarding() {
+    const node = els.thread.querySelector('.onboarding');
+    if (!node) return;
+    node.dispatchEvent(new Event('soroagent-remove'));
+    node.replaceWith(card({ kind: 'ok', icon: 'check', title: 'Connected! I\'m ready.', body: 'Try Summarize, or ask me anything about this page.' }));
   }
 
   // The model suggestion appears at most once, ever: the first time a better-suited local model is
@@ -858,7 +894,7 @@
       } catch {
         // keep empty
       }
-      return el('li', {}, [el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer', textContent: src.title || host }), el('small', { textContent: ` ${host}` })]);
+      return el('li', {}, [el('a', { href: S.safeUrl(src.url), target: '_blank', rel: 'noopener noreferrer', textContent: src.title || host }), el('small', { textContent: ` ${host}` })]);
     }));
     return el('div', { className: 'card' }, [
       el('div', { className: 'card-title' }, [el('span', { className: 'card-title-text', textContent: `${title}${query ? ` · searched “${query}”` : ''}` })]),
@@ -1472,13 +1508,46 @@
     return getPage();
   }
 
+  // Questions like "where is my data stored?" could be about soroagent or about the website:
+  // ask which, then answer about soroagent from facts (no model needed) or about the page as usual.
   function ask(question) {
+    const topic = S.ownTopic(question);
+    if (!topic) return askPage(question);
+    addUserMessage(question);
+    const host = location.hostname.replace(/^www\./, '');
+    const node = card({
+      icon: 'chat',
+      title: 'Do you mean soroagent or this website?',
+      body: `I can answer about me (the owl in your browser), or about ${host} from what this page says.`,
+      actions: [
+        {
+          label: 'soroagent 🦉',
+          onClick: () => {
+            node.remove();
+            const answer = S.ownAnswer(topic, { cloud: state.cloud, providerLabel: els.where.textContent, autoBackup: state.settings.autoBackup, trackTime: state.settings.trackTime });
+            addAssistantMessage().finish(answer);
+            state.history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
+          },
+        },
+        {
+          label: `This website (${host})`,
+          onClick: () => {
+            node.remove();
+            askPage(question, { echo: false });
+          },
+        },
+      ],
+    });
+    append(node);
+  }
+
+  function askPage(question, { echo = true } = {}) {
     return runTask(async (signal) => {
       if (!state.pageContext || state.pageContext.url !== location.href) {
         state.pageContext = { url: location.href, page: currentContext() };
         state.history = [];
       }
-      addUserMessage(question);
+      if (echo) addUserMessage(question);
       const vars = S.pageVars(state.pageContext.page, { context: pageInfo().context || '', question });
       const [system] = S.buildMessages('ask', vars, sitePrompts());
       await streamReply([system, ...state.history, { role: 'user', content: question }], question, signal);

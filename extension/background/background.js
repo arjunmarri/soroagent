@@ -431,16 +431,27 @@
 
   ext.runtime.onInstalled.addListener(async (details) => {
     createMenus();
+    if (details.reason === 'update') {
+      // People updating from before the first-run setup existed are already set up.
+      const { settings } = await ext.storage.local.get('settings');
+      if (settings && settings.onboarded === undefined) await ext.storage.local.set({ settings: { ...settings, onboarded: true } });
+      return;
+    }
     if (details.reason !== 'install') return;
     // A fresh install: if an automatic backup from an earlier install is still in Downloads,
     // the welcome (settings) page offers to restore it.
     try {
       const file = await S.findBackupFile();
-      if (file) await ext.storage.local.set({ restoreOffer: file });
+      if (file) {
+        await ext.storage.local.set({ restoreOffer: file });
+        ext.runtime.openOptionsPage(); // the welcome-back restore lives there
+        return;
+      }
     } catch (err) {
       console.warn('[soroagent] Could not look for an earlier backup:', err);
     }
-    ext.runtime.openOptionsPage();
+    // Brand new: a friendly first-run setup (not the full settings page).
+    ext.tabs.create({ url: ext.runtime.getURL('pages/onboard.html') });
   });
   ext.runtime.onStartup.addListener(createMenus);
 

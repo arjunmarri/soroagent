@@ -16,7 +16,7 @@
   let lastTick = Date.now();
   let lastInput = Date.now();
   let pending = 0; // ms not yet sent
-  let page = { url: soroagent.pageKey(location.href), title: document.title };
+  let page = { url: soroagent.statsUrl(location.href), title: document.title };
   let lastFlush = Date.now();
 
   const mediaPlaying = () => [...document.querySelectorAll('video, audio')].some((m) => !m.paused && !m.ended && m.readyState > 2);
@@ -40,7 +40,7 @@
     if (counting()) pending += Math.min(now - lastTick, TICK_MS * 2);
     lastTick = now;
     // Single-page sites (X, Reddit, YouTube) change the address without reloading.
-    const url = soroagent.pageKey(location.href);
+    const url = soroagent.statsUrl(location.href);
     if (url !== page.url) {
       flush();
       page = { url, title: document.title };

@@ -75,7 +75,7 @@
     meta.append(el('span', { textContent: record.label }));
     if (record.model) meta.append(el('span', { textContent: record.model }));
     if (duration(record)) meta.append(el('span', { textContent: duration(record) }));
-    if (/^https?:/.test(record.url)) meta.append(el('a', { href: record.url, target: '_blank', rel: 'noopener', textContent: 'Open page ↗' }));
+    if (/^https?:/.test(record.url)) meta.append(el('a', { href: S.safeUrl(record.url), target: '_blank', rel: 'noopener', textContent: 'Open page ↗' }));
 
     const card = el('article', { className: 'item compact' }, [title, meta]);
     if (record.status === 'running') card.append(el('div', { className: 'working', textContent: record.statusText || 'Summarizing in the background…' }));
@@ -86,7 +86,7 @@
     }
     if (record.sources && record.sources.length) {
       card.append(el('div', { className: 'meta', textContent: `Research sources · searched “${record.query || ''}”` }));
-      card.append(el('ol', { className: 'sources' }, record.sources.map((src) => el('li', {}, [el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer', textContent: src.title || src.url })]))));
+      card.append(el('ol', { className: 'sources' }, record.sources.map((src) => el('li', {}, [el('a', { href: S.safeUrl(src.url), target: '_blank', rel: 'noopener noreferrer', textContent: src.title || src.url })]))));
     }
 
     const actions = el('div', { className: 'actions' });

@@ -178,7 +178,7 @@
 
   function sourcesList(sources) {
     return el('ol', { className: 'sources' }, (sources || []).map((src) =>
-      el('li', {}, [el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer', textContent: src.title || hostOf(src.url) }), el('small', { textContent: ` ${hostOf(src.url)}` })])
+      el('li', {}, [el('a', { href: S.safeUrl(src.url), target: '_blank', rel: 'noopener noreferrer', textContent: src.title || hostOf(src.url) }), el('small', { textContent: ` ${hostOf(src.url)}` })])
     ));
   }
 
@@ -259,7 +259,7 @@
       go.addEventListener('click', () => pickTopic(s));
       actions.append(go);
     }
-    if (/^https?:/.test(s.url)) actions.append(el('a', { className: 'btn', href: s.url, target: '_blank', rel: 'noopener', textContent: 'Open source ↗' }));
+    if (/^https?:/.test(s.url)) actions.append(el('a', { className: 'btn', href: S.safeUrl(s.url), target: '_blank', rel: 'noopener', textContent: 'Open source ↗' }));
     const copy = el('button', { type: 'button', className: 'btn', textContent: 'Copy' });
     copy.addEventListener('click', async () => {
       const extra = s.research ? `\n\n## Research\n${stripThinking(s.research.text)}` : '';
@@ -305,7 +305,7 @@
       setTimeout(() => (copy.textContent = 'Copy image'), 1500);
     });
     actions.append(save, copy);
-    if (/^https?:/.test(s.url)) actions.append(el('a', { className: 'btn', href: s.url, target: '_blank', rel: 'noopener', textContent: 'Open page ↗' }));
+    if (/^https?:/.test(s.url)) actions.append(el('a', { className: 'btn', href: S.safeUrl(s.url), target: '_blank', rel: 'noopener', textContent: 'Open page ↗' }));
     const remove = el('button', { type: 'button', className: 'btn danger', textContent: 'Delete' });
     remove.addEventListener('click', async () => {
       await deleteSnippets([s.id]);
@@ -325,7 +325,7 @@
     if (image) image.addEventListener('error', () => image.remove());
     nodes.push(image ? el('div', { className: 'product' }, [image, details]) : details);
     const actions = el('div', { className: 'reader-actions' });
-    const buy = el('a', { className: 'btn primary', href: s.url, target: '_blank', rel: 'noopener', textContent: 'View product ↗' });
+    const buy = el('a', { className: 'btn primary', href: S.safeUrl(s.url), target: '_blank', rel: 'noopener', textContent: 'View product ↗' });
     const bought = el('button', { type: 'button', className: 'btn', textContent: s.boughtAt ? 'Not bought yet' : 'Mark as bought' });
     bought.addEventListener('click', () => S.updateSnippet(s.id, { boughtAt: s.boughtAt ? '' : new Date().toISOString() }));
     const remove = el('button', { type: 'button', className: 'btn danger', textContent: 'Remove' });
@@ -342,7 +342,7 @@
     if (s.summary) nodes.push(el('div', { className: 'prose' }, [el('p', { textContent: s.summary })]));
     nodes.push(el('p', { className: 'muted', textContent: s.readAt ? `Marked as read ${when(s.readAt, { dateStyle: 'medium', timeStyle: 'short' })}.` : 'Saved to read later.' }));
     const actions = el('div', { className: 'reader-actions' });
-    const open = el('a', { className: 'btn primary', href: s.url, target: '_blank', rel: 'noopener', textContent: 'Open page ↗' });
+    const open = el('a', { className: 'btn primary', href: S.safeUrl(s.url), target: '_blank', rel: 'noopener', textContent: 'Open page ↗' });
     open.addEventListener('click', () => !s.readAt && S.updateSnippet(s.id, { readAt: new Date().toISOString() }));
     const mark = el('button', { type: 'button', className: 'btn', textContent: s.readAt ? 'Mark as unread' : 'Mark as read' });
     mark.addEventListener('click', () => S.updateSnippet(s.id, { readAt: s.readAt ? '' : new Date().toISOString() }));

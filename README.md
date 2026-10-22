@@ -27,9 +27,12 @@ Browsers were built to *fetch* pages, not to help you *understand* them. Your br
 
 ## What it does
 
+### Get started in a minute
+The first time you open the owl, it says hello (with a joke) and asks you to connect an AI right in the chat: pick Claude, ChatGPT, Gemini, Groq or OpenRouter, paste a key, done. **How do I get a key?** walks you through it step by step without leaving the page, and **I have a local model** sets up a free model on your computer instead. The key box is soroagent's own protected frame, so the website you're on can't see what you type.
+
 ### Understand any page
 - **Summarize** gives you the page in a clear, scannable format: a one-line TL;DR, then the key points. Ask again while nothing has changed and you get the earlier summary instantly, with **Regenerate** if you want a fresh one.
-- **Ask anything** about the page in a chat, or tap a suggestion on the opening screen: *What are the key points?*, *Explain it simply*, *What should I double-check?*
+- **Ask anything** about the page in a chat. Questions like *"do you save my data in the cloud?"* or *"is this open source?"* get a quick *"soroagent or this website?"* first, then an accurate answer about soroagent itself or about the site. Or  or tap a suggestion on the opening screen: *What are the key points?*, *Explain it simply*, *What should I double-check?*
 - **Tuned for the sites you use.** Built-in prompts for X, Reddit, YouTube, GitHub, Hacker News, Wikipedia, LinkedIn, Amazon, Stack Overflow and major news sites: thread consensus on Reddit, the accepted answer on Stack Overflow, pros and cons from reviews on Amazon.
 - **Works while you move on.** Summaries run in the background. Switch tabs or leave the page, and the result is waiting when you come back. The toolbar owl counts what finished while you were away.
 
@@ -74,12 +77,12 @@ With a local model, page text never leaves your computer. With a cloud API, the 
 
 ## Download
 
-Current version: **v2.19.3**. The version is in each file name, so you can tell which build you have.
+Current version: **v2.20.0**. The version is in each file name, so you can tell which build you have.
 
 | Browser | Download | Install |
 |---|---|---|
-| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.19.3.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.3.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
-| Firefox (128+) | [**soroagent-firefox-2.19.3.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.3.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
+| Chrome, Edge, Brave, Arc | [**soroagent-chrome-2.20.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.20.0.zip) | Unzip, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder. |
+| Firefox (128+) | [**soroagent-firefox-2.20.0.zip**](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.20.0.zip) | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose the zip. |
 
 Both work on macOS and Windows. Full steps are below.
 
@@ -114,8 +117,8 @@ Small models (3–8B) are fast. Larger ones (14B and up) summarize and filter no
 
 **Download a ready-made build** from the [`downloads/`](downloads) folder:
 
-- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.19.3.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.19.3.zip)
-- Firefox: [soroagent-firefox-2.19.3.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.19.3.zip)
+- Chrome, Edge, Brave, Arc: [soroagent-chrome-2.20.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-chrome-2.20.0.zip)
+- Firefox: [soroagent-firefox-2.20.0.zip](https://github.com/arjunmarri/soroagent/raw/main/downloads/soroagent-firefox-2.20.0.zip)
 
 Unzip the Chrome build into a folder you'll keep: Chrome loads the extension from that folder. Firefox can load the zip directly.
 
@@ -131,7 +134,7 @@ This creates `dist/chrome` and `dist/firefox`. Run `npm run package` to also get
 
 **Chrome, Edge, Brave, Arc:** open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder (or `dist/chrome` if you built it).
 
-**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.19.3.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
+**Firefox (128+):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `soroagent-firefox-2.20.0.zip` (or `dist/firefox/manifest.json` if you built it). Temporary add-ons are removed when Firefox restarts. To install it permanently, sign the zip through [addons.mozilla.org](https://addons.mozilla.org/developers/) (it can be unlisted).
 
 On first install the settings page opens and tests the connection to `http://127.0.0.1:11434`.
 
@@ -194,6 +197,10 @@ Profiles in [`extension/sites/`](extension/sites) give soroagent site-specific b
 - **Ollama and 403 errors:** Ollama rejects requests from `chrome-extension://` and `moz-extension://` origins by default. soroagent rewrites the `Origin` header to the server's own origin, which Ollama always accepts. This applies only to the extension's own background requests: Chrome uses a session `declarativeNetRequest` rule and Firefox uses `webRequest`. Requests from web pages are never changed, so you don't need to set `OLLAMA_ORIGINS`.
 - Reasoning models (Qwen3, DeepSeek-R1, Gemma 4…) run with thinking turned off for speed, and any `<think>` output is removed. You can turn thinking on in settings.
 - **Summaries are background jobs.** The page hands the work to the background worker, which saves progress in the summary history (`summary:<id>` in extension storage, newest 300 kept), streams to whichever page is open, and keeps running if you leave. If the browser itself stops soroagent mid-summary, the entry is marked *interrupted* and you can run it again.
+- **Research only reads the public web.** Search results pointing at your computer or local network (localhost, 192.168.x.x, routers, NAS boxes, `.local` names) are never fetched, so nothing private can end up in a prompt.
+- **Stats keep addresses without secrets.** Only harmless query parameters (like YouTube's `?v=`) are kept, so tokens in links (password resets, sessions, invites) are never stored or backed up.
+- **Links from snippets, history and imported files** are only clickable when they're `http(s)`.
+- **Typing in the panel:** the panel lives inside the web page, so a malicious page could in principle observe keystrokes typed into the panel's question box. That's why API keys are entered in soroagent's own frame (first-run setup) or on the settings page, never in the panel's chat box.
 - Settings, keys and snippets are stored in `chrome.storage.local` on your machine (one key per snippet, so saves from several tabs can't overwrite each other).
 
 ## Development

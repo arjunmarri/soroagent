@@ -477,7 +477,7 @@ Rewrite it to get better results on this website. Keep the intent and every rule
     }
     const form = readForm();
     // Choosing a model here means the panel never needs to suggest one.
-    saved = await S.saveSettings({ ...form, modelTipSeen: Boolean(saved.modelTipSeen || chosenModel()) });
+    saved = await S.saveSettings({ ...form, onboarded: true, modelTipSeen: Boolean(saved.modelTipSeen || chosenModel()) });
     $('saved').textContent = 'Saved.';
     setTimeout(() => ($('saved').textContent = ''), 2500);
   });

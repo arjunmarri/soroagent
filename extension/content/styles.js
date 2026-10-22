@@ -319,6 +319,8 @@ header {
 .safety-actions button { border: 1px solid var(--border); background: var(--bg); border-radius: 8px; padding: 3px 9px; font-size: 11.5px; font-weight: 550; }
 .safety-actions .primary { background: var(--err); border-color: var(--err); color: #fff; }
 .safety-actions .quiet { border-color: transparent; background: none; color: var(--fg-muted); }
+.onboarding .card-title { font-size: 13.5px; }
+.onboard-frame { display: block; width: 100%; height: 300px; margin-top: 10px; border: 0; border-radius: 10px; background: var(--bg); color-scheme: normal; }
 .progress { height: 4px; border-radius: 4px; background: var(--border); margin-top: 8px; overflow: hidden; }
 .progress > div { height: 100%; background: linear-gradient(90deg, var(--brand), var(--spark)); width: 0; transition: width 0.2s ease; }
 

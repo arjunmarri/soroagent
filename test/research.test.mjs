@@ -48,3 +48,12 @@ test('Brave and Bing results (fallback engines)', () => {
   const bing = `<li class="b_algo" data-id><h2 class=""><a target="_blank" href="https://www.bing.com/ck/a?!&amp;&amp;p=1&amp;u=a1${target}&amp;ntb=1" h="ID">Write-Ahead Logging</a></h2><div class="b_caption"><p class="b_lineclamp2">WAL lets readers continue.</p></div></li>`;
   assert.deepEqual(S.parseBing(bing), [{ url: 'https://sqlite.org/wal.html', title: 'Write-Ahead Logging', snippet: 'WAL lets readers continue.' }]);
 });
+
+test('research never reads pages on this computer or the local network', () => {
+  for (const url of ['http://localhost:8080/', 'http://127.0.0.1/admin', 'http://192.168.1.1/', 'http://10.0.0.5/', 'http://172.20.1.1/', 'http://169.254.169.254/latest/meta-data', 'http://[::1]/', 'http://router/', 'http://nas.local/', 'https://user:pw@example.com/', 'file:///etc/passwd', 'ftp://example.com/']) {
+    assert.equal(S.isPublicUrl(url), false, url);
+  }
+  for (const url of ['https://en.wikipedia.org/wiki/Owl', 'http://93.184.216.34/', 'https://[2606:4700::1111]/', 'https://172.15.0.1/']) {
+    assert.equal(S.isPublicUrl(url), true, url);
+  }
+});
